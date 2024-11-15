@@ -12,7 +12,8 @@ apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
 ```
 2. Start docker.
 3. Run `docker-compose up` in source directory of the project.
-4. Then you start GStreamer pipeline using. Don't forget to modify source file and rtmp server target.
+4. Then you can start GStreamer pipeline using following command (works on Linux, Windows might be different...). 
+Don't forget to modify source `mp4` file and `rtmp://` server target.
 ```
 gst-launch-1.0 -e filesrc location=video_resources/video2.mp4 ! decodebin name=d ! queue ! videoconvert ! \
 x264enc bitrate=1000 tune=zerolatency ! video/x-h264 ! h264parse ! video/x-h264 ! flvmux name=mux streamable=true \
