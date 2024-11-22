@@ -1,0 +1,17 @@
+# Use postgres/example user/password credentials
+version: "3.1"
+
+services: # List of services to run
+  db: # Name of the service (can be anything)
+    image: postgres # Specify image to build container from, in this case latest postgres (https://hub.docker.com/_/postgres)
+    restart: always # If container stops, always restart it
+    environment:
+      POSTGRES_PASSWORD: example # Set password for postgres (default) user
+    ports:
+      - "5432:5432" # Maps the port host:container
+
+  adminer:
+    image: adminer # Use latest adminer image (https://hub.docker.com/_/adminer/)
+    restart: always
+    ports:
+      - "8080:8080"
