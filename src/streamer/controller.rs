@@ -49,9 +49,6 @@ fn stop_stream(pipeline: &Pipeline) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-/// gst-launch-1.0 -e filesrc location=video_resources/video2.mp4 ! decodebin name=d ! queue ! videoconvert ! x264enc bitrate=1000 tune=zerolatency
-/// ! video/x-h264 ! h264parse ! video/x-h264 ! flvmux name=mux streamable=true ! queue ! rtmpsink location='rtmp://localhost/hls/stream2'
-/// d. ! queue ! audioconvert ! audioresample ! audio/x-raw,rate=48000 ! voaacenc bitrate=96000 ! audio/mpeg ! aacparse ! audio/mpeg, mpegversion=4 ! mux.
 fn create_link_elements(pipeline: &Pipeline, stream_config: StreamConfig) -> Result<(), Box<dyn Error>> {
     let file_src = ElementFactory::make("filesrc").build()?;
     file_src.set_property_from_str("location", &stream_config.video_path);
