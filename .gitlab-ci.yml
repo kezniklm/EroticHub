@@ -11,11 +11,16 @@ variables:
 
 
 default:
-  image: rust:alpine3.20
+  image: rust:latest
   services:
     - postgres:13
   before_script:
-    - apk add --no-cache alpine-sdk build-base musl-dev gcc g++ openssl-dev glib glib-dev gstreamer-dev gst-plugins-base-dev pkgconf linux-headers gettext gettext-dev
+    - apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+      gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+      gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly \
+      gstreamer1.0-libav libgstrtspserver-1.0-dev libges-1.0-dev \
+      gstreamer1.0-tools
+    - apt-get install build-base musl-dev gcc g++ openssl-dev
     - rustc --version
     - cargo --version
     - cargo install sqlx-cli
