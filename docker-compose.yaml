@@ -1,9 +1,0 @@
-services:
-  nginx:
-    container_name: nginx-rtmp
-    build: docker/nginx-rtmp/.
-    restart: always
-    tty: true
-    ports:
-      - "1935:1935"
-      - "8080:80"
