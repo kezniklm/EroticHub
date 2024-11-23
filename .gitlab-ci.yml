@@ -1,3 +1,7 @@
+workflow:
+  rules:
+    when: never
+
 variables:
   OPENSSL_DIR: "/usr"
   OPENSSL_LIB_DIR: "/usr/lib"
