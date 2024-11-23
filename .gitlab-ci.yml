@@ -1,0 +1,63 @@
+variables:
+  OPENSSL_DIR: "/usr"
+  OPENSSL_LIB_DIR: "/usr/lib"
+  OPENSSL_INCLUDE_DIR: "/usr/include"
+  POSTGRES_DB: erotic-hub
+  POSTGRES_USER: user
+  POSTGRES_PASSWORD: password
+  POSTGRES_HOST_AUTH_METHOD: trust
+  DATABASE_URL: "postgres://user:password@postgres:5432/erotic-hub"
+
+default:
+  image: rust:alpine3.20
+  services:
+    - postgres:13
+  before_script:
+    - apk add --no-cache alpine-sdk build-base musl-dev gcc openssl-dev
+    - rustc --version
+    - cargo --version
+    - cargo install sqlx-cli
+    - sqlx migrate run
+  tags:
+    - shared-fi
+
+stages:
+  - build
+  - test
+
+build:
+  stage: build
+  script:
+    - cargo build --verbose
+  cache:
+    - key: "$CI_COMMIT_REF_SLUG"
+      paths:
+        - target/
+
+      policy: push
+
+lint:
+  stage: test
+  script:
+    - rustup component add rustfmt
+    - cargo fmt -- --check
+    - rustup component add clippy
+    - cargo clippy -- -D warnings
+
+  cache:
+    - key: "$CI_COMMIT_REF_SLUG"
+      paths:
+        - target/
+
+      policy: pull
+
+test:
+  stage: test
+  script:
+    - cargo test --verbose
+  cache:
+    - key: "$CI_COMMIT_REF_SLUG"
+      paths:
+        - target/
+
+      policy: pull
