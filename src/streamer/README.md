@@ -15,11 +15,11 @@ apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
 4. Then you can start GStreamer pipeline using following command (works on Linux, Windows might be different...). 
 Don't forget to modify source `mp4` file and `rtmp://` server target.
 ```
-gst-launch-1.0 -e filesrc location=video_resources/video2.mp4 ! decodebin name=d ! queue ! videoconvert ! \
-x264enc bitrate=1000 tune=zerolatency ! video/x-h264 ! h264parse ! video/x-h264 ! flvmux name=mux streamable=true \
-! queue ! rtmpsink location='rtmp://localhost/hls/stream-<id>' \
-d. ! queue ! audioconvert ! audioresample ! audio/x-raw,rate=48000 ! voaacenc bitrate=96000 ! audio/mpeg \
-! aacparse ! audio/mpeg, mpegversion=4 ! mux.
+gst-launch-1.0 -e filesrc location=video_resources/video3.mp4 ! decodebin name=d ! queue ! videoconvert ! videoscale ! \
+video/x-raw,width=640,height=360 ! x264enc ! flvmux name=mux streamable=true ! queue ! \
+rtmpsink location='rtmp://localhost/hls/stream-1_360' d. ! queue ! audioconvert ! audioresample ! \
+audio/x-raw,rate=48000 ! voaacenc bitrate=96000 ! audio/mpeg ! aacparse ! audio/mpeg, mpegversion=4 ! mux.
+
 ```
 
 5. It starts sending RTMP stream to Nginx, where it's converted to HLS stream, which can be then fetched using HTTP protocol

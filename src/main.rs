@@ -1,3 +1,4 @@
+use crate::streamer::types::{StreamInfo, StreamStorage};
 use actix_web::{web, App, HttpServer};
 use log::{info, warn};
 
@@ -15,6 +16,8 @@ mod api;
 mod business;
 mod configuration;
 mod persistence;
+mod streamer;
+
 
 const CONFIG_FILE_KEY: &str = "CONFIG_FILE_PATH";
 
@@ -35,17 +38,23 @@ async fn main() -> anyhow::Result<()> {
     };
 
     let config = init_configuration().expect("Failed to load config.yaml");
+    init_gstream().expect("Failed to initialize GStreamer. Check if you have it installed on your system");
+
     let pool = setup_db_pool().await?;
 
+    let stream_storage = StreamStorage::new();
     let user_repo = PostgresUserRepo::new(pool.clone());
 
     let user_facade = UserFacade::new(Arc::new(user_repo));
 
     HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(stream_storage.clone()))
+            .app_data(web::Data::new(user_repo.clone()))
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
             .service(controllers::user::list_users)
+            .service(controllers::stream_controller::register_scope())
     })
     .bind(("127.0.0.1", 8000))?
     .run()
