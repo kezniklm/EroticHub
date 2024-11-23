@@ -7,18 +7,22 @@ variables:
   POSTGRES_PASSWORD: password
   POSTGRES_HOST_AUTH_METHOD: trust
   DATABASE_URL: "postgres://user:password@postgres:5432/erotic-hub"
+  RUSTFLAGS: "-L /usr/lib -C linker=musl-gcc"
+  PKG_CONFIG_PATH: "/usr/lib/pkgconfig:/usr/local/lib/pkgconfig"
 
 default:
   image: rust:alpine3.20
   services:
     - postgres:13
   before_script:
-    - apk add --no-cache alpine-sdk build-base musl-dev gcc g++ openssl-dev glib glib-dev
-    - apk add --no-cache gstreamer-dev gst-plugins-base-dev pkgconf linux-headers gettext-dev
+    - apk add --no-cache alpine-sdk build-base musl-dev gcc g++ openssl-dev glib glib-dev \
+      gstreamer-dev gst-plugins-base-dev pkgconf linux-headers gettext gettext-dev
     - rustc --version
     - cargo --version
     - cargo install sqlx-cli
     - sqlx migrate run
+    - echo 'int main() { return 0; }' > test.c \
+      cc test.c -o test -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -lintl -L/usr/lib
   tags:
     - shared-fi
 
