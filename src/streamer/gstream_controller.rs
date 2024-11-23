@@ -151,10 +151,10 @@ fn create_link_elements(
     let audio_convert = ElementFactory::make("audioconvert").build()?;
     let audio_resample = ElementFactory::make("audioresample").build()?;
     let audio_xraw = ElementFactory::make("capsfilter").build()?;
-    audio_xraw.set_property_from_str("caps", "audio/x-raw,rate=48000");
+    audio_xraw.set_property_from_str("caps", "audio/x-raw");
 
-    let voaacenc = ElementFactory::make("voaacenc").build()?;
-    voaacenc.set_property_from_str("bitrate", "96000");
+    let avenc_aac = ElementFactory::make("avenc_aac").build()?;
+    avenc_aac.set_property_from_str("bitrate", "128000");
 
     let audio_mpeg = ElementFactory::make("capsfilter").build()?;
     audio_mpeg.set_property_from_str("caps", "audio/mpeg");
@@ -179,7 +179,7 @@ fn create_link_elements(
         &audio_convert,
         &audio_resample,
         &audio_xraw,
-        &voaacenc,
+        &avenc_aac,
         &audio_mpeg,
         &aac_parse,
         &audio_mpeg2,
@@ -200,7 +200,7 @@ fn create_link_elements(
         &audio_convert,
         &audio_resample,
         &audio_xraw,
-        &voaacenc,
+        &avenc_aac,
         &audio_mpeg,
         &aac_parse,
         &audio_mpeg2,
@@ -243,7 +243,7 @@ mod test {
         println!("{:?}", env::current_dir());
         init_gstreamer()?;
         let main_stream = CompoundStreamInfo::new(
-            String::from("1"),
+            String::from("2"),
             String::from("video_resources/video3.mp4"),
             vec![StreamResolution::P360],
         );
