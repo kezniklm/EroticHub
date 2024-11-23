@@ -13,7 +13,7 @@ default:
   services:
     - postgres:13
   before_script:
-    - apk add --no-cache alpine-sdk build-base musl-dev gcc openssl-dev glib
+    - apk add --no-cache alpine-sdk build-base musl-dev gcc openssl-dev glib glib-dev
     - rustc --version
     - cargo --version
     - cargo install sqlx-cli
