@@ -1,81 +1,122 @@
-use std::sync::Arc;
+use crate::streamer::types::{CompoundStreamInfo, StreamResolution, StreamStorage};
 use actix_web::web::Data;
-use crate::streamer::types::{CompoundStreamInfo, StreamInfo, StreamStorage};
+use anyhow::Result;
 use gstreamer::prelude::{
     ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExtManual, PadExt,
 };
 use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pad, Pipeline, State};
-use anyhow::Result;
+use log::{debug, error, info};
+use std::sync::Arc;
+use std::thread;
 
-pub async fn create_streams(stream_storage: Data<StreamStorage>, compound_stream: CompoundStreamInfo) -> Result<()> {
-    let mut pipelines = Vec::new();
-    for stream in &compound_stream.streams {
-        let pipeline = Arc::new(create_stream(&compound_stream, stream)?);
-        pipelines.push(pipeline.clone());
-
-        actix_rt::spawn(async move {
-            match pipeline.set_state(State::Playing) {
-                Ok(_) => {
-                    println!("Stream started!");
-                }
-                Err(_) => {
-                    println!("Failed to start the stream!");
-                }
-            };
-            match pipeline.bus() {
-                None => {
-                    println!("Error");
-                }
-                Some(bus) => {
-                    for msg in bus.iter_timed(ClockTime::NONE) {
-                        match msg.view() {
-                            MessageView::Eos(_) => {
-                                println!("stream ended");
-                                stop_stream(&pipeline).expect("fail");
-                                return;
-                            }
-                            MessageView::Error(err) => {
-                                stop_stream(&pipeline).expect("Fail");
-                                return;
-                            }
-                            _ => (),
-                        }
-                    }
-                }
-            }
-        });
-
-    }
-
-    stream_storage.push(compound_stream, pipelines).await;
-
-
-    Ok(())
-}
-
-pub fn init_gstream() -> Result<(), gstreamer::glib::Error> {
+pub fn init_gstreamer() -> std::result::Result<(), gstreamer::glib::Error> {
     gstreamer::init()
 }
 
-fn create_stream(
+pub async fn create_streams(
+    stream_storage: Data<StreamStorage>,
+    compound_stream: CompoundStreamInfo,
+) -> Result<()> {
+    let mut pipelines = Vec::new();
+    let mut handles = Vec::new();
+    for resolution in compound_stream.clone().streams {
+        let pipeline = Arc::new(create_stream(&compound_stream, &resolution)?);
+        let stream_storage = stream_storage.clone();
+        pipelines.push(pipeline.clone());
+
+        let stream_id = compound_stream.stream_id.clone();
+        handles.push(thread::spawn(move || {
+            match pipeline.set_state(State::Playing) {
+                Ok(_) => {
+                    info!(
+                        "Stream with ID: {}: {} started",
+                        stream_id,
+                        resolution.as_str()
+                    );
+                }
+                Err(_) => {
+                    error!(
+                        "Failed to start the with ID: {}: {}!",
+                        stream_id,
+                        resolution.as_str()
+                    );
+                }
+            };
+
+            pipeline_listen(pipeline, stream_id, stream_storage);
+        }));
+    }
+
+    actix_rt::spawn(async move {
+        for handle in handles {
+            handle.join().expect("Cannot join the thread");
+        }
+    });
+
+    stream_storage.push(compound_stream, pipelines);
+
+    Ok(())
+}
+
+fn pipeline_listen(
+    pipeline: Arc<Pipeline>,
+    stream_id: String,
+    stream_storage: Data<StreamStorage>,
+) {
+    if pipeline.bus().is_none() {
+        error!("Error while initializing bus for stream: {}", stream_id);
+        return;
+    }
+
+    for msg in pipeline.bus().unwrap().iter_timed(ClockTime::NONE) {
+        match msg.view() {
+            MessageView::Eos(_) => {
+                info!("Stream with ID: {} ended", stream_id);
+                stop_stream(&pipeline);
+                stream_storage.remove(stream_id);
+                debug!("Stream storage size: {}", stream_storage.size());
+                break;
+            }
+            MessageView::Error(err) => {
+                error!(
+                    "Error occurred during stream with ID: {}, {}",
+                    stream_id, err
+                );
+                stop_stream(&pipeline);
+                stream_storage.remove(stream_id);
+                debug!("Stream storage size: {}", stream_storage.size());
+                break;
+            }
+            _ => (),
+        }
+    }
+}
+
+pub fn create_stream(
     parent_stream: &CompoundStreamInfo,
-    resolution_stream: &StreamInfo,
+    resolution: &StreamResolution,
 ) -> Result<Pipeline> {
     let pipeline = Pipeline::new();
 
-    create_link_elements(&pipeline, parent_stream, resolution_stream)?;
+    create_link_elements(&pipeline, parent_stream, resolution)?;
     Ok(pipeline)
 }
 
-fn stop_stream(pipeline: &Pipeline) -> Result<()> {
-    pipeline.set_state(State::Null)?;
-    Ok(())
+fn stop_stream(pipeline: &Pipeline) {
+    match pipeline.set_state(State::Null) {
+        Ok(_) => {
+            debug!("Stream successfully ended");
+        }
+        Err(err) => {
+            error!("Failed to end stream: {}", err);
+        }
+    }
 }
 
 fn create_link_elements(
     pipeline: &Pipeline,
     parent_stream: &CompoundStreamInfo,
-    resolution_stream: &StreamInfo,
+    resolution: &StreamResolution,
 ) -> Result<()> {
     let file_src = ElementFactory::make("filesrc").build()?;
     file_src.set_property_from_str("location", &parent_stream.video_path);
@@ -87,14 +128,11 @@ fn create_link_elements(
 
     let video_scale = ElementFactory::make("videoscale").build()?;
 
-    let (width, height) = resolution_stream.resolution.get_resolution();
+    let (width, height) = resolution.get_resolution();
     let video_xh264 = ElementFactory::make("capsfilter").build()?;
     video_xh264.set_property_from_str(
         "caps",
-        &format!(
-            "video/x-raw, width={width}, height={height}",
-
-        ),
+        &format!("video/x-raw, width={width}, height={height}",),
     );
 
     let x264_enc = ElementFactory::make("x264enc").build()?;
@@ -106,7 +144,7 @@ fn create_link_elements(
     let rtmp_sink = ElementFactory::make("rtmpsink").build()?;
     rtmp_sink.set_property_from_str(
         "location",
-        &parent_stream.compose_stream_url(resolution_stream.resolution.clone()),
+        &parent_stream.compose_stream_url(resolution.clone()),
     );
 
     let queue3 = ElementFactory::make("queue").build()?;
@@ -190,25 +228,27 @@ fn create_link_elements(
     Ok(())
 }
 
+// Use this test only for offline tests of streaming controller
+// Remove it before the project is done
 mod test {
-    use std::env;
+    use crate::streamer::gstream_controller::{create_stream, init_gstreamer};
+    use crate::streamer::types::{CompoundStreamInfo, StreamResolution};
     use gstreamer::prelude::ElementExt;
     use gstreamer::{ClockTime, MessageView, State};
-    use crate::streamer::gstream_controller::{create_stream, create_streams, init_gstream};
-    use crate::streamer::types::{CompoundStreamInfo, StreamInfo, StreamResolution};
+    use std::env;
 
-    #[test]
+    // #[test]
+    #[allow(dead_code)]
     fn test01() -> anyhow::Result<()> {
         println!("{:?}", env::current_dir());
-        init_gstream()?;
-        let stream_360p = StreamInfo::new(StreamResolution::P360);
+        init_gstreamer()?;
         let main_stream = CompoundStreamInfo::new(
             String::from("1"),
             String::from("video_resources/video3.mp4"),
-            vec![stream_360p.clone()],
+            vec![StreamResolution::P360],
         );
 
-        let pipeline = create_stream(&main_stream, &stream_360p)?;
+        let pipeline = create_stream(&main_stream, &StreamResolution::P360)?;
         match pipeline.set_state(State::Playing) {
             Ok(_) => {
                 println!("Stream started!");
