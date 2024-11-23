@@ -14,7 +14,7 @@ default:
     - postgres:13
   before_script:
     - apk add --no-cache alpine-sdk build-base musl-dev gcc openssl-dev glib glib-dev
-    - apk add --no-cache gstreamer-dev gst-plugins-base-dev pkgconf linux-headers
+    - apk add --no-cache gstreamer-dev gst-plugins-base-dev pkgconf linux-headers gettext-dev
     - rustc --version
     - cargo --version
     - cargo install sqlx-cli
