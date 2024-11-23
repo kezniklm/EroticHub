@@ -1,6 +1,9 @@
 use gstreamer::Pipeline;
 use std::sync::{Arc, Mutex};
 
+const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
+const STREAM_PATH_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
+
 #[derive(Clone)]
 pub struct CompoundStreamInfo {
     pub stream_id: String,
@@ -21,10 +24,13 @@ impl CompoundStreamInfo {
         }
     }
 
-    // TODO: Load from some configuration file
     pub fn compose_stream_url(&self, resolution: StreamResolution) -> String {
+        let rtmp_server_path = dotenvy::var(RTMP_SERVER_ENV).expect("RTMP server path is not defined");
+        let stream_path_prefix = dotenvy::var(STREAM_PATH_PREFIX_KEY).expect("Stream path prefix is not defined");
         format!(
-            "rtmp://localhost/hls/stream-{}_{}",
+            "{}/{}-{}_{}",
+            rtmp_server_path,
+            stream_path_prefix,
             self.stream_id,
             resolution.as_str()
         )
