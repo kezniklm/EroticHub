@@ -1,16 +1,19 @@
 use gstreamer::Pipeline;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub struct CompoundStreamInfo {
     pub stream_id: String,
     pub video_path: String,
-    pub streams: Vec<StreamInfo>,
+    pub streams: Vec<StreamResolution>,
 }
 
 impl CompoundStreamInfo {
-    pub fn new(stream_id: String, video_path: String, streams: Vec<StreamInfo>) -> CompoundStreamInfo {
+    pub fn new(
+        stream_id: String,
+        video_path: String,
+        streams: Vec<StreamResolution>,
+    ) -> CompoundStreamInfo {
         CompoundStreamInfo {
             stream_id,
             video_path,
@@ -19,25 +22,12 @@ impl CompoundStreamInfo {
     }
 
     // TODO: Load from some configuration file
-    pub fn compose_stream_url(&self, quality: StreamResolution) -> String {
+    pub fn compose_stream_url(&self, resolution: StreamResolution) -> String {
         format!(
             "rtmp://localhost/hls/stream-{}_{}",
             self.stream_id,
-            quality.as_str()
+            resolution.as_str()
         )
-    }
-}
-
-#[derive(Clone)]
-pub struct StreamInfo {
-    pub resolution: StreamResolution,
-}
-
-impl StreamInfo {
-    pub fn new(resolution: StreamResolution) -> StreamInfo {
-        StreamInfo {
-            resolution
-        }
     }
 }
 
@@ -49,7 +39,7 @@ pub enum StreamResolution {
 }
 
 impl StreamResolution {
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match &self {
             StreamResolution::P360 => "360",
             StreamResolution::P480 => "480",
@@ -66,9 +56,10 @@ impl StreamResolution {
     }
 }
 
+type PipelinesList = Vec<Arc<Pipeline>>;
 #[derive(Clone)]
 pub struct StreamStorage {
-    streams: Arc<Mutex<Vec<(CompoundStreamInfo, Vec<Arc<Pipeline>>)>>>,
+    streams: Arc<Mutex<Vec<(CompoundStreamInfo, PipelinesList)>>>,
 }
 
 impl StreamStorage {
@@ -78,27 +69,26 @@ impl StreamStorage {
         }
     }
 
-    pub async fn push(&self, stream: CompoundStreamInfo, pipeline: Vec<Arc<Pipeline>>) {
-        let mut streams = self.streams.lock();
-        streams.await.push((stream, pipeline));
+    pub fn push(&self, stream: CompoundStreamInfo, pipeline: PipelinesList) {
+        let mut streams = self.streams.lock().unwrap();
+        streams.push((stream, pipeline));
     }
 
-    pub async fn remove(&self, stream_id: String) {
-        let mut streams = self.streams.lock();
-        let mut mutex = streams.await;
-        let position = mutex
+    pub fn remove(&self, stream_id: String) {
+        let mut streams = self.streams.lock().unwrap();
+        let position = streams
             .iter()
-            .position(|(stream, pipeline)| stream.stream_id == stream_id);
+            .position(|(stream, _pipeline)| stream.stream_id == stream_id);
         match position {
             None => (),
             Some(position) => {
-                mutex.remove(position);
+                streams.remove(position);
             }
         }
     }
 
-    pub async fn size(&self) -> usize {
-        let streams = self.streams.lock();
-        streams.await.len()
+    pub fn size(&self) -> usize {
+        let streams = self.streams.lock().unwrap();
+        streams.len()
     }
 }

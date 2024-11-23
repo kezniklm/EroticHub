@@ -1,5 +1,9 @@
-use crate::streamer::types::{StreamInfo, StreamStorage};
+use crate::streamer::gstream_controller::init_gstreamer;
+use crate::streamer::types::StreamStorage;
+use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
+use env_logger::Env;
+use log::warn;
 use log::{info, warn};
 
 use crate::api::controllers;
@@ -10,7 +14,7 @@ use config::Config;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
-use std::sync::Arc;
+use crate::streamer::gstream_controller::init_gstream;
 
 mod api;
 mod business;
@@ -37,6 +41,9 @@ async fn main() -> anyhow::Result<()> {
         warn!("failed loading .env file: {e}")
     };
 
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+    init_gstreamer()
+        .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
     let config = init_configuration().expect("Failed to load config.yaml");
     init_gstream().expect("Failed to initialize GStreamer. Check if you have it installed on your system");
 
@@ -49,6 +56,7 @@ async fn main() -> anyhow::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(web::Data::new(stream_storage.clone()))
             .app_data(web::Data::new(user_repo.clone()))
             .app_data(web::Data::new(user_facade.clone()))
