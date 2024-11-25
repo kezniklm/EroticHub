@@ -1,13 +1,17 @@
 use actix_web::{web, App, HttpServer};
 use log::warn;
-use repositories::user::PostgresUserRepo;
+
+use crate::api::controllers;
+use crate::business::facades::user::UserFacade;
+use crate::persistence::repositories::user::PostgresUserRepo;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
+use std::sync::Arc;
 
-mod controllers;
-mod models;
-mod repositories;
+mod api;
+mod business;
+mod persistence;
 
 async fn setup_db_pool() -> anyhow::Result<Pool<Postgres>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -29,9 +33,11 @@ async fn main() -> anyhow::Result<()> {
 
     let user_repo = PostgresUserRepo::new(pool.clone());
 
+    let user_facade = UserFacade::new(Arc::new(user_repo));
+
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(user_repo.clone()))
+            .app_data(web::Data::new(user_facade.clone()))
             .service(controllers::user::list_users)
     })
     .bind(("127.0.0.1", 8000))?

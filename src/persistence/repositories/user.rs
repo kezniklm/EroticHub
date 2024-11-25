@@ -1,10 +1,10 @@
+use crate::persistence::entities::user::User;
 use async_trait::async_trait;
 use sqlx::PgPool;
-
-use crate::models::user::User;
+use std::fmt::Debug;
 
 #[async_trait]
-pub trait UserRepo {
+pub trait UserRepo: Debug {
     async fn list_users(&self) -> anyhow::Result<Vec<User>>;
 }
 
