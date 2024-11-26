@@ -4,23 +4,23 @@ use sqlx::PgPool;
 use std::fmt::Debug;
 
 #[async_trait]
-pub trait UserRepo: Debug {
+pub trait UserRepoTrait: Debug {
     async fn list_users(&self) -> anyhow::Result<Vec<User>>;
 }
 
 #[derive(Debug, Clone)]
-pub struct PostgresUserRepo {
+pub struct UserRepository {
     pg_pool: PgPool,
 }
 
-impl PostgresUserRepo {
+impl UserRepository {
     pub fn new(pg_pool: PgPool) -> Self {
         Self { pg_pool }
     }
 }
 
 #[async_trait]
-impl UserRepo for PostgresUserRepo {
+impl UserRepoTrait for UserRepository {
     async fn list_users(&self) -> anyhow::Result<Vec<User>> {
         let users = sqlx::query_as!(User, "SELECT * FROM user_table")
             .fetch_all(&self.pg_pool)
