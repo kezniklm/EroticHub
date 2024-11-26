@@ -3,7 +3,7 @@ use log::warn;
 
 use crate::api::controllers;
 use crate::business::facades::user::UserFacade;
-use crate::persistence::repositories::user::PostgresUserRepo;
+use crate::persistence::repositories::user::UserRepository;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = setup_db_pool().await?;
 
-    let user_repo = PostgresUserRepo::new(pool.clone());
+    let user_repo = UserRepository::new(pool.clone());
 
     let user_facade = UserFacade::new(Arc::new(user_repo));
 
