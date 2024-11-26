@@ -10,12 +10,12 @@ pub trait UserRepoTrait: Debug {
 
 #[derive(Debug, Clone)]
 pub struct UserRepository {
-    pg_pool: PgPool,
+    pool: PgPool,
 }
 
 impl UserRepository {
-    pub fn new(pg_pool: PgPool) -> Self {
-        Self { pg_pool }
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
     }
 }
 
@@ -23,7 +23,7 @@ impl UserRepository {
 impl UserRepoTrait for UserRepository {
     async fn list_users(&self) -> anyhow::Result<Vec<User>> {
         let users = sqlx::query_as!(User, "SELECT * FROM user_table")
-            .fetch_all(&self.pg_pool)
+            .fetch_all(&self.pool)
             .await?;
 
         Ok(users)
