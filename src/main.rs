@@ -4,7 +4,7 @@ use log::{info, warn};
 use crate::api::controllers;
 use crate::business::facades::user::UserFacade;
 use crate::configuration::models::Configuration;
-use crate::persistence::repositories::user::PostgresUserRepo;
+use crate::persistence::repositories::user::UserRepository;
 use config::Config;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
@@ -37,7 +37,7 @@ async fn main() -> anyhow::Result<()> {
     let config = init_configuration().expect("Failed to load config.yaml");
     let pool = setup_db_pool().await?;
 
-    let user_repo = PostgresUserRepo::new(pool.clone());
+    let user_repo = UserRepository::new(pool.clone());
 
     let user_facade = UserFacade::new(Arc::new(user_repo));
 
