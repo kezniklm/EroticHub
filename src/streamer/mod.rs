@@ -1,1 +1,2 @@
-pub mod gstream_controller;
+pub mod gstreamer_controller;
+pub mod types;

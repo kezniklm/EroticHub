@@ -1,8 +1,10 @@
-use crate::streamer::gstream_controller::create_streams;
+use std::sync::Arc;
+use crate::streamer::gstreamer_controller::create_streams;
 use actix_web::web::{Data, Path};
 use actix_web::{post, web, HttpResponse, Responder, Scope};
 use log::error;
-use crate::business::models::stream::{CompoundStreamInfo, StreamResolution, StreamStorage};
+use crate::business::models::stream::{CompoundStreamInfo, StreamStorage};
+use crate::streamer::types::StreamResolution;
 
 pub fn register_scope() -> Scope {
     web::scope("/stream").service(start_stream)
@@ -21,8 +23,7 @@ async fn start_stream(_path: Path<u32>, stream_storage: Data<StreamStorage>) -> 
             StreamResolution::P720,
         ],
     );
-
-    match create_streams(stream_storage.clone(), main_stream).await {
+    match create_streams(stream_storage.into_inner(), Arc::new(main_stream)).await {
         Ok(_) => {
             HttpResponse::Ok()
         }

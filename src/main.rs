@@ -1,4 +1,4 @@
-use crate::streamer::gstream_controller::init_gstreamer;
+use crate::streamer::gstreamer_controller::init_gstreamer;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use env_logger::Env;

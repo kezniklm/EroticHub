@@ -1,5 +1,3 @@
-use crate::business::models::stream::{CompoundStreamInfo, StreamResolution, StreamStorage};
-use actix_web::web::Data;
 use anyhow::Result;
 use gstreamer::prelude::{
     ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExtManual, PadExt,
@@ -8,25 +6,26 @@ use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pad, Pipeline, 
 use log::{debug, error, info};
 use std::sync::Arc;
 use std::thread;
+use crate::streamer::types::{CompoundStreamInfoTrait, StreamResolution, StreamStorageTrait};
 
 pub fn init_gstreamer() -> std::result::Result<(), gstreamer::glib::Error> {
     gstreamer::init()
 }
 
 pub async fn create_streams(
-    stream_storage: Data<StreamStorage>,
-    compound_stream: CompoundStreamInfo,
+    stream_storage: Arc<dyn StreamStorageTrait>,
+    compound_stream: Arc<dyn CompoundStreamInfoTrait>,
 ) -> Result<()> {
     let mut pipelines = Vec::new();
     let mut handles = Vec::new();
-    for resolution in compound_stream.clone().streams {
-        let pipeline = Arc::new(create_stream_pipeline(&compound_stream, &resolution)?);
+    for resolution in compound_stream.get_resolutions().clone() {
+        let pipeline = Arc::new(create_stream_pipeline(compound_stream.clone(), &resolution)?);
         let stream_storage = stream_storage.clone();
         pipelines.push(pipeline.clone());
 
-        let stream_id = compound_stream.stream_id.clone();
+        let stream_id = compound_stream.clone().get_stream_id().clone();
         handles.push(thread::spawn(move || {
-            start_stream(stream_id.as_str(), pipeline.clone(), resolution);
+            start_stream(stream_id.as_str(), pipeline.clone(), &resolution);
             pipeline_listen(pipeline, stream_id.as_str(), stream_storage);
         }));
     }
@@ -37,12 +36,12 @@ pub async fn create_streams(
         }
     });
 
-    stream_storage.push(compound_stream, pipelines);
+    stream_storage.push(compound_stream.clone(), pipelines);
 
     Ok(())
 }
 
-fn start_stream(stream_id: &str, pipeline: Arc<Pipeline>, resolution: StreamResolution) {
+fn start_stream(stream_id: &str, pipeline: Arc<Pipeline>, resolution: &StreamResolution) {
     match pipeline.set_state(State::Playing) {
         Ok(_) => {
             info!(
@@ -64,7 +63,7 @@ fn start_stream(stream_id: &str, pipeline: Arc<Pipeline>, resolution: StreamReso
 fn pipeline_listen(
     pipeline: Arc<Pipeline>,
     stream_id: &str,
-    stream_storage: Data<StreamStorage>,
+    stream_storage: Arc<dyn StreamStorageTrait>,
 ) {
     if pipeline.bus().is_none() {
         error!("Error while initializing bus for stream: {}", stream_id);
@@ -96,7 +95,7 @@ fn pipeline_listen(
 }
 
 pub fn create_stream_pipeline(
-    parent_stream: &CompoundStreamInfo,
+    parent_stream: Arc<dyn CompoundStreamInfoTrait>,
     resolution: &StreamResolution,
 ) -> Result<Pipeline> {
     let pipeline = Pipeline::new();
@@ -129,14 +128,14 @@ fn build_element(name: &str, props: Option<&[(&str, &str)]>) -> Result<Element> 
 
 fn add_elements_to_pipeline(
     pipeline: &Pipeline,
-    stream: &CompoundStreamInfo,
+    stream: Arc<dyn CompoundStreamInfoTrait>,
     resolution: &StreamResolution,
 ) -> Result<()> {
     let (width, height) = resolution.get_resolution();
     let rtmp_url = stream.compose_stream_url(resolution.clone());
     
     // Video elements
-    let file_src = build_element("filesrc", Some(&[("location", stream.video_path.as_str())]))?;
+    let file_src = build_element("filesrc", Some(&[("location", stream.get_video_path().as_str())]))?;
     let decode_bin = build_element("decodebin", Some(&[("name", "d")]))?;
     let queue = build_element("queue", None)?;
     let video_convert = build_element("videoconvert", None)?;
@@ -231,12 +230,15 @@ fn add_elements_to_pipeline(
 
 // Use this test only for offline tests of streaming controller
 // Remove it before the project is done
+#[allow(unused_imports)]
 mod test {
-    use crate::business::models::stream::{CompoundStreamInfo, StreamResolution};
-    use crate::streamer::gstream_controller::{create_stream_pipeline, init_gstreamer};
+    use crate::business::models::stream::CompoundStreamInfo;
     use gstreamer::prelude::ElementExt;
     use gstreamer::{ClockTime, MessageView, State};
     use std::env;
+    use std::sync::Arc;
+    use crate::streamer::gstreamer_controller::{create_stream_pipeline, init_gstreamer};
+    use crate::streamer::types::StreamResolution;
 
     #[test]
     // #[allow(dead_code)]
@@ -249,7 +251,7 @@ mod test {
             vec![StreamResolution::P360],
         );
 
-        let pipeline = create_stream_pipeline(&main_stream, &StreamResolution::P360)?;
+        let pipeline = create_stream_pipeline(Arc::new(main_stream), &StreamResolution::P360)?;
         match pipeline.set_state(State::Playing) {
             Ok(_) => {
                 println!("Stream started!");

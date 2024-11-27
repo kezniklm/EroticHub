@@ -1,13 +1,13 @@
-use gstreamer::Pipeline;
+use crate::streamer::types::{CompoundStreamInfoTrait, PipelinesList, StreamResolution, StreamStorageTrait};
 use std::sync::{Arc, Mutex};
 
 const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
 const STREAM_PATH_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
 
-type PipelinesList = Vec<Arc<Pipeline>>;
+type Streams = Arc<Mutex<Vec<(Arc<dyn CompoundStreamInfoTrait>, PipelinesList)>>>;
 #[derive(Clone)]
 pub struct StreamStorage {
-    streams: Arc<Mutex<Vec<(CompoundStreamInfo, PipelinesList)>>>,
+    streams: Streams,
 }
 
 impl StreamStorage {
@@ -16,17 +16,19 @@ impl StreamStorage {
             streams: Arc::new(Mutex::new(Vec::new())),
         }
     }
+}
 
-    pub fn push(&self, stream: CompoundStreamInfo, pipeline: PipelinesList) {
+impl StreamStorageTrait for StreamStorage {
+    fn push(&self, stream: Arc<dyn CompoundStreamInfoTrait>, pipeline: PipelinesList) {
         let mut streams = self.streams.lock().unwrap();
         streams.push((stream, pipeline));
     }
 
-    pub fn remove(&self, stream_id: &str) {
+    fn remove(&self, stream_id: &str) {
         let mut streams = self.streams.lock().unwrap();
         let position = streams
             .iter()
-            .position(|(stream, _pipeline)| stream.stream_id == stream_id);
+            .position(|(stream, _pipeline)| stream.get_stream_id() == stream_id);
         match position {
             None => (),
             Some(position) => {
@@ -35,7 +37,7 @@ impl StreamStorage {
         }
     }
 
-    pub fn size(&self) -> usize {
+    fn size(&self) -> usize {
         let streams = self.streams.lock().unwrap();
         streams.len()
     }
@@ -62,7 +64,10 @@ impl CompoundStreamInfo {
         }
     }
 
-    pub fn compose_stream_url(&self, resolution: StreamResolution) -> String {
+}
+
+impl CompoundStreamInfoTrait for CompoundStreamInfo {
+    fn compose_stream_url(&self, resolution: StreamResolution) -> String {
         let rtmp_server_path = dotenvy::var(RTMP_SERVER_ENV).expect("RTMP server path is not defined");
         let stream_path_prefix = dotenvy::var(STREAM_PATH_PREFIX_KEY).expect("Stream path prefix is not defined");
         format!(
@@ -73,29 +78,16 @@ impl CompoundStreamInfo {
             resolution.as_str()
         )
     }
-}
 
-#[derive(Clone)]
-pub enum StreamResolution {
-    P360,
-    P480,
-    P720,
-}
-
-impl StreamResolution {
-    pub fn as_str(&self) -> &'static str {
-        match &self {
-            StreamResolution::P360 => "360",
-            StreamResolution::P480 => "480",
-            StreamResolution::P720 => "720",
-        }
+    fn get_stream_id(&self) -> String {
+        self.stream_id.clone()
     }
 
-    pub fn get_resolution(&self) -> (u32, u32) {
-        match &self {
-            StreamResolution::P360 => (640, 360),
-            StreamResolution::P480 => (854, 480),
-            StreamResolution::P720 => (1280, 720),
-        }
+    fn get_video_path(&self) -> String {
+        self.video_path.clone()
+    }
+
+    fn get_resolutions(&self) -> &Vec<StreamResolution> {
+        &self.streams
     }
 }
