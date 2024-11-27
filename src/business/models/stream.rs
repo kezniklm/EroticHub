@@ -4,6 +4,44 @@ use std::sync::{Arc, Mutex};
 const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
 const STREAM_PATH_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
 
+type PipelinesList = Vec<Arc<Pipeline>>;
+#[derive(Clone)]
+pub struct StreamStorage {
+    streams: Arc<Mutex<Vec<(CompoundStreamInfo, PipelinesList)>>>,
+}
+
+impl StreamStorage {
+    pub fn new() -> StreamStorage {
+        StreamStorage {
+            streams: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+
+    pub fn push(&self, stream: CompoundStreamInfo, pipeline: PipelinesList) {
+        let mut streams = self.streams.lock().unwrap();
+        streams.push((stream, pipeline));
+    }
+
+    pub fn remove(&self, stream_id: &str) {
+        let mut streams = self.streams.lock().unwrap();
+        let position = streams
+            .iter()
+            .position(|(stream, _pipeline)| stream.stream_id == stream_id);
+        match position {
+            None => (),
+            Some(position) => {
+                streams.remove(position);
+            }
+        }
+    }
+
+    pub fn size(&self) -> usize {
+        let streams = self.streams.lock().unwrap();
+        streams.len()
+    }
+}
+
+
 #[derive(Clone)]
 pub struct CompoundStreamInfo {
     pub stream_id: String,
@@ -59,42 +97,5 @@ impl StreamResolution {
             StreamResolution::P480 => (854, 480),
             StreamResolution::P720 => (1280, 720),
         }
-    }
-}
-
-type PipelinesList = Vec<Arc<Pipeline>>;
-#[derive(Clone)]
-pub struct StreamStorage {
-    streams: Arc<Mutex<Vec<(CompoundStreamInfo, PipelinesList)>>>,
-}
-
-impl StreamStorage {
-    pub fn new() -> StreamStorage {
-        StreamStorage {
-            streams: Arc::new(Mutex::new(Vec::new())),
-        }
-    }
-
-    pub fn push(&self, stream: CompoundStreamInfo, pipeline: PipelinesList) {
-        let mut streams = self.streams.lock().unwrap();
-        streams.push((stream, pipeline));
-    }
-
-    pub fn remove(&self, stream_id: String) {
-        let mut streams = self.streams.lock().unwrap();
-        let position = streams
-            .iter()
-            .position(|(stream, _pipeline)| stream.stream_id == stream_id);
-        match position {
-            None => (),
-            Some(position) => {
-                streams.remove(position);
-            }
-        }
-    }
-
-    pub fn size(&self) -> usize {
-        let streams = self.streams.lock().unwrap();
-        streams.len()
     }
 }

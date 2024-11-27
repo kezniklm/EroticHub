@@ -1,4 +1,4 @@
-use crate::streamer::types::{CompoundStreamInfo, StreamResolution, StreamStorage};
+use crate::business::models::stream::{CompoundStreamInfo, StreamResolution, StreamStorage};
 use actix_web::web::Data;
 use anyhow::Result;
 use gstreamer::prelude::{
@@ -20,30 +20,14 @@ pub async fn create_streams(
     let mut pipelines = Vec::new();
     let mut handles = Vec::new();
     for resolution in compound_stream.clone().streams {
-        let pipeline = Arc::new(create_stream(&compound_stream, &resolution)?);
+        let pipeline = Arc::new(create_stream_pipeline(&compound_stream, &resolution)?);
         let stream_storage = stream_storage.clone();
         pipelines.push(pipeline.clone());
 
         let stream_id = compound_stream.stream_id.clone();
         handles.push(thread::spawn(move || {
-            match pipeline.set_state(State::Playing) {
-                Ok(_) => {
-                    info!(
-                        "Stream with ID: {}: {} started",
-                        stream_id,
-                        resolution.as_str()
-                    );
-                }
-                Err(_) => {
-                    error!(
-                        "Failed to start the with ID: {}: {}!",
-                        stream_id,
-                        resolution.as_str()
-                    );
-                }
-            };
-
-            pipeline_listen(pipeline, stream_id, stream_storage);
+            start_stream(stream_id.as_str(), pipeline.clone(), resolution);
+            pipeline_listen(pipeline, stream_id.as_str(), stream_storage);
         }));
     }
 
@@ -58,9 +42,28 @@ pub async fn create_streams(
     Ok(())
 }
 
+fn start_stream(stream_id: &str, pipeline: Arc<Pipeline>, resolution: StreamResolution) {
+    match pipeline.set_state(State::Playing) {
+        Ok(_) => {
+            info!(
+                        "Stream with ID: {}: {} started",
+                        stream_id,
+                        resolution.as_str()
+                    );
+        }
+        Err(_) => {
+            error!(
+                        "Failed to start the stream with ID: {}: {}!",
+                        stream_id,
+                        resolution.as_str()
+                    );
+        }
+    };
+}
+
 fn pipeline_listen(
     pipeline: Arc<Pipeline>,
-    stream_id: String,
+    stream_id: &str,
     stream_storage: Data<StreamStorage>,
 ) {
     if pipeline.bus().is_none() {
@@ -92,13 +95,13 @@ fn pipeline_listen(
     }
 }
 
-pub fn create_stream(
+pub fn create_stream_pipeline(
     parent_stream: &CompoundStreamInfo,
     resolution: &StreamResolution,
 ) -> Result<Pipeline> {
     let pipeline = Pipeline::new();
 
-    create_link_elements(&pipeline, parent_stream, resolution)?;
+    add_elements_to_pipeline(&pipeline, parent_stream, resolution)?;
     Ok(pipeline)
 }
 
@@ -113,56 +116,54 @@ fn stop_stream(pipeline: &Pipeline) {
     }
 }
 
-fn create_link_elements(
+fn build_element(name: &str, props: Option<&[(&str, &str)]>) -> Result<Element> {
+    let element = ElementFactory::make(name).build()?;
+    if let Some(props) = props {
+        for &(key, val) in props {
+            element.set_property_from_str(key, val);
+        }
+    }
+    
+    Ok(element)
+}
+
+fn add_elements_to_pipeline(
     pipeline: &Pipeline,
-    parent_stream: &CompoundStreamInfo,
+    stream: &CompoundStreamInfo,
     resolution: &StreamResolution,
 ) -> Result<()> {
-    let file_src = ElementFactory::make("filesrc").build()?;
-    file_src.set_property_from_str("location", &parent_stream.video_path);
-
-    let decode_bin = ElementFactory::make("decodebin").build()?;
-    decode_bin.set_property_from_str("name", "d");
-    let queue = ElementFactory::make("queue").build()?;
-    let video_convert = ElementFactory::make("videoconvert").build()?;
-
-    let video_scale = ElementFactory::make("videoscale").build()?;
-
     let (width, height) = resolution.get_resolution();
-    let video_xh264 = ElementFactory::make("capsfilter").build()?;
-    video_xh264.set_property_from_str(
+    let rtmp_url = stream.compose_stream_url(resolution.clone());
+    
+    // Video elements
+    let file_src = build_element("filesrc", Some(&[("location", stream.video_path.as_str())]))?;
+    let decode_bin = build_element("decodebin", Some(&[("name", "d")]))?;
+    let queue = build_element("queue", None)?;
+    let video_convert = build_element("videoconvert", None)?;
+    let video_scale = build_element("videoscale", None)?;
+    let video_h264 = build_element("capsfilter", Some(&[(
         "caps",
-        &format!("video/x-raw, width={width}, height={height}",),
-    );
+        format!("video/x-raw, width={width}, height={height}").as_str()
+    )]))?;
+    
 
-    let x264_enc = ElementFactory::make("x264enc").build()?;
-    let flvmux = ElementFactory::make("flvmux").build()?;
-    flvmux.set_property_from_str("name", "mux");
-    flvmux.set_property_from_str("streamable", "true");
-    let queue2 = ElementFactory::make("queue").build()?;
+    let x264_enc = build_element("x264enc", None)?;
+    let flv_mux = build_element("flvmux", Some(&[
+        ("name", "mux"),
+        ("streamable", "true")
+    ]))?;
+    let queue2 = build_element("queue", None)?;
+    let rtmp_sink = build_element("rtmpsink", Some(&[("location", rtmp_url.as_str())]))?;
 
-    let rtmp_sink = ElementFactory::make("rtmpsink").build()?;
-    rtmp_sink.set_property_from_str(
-        "location",
-        &parent_stream.compose_stream_url(resolution.clone()),
-    );
-
-    let queue3 = ElementFactory::make("queue").build()?;
-    let audio_convert = ElementFactory::make("audioconvert").build()?;
-    let audio_resample = ElementFactory::make("audioresample").build()?;
-    let audio_xraw = ElementFactory::make("capsfilter").build()?;
-    audio_xraw.set_property_from_str("caps", "audio/x-raw");
-
-    let avenc_aac = ElementFactory::make("avenc_aac").build()?;
-    avenc_aac.set_property_from_str("bitrate", "128000");
-
-    let audio_mpeg = ElementFactory::make("capsfilter").build()?;
-    audio_mpeg.set_property_from_str("caps", "audio/mpeg");
-
-    let aac_parse = ElementFactory::make("aacparse").build()?;
-
-    let audio_mpeg2 = ElementFactory::make("capsfilter").build()?;
-    audio_mpeg2.set_property_from_str("caps", "audio/mpeg, mpegversion=4");
+    // Audio elements
+    let queue3 = build_element("queue", None)?;
+    let audio_convert = build_element("audioconvert", None)?;
+    let audio_resample = build_element("audioresample", None)?;
+    let audio_xraw = build_element("capsfilter", Some(&[("caps", "audio/x-raw")]))?;
+    let avenc_aac = build_element("avenc_aac", Some(&[("bitrate", "128000")]))?;
+    let audio_mpeg = build_element("capsfilter", Some(&[("caps", "audio/mpeg")]))?;
+    let aac_parse = build_element("aacparse", None)?;
+    let audio_mpeg4 = build_element("capsfilter", Some(&[("caps", "audio/mpeg, mpegversion=4")]))?;
 
     let pipeline_elements = [
         &file_src,
@@ -170,9 +171,9 @@ fn create_link_elements(
         &queue.clone(),
         &video_convert,
         &video_scale,
-        &video_xh264,
+        &video_h264,
         &x264_enc,
-        &flvmux,
+        &flv_mux,
         &queue2,
         &rtmp_sink,
         &queue3.clone(),
@@ -182,7 +183,7 @@ fn create_link_elements(
         &avenc_aac,
         &audio_mpeg,
         &aac_parse,
-        &audio_mpeg2,
+        &audio_mpeg4,
     ];
     pipeline.add_many(pipeline_elements)?;
 
@@ -191,9 +192,9 @@ fn create_link_elements(
         &queue,
         &video_convert,
         &video_scale,
-        &video_xh264,
+        &video_h264,
         &x264_enc,
-        &flvmux,
+        &flv_mux,
     ])?;
     Element::link_many([
         &queue3.clone(),
@@ -203,11 +204,11 @@ fn create_link_elements(
         &avenc_aac,
         &audio_mpeg,
         &aac_parse,
-        &audio_mpeg2,
-        &flvmux,
+        &audio_mpeg4,
+        &flv_mux,
     ])?;
 
-    flvmux.link(&rtmp_sink)?;
+    flv_mux.link(&rtmp_sink)?;
     decode_bin.connect_pad_added(move |_, src_pad: &Pad| {
         let video_sink_pad = &queue
             .static_pad("sink")
@@ -231,14 +232,14 @@ fn create_link_elements(
 // Use this test only for offline tests of streaming controller
 // Remove it before the project is done
 mod test {
-    use crate::streamer::gstream_controller::{create_stream, init_gstreamer};
-    use crate::streamer::types::{CompoundStreamInfo, StreamResolution};
+    use crate::business::models::stream::{CompoundStreamInfo, StreamResolution};
+    use crate::streamer::gstream_controller::{create_stream_pipeline, init_gstreamer};
     use gstreamer::prelude::ElementExt;
     use gstreamer::{ClockTime, MessageView, State};
     use std::env;
 
-    // #[test]
-    #[allow(dead_code)]
+    #[test]
+    // #[allow(dead_code)]
     fn test01() -> anyhow::Result<()> {
         println!("{:?}", env::current_dir());
         init_gstreamer()?;
@@ -248,7 +249,7 @@ mod test {
             vec![StreamResolution::P360],
         );
 
-        let pipeline = create_stream(&main_stream, &StreamResolution::P360)?;
+        let pipeline = create_stream_pipeline(&main_stream, &StreamResolution::P360)?;
         match pipeline.set_state(State::Playing) {
             Ok(_) => {
                 println!("Stream started!");

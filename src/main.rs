@@ -1,5 +1,4 @@
 use crate::streamer::gstream_controller::init_gstreamer;
-use crate::streamer::types::StreamStorage;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use env_logger::Env;
@@ -14,7 +13,8 @@ use config::Config;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
-use crate::streamer::gstream_controller::init_gstream;
+use std::sync::Arc;
+use crate::business::models::stream::StreamStorage;
 
 mod api;
 mod business;
@@ -58,7 +58,6 @@ async fn main() -> anyhow::Result<()> {
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(stream_storage.clone()))
-            .app_data(web::Data::new(user_repo.clone()))
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
             .service(controllers::user::list_users)

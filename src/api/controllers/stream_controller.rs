@@ -1,8 +1,8 @@
 use crate::streamer::gstream_controller::create_streams;
-use crate::streamer::types::{CompoundStreamInfo, StreamResolution, StreamStorage};
 use actix_web::web::{Data, Path};
 use actix_web::{post, web, HttpResponse, Responder, Scope};
 use log::error;
+use crate::business::models::stream::{CompoundStreamInfo, StreamResolution, StreamStorage};
 
 pub fn register_scope() -> Scope {
     web::scope("/stream").service(start_stream)
