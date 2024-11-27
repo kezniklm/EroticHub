@@ -15,6 +15,8 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
+use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
+use crate::persistence::repositories::temp_file::PgTempFileRepo;
 
 mod api;
 mod business;
@@ -51,8 +53,11 @@ async fn main() -> anyhow::Result<()> {
 
     let stream_storage = StreamStorage::new();
     let user_repo = PostgresUserRepo::new(pool.clone());
-
     let user_facade = UserFacade::new(Arc::new(user_repo));
+
+    let temp_file_repo = PgTempFileRepo::new(pool.clone());
+    let temp_file_facade = TempFileFacade::new(Arc::new(temp_file_repo));
+    temp_file_facade.create_temp_directory().await.expect("Failed to create temp directory");
 
     HttpServer::new(move || {
         App::new()
@@ -60,6 +65,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::new(stream_storage.clone()))
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
+            .app_data(web::Data::new(temp_file_facade.clone()))
             .service(controllers::user::list_users)
             .service(controllers::video::register_scope())
             .service(controllers::stream_controller::register_scope())

@@ -1,3 +1,3 @@
-mod temp_file;
+pub mod temp_file;
 pub mod user;
-mod video;
+pub mod video;

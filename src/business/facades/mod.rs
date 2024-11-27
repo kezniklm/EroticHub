@@ -1,2 +1,3 @@
 pub mod user;
-mod video;
+pub mod video;
+pub mod temp_file;

@@ -1,7 +1,6 @@
 use crate::persistence::entities::temp_file::TempFile;
 use async_trait::async_trait;
 use sqlx::PgPool;
-use std::sync::Arc;
 
 #[async_trait]
 pub trait TempFileRepo {
@@ -10,7 +9,15 @@ pub trait TempFileRepo {
 }
 
 pub struct PgTempFileRepo {
-    pg_pool: Arc<PgPool>,
+    pg_pool: PgPool,
+}
+
+impl PgTempFileRepo {
+    pub fn new(pg_pool: PgPool) -> Self {
+        Self {
+            pg_pool,
+        }
+    }
 }
 
 #[async_trait]
@@ -24,7 +31,7 @@ impl TempFileRepo for PgTempFileRepo {
             temp_file.user_id,
             temp_file.file_path
         )
-        .fetch_one(self.pg_pool.clone().as_ref())
+        .fetch_one(&self.pg_pool)
         .await?;
         
         Ok(result.id)
@@ -34,7 +41,7 @@ impl TempFileRepo for PgTempFileRepo {
         let result = sqlx::query_as!(TempFile, r#"
             SELECT f.id, f.user_id, f.file_path FROM temp_file f JOIN user_table u ON f.id = u.id
             WHERE f.id=$1 AND u.id=$2;
-        "#, file_id, user_id).fetch_optional(self.pg_pool.clone().as_ref()).await?;
+        "#, file_id, user_id).fetch_optional(&self.pg_pool).await?;
         
         Ok(result)
     }

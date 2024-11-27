@@ -1,7 +1,6 @@
 use crate::persistence::entities::video::{Video, VideoVisibility};
 use async_trait::async_trait;
 use sqlx::PgPool;
-use std::sync::Arc;
 
 #[async_trait]
 pub trait VideoRepo {
@@ -11,11 +10,11 @@ pub trait VideoRepo {
 
 #[derive(Debug, Clone)]
 pub struct PgVideoRepo {
-    pg_pool: Arc<PgPool>,
+    pg_pool: PgPool,
 }
 
 impl PgVideoRepo {
-    pub fn new(pg_pool: Arc<PgPool>) -> Self {
+    pub fn new(pg_pool: PgPool) -> Self {
         Self { pg_pool }
     }
 }
@@ -34,7 +33,7 @@ impl VideoRepo for PgVideoRepo {
             thumbnail_path,
             description FROM video"#
         )
-        .fetch_all(self.pg_pool.as_ref())
+        .fetch_all(&self.pg_pool)
         .await?;
 
         Ok(result)
@@ -62,7 +61,7 @@ impl VideoRepo for PgVideoRepo {
             video.description,
             video.visibility as VideoVisibility
         )
-        .fetch_one(self.pg_pool.as_ref())
+        .fetch_one(&self.pg_pool)
         .await?;
 
         Ok(result)
