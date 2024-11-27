@@ -1,3 +1,4 @@
+use crate::streamer::types::{CompoundStreamInfoTrait, StreamResolution, StreamStorageTrait};
 use anyhow::Result;
 use gstreamer::prelude::{
     ElementExt, ElementExtManual, GObjectExtManualGst, GstBinExtManual, PadExt,
@@ -7,7 +8,6 @@ use log::{debug, error, info};
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
-use crate::streamer::types::{CompoundStreamInfoTrait, StreamResolution, StreamStorageTrait};
 
 pub fn init_gstreamer() -> std::result::Result<(), gstreamer::glib::Error> {
     gstreamer::init()
@@ -20,14 +20,21 @@ pub fn create_streams(
     let mut pipelines = Vec::new();
     let mut handles = Vec::new();
     for resolution in compound_stream.get_resolutions().clone() {
-        let pipeline = Arc::new(create_stream_pipeline(compound_stream.clone(), &resolution)?);
+        let pipeline = Arc::new(create_stream_pipeline(
+            compound_stream.clone(),
+            &resolution,
+        )?);
         let stream_storage = stream_storage.clone();
         pipelines.push(pipeline.clone());
 
         let stream_id = compound_stream.clone().get_stream_id().clone();
         start_stream(pipeline.clone())?;
 
-        info!("Stream with ID: {}: {} started", stream_id, resolution.as_str());
+        info!(
+            "Stream with ID: {}: {} started",
+            stream_id,
+            resolution.as_str()
+        );
         handles.push(thread::spawn(move || {
             pipeline_listen(pipeline, stream_id.as_str(), stream_storage);
         }));
@@ -105,7 +112,7 @@ fn build_element(name: &str, props: Option<&[(&str, &str)]>) -> Result<Element> 
             element.set_property_from_str(key, val);
         }
     }
-    
+
     Ok(element)
 }
 
@@ -116,24 +123,26 @@ fn add_elements_to_pipeline(
 ) -> Result<()> {
     let (width, height) = resolution.get_resolution();
     let rtmp_url = stream.compose_stream_url(resolution.clone());
-    
+
     // Video elements
-    let file_src = build_element("filesrc", Some(&[("location", stream.get_video_path().as_str())]))?;
+    let file_src = build_element(
+        "filesrc",
+        Some(&[("location", stream.get_video_path().as_str())]),
+    )?;
     let decode_bin = build_element("decodebin", Some(&[("name", "d")]))?;
     let queue = build_element("queue", None)?;
     let video_convert = build_element("videoconvert", None)?;
     let video_scale = build_element("videoscale", None)?;
-    let video_h264 = build_element("capsfilter", Some(&[(
-        "caps",
-        format!("video/x-raw, width={width}, height={height}").as_str()
-    )]))?;
-    
+    let video_h264 = build_element(
+        "capsfilter",
+        Some(&[(
+            "caps",
+            format!("video/x-raw, width={width}, height={height}").as_str(),
+        )]),
+    )?;
 
     let x264_enc = build_element("x264enc", None)?;
-    let flv_mux = build_element("flvmux", Some(&[
-        ("name", "mux"),
-        ("streamable", "true")
-    ]))?;
+    let flv_mux = build_element("flvmux", Some(&[("name", "mux"), ("streamable", "true")]))?;
     let queue2 = build_element("queue", None)?;
     let rtmp_sink = build_element("rtmpsink", Some(&[("location", rtmp_url.as_str())]))?;
 
@@ -216,12 +225,12 @@ fn add_elements_to_pipeline(
 #[allow(unused_imports)]
 mod test {
     use crate::business::models::stream::CompoundStreamInfo;
+    use crate::streamer::gstreamer_controller::{create_stream_pipeline, init_gstreamer};
+    use crate::streamer::types::StreamResolution;
     use gstreamer::prelude::ElementExt;
     use gstreamer::{ClockTime, MessageView, State};
     use std::env;
     use std::sync::Arc;
-    use crate::streamer::gstreamer_controller::{create_stream_pipeline, init_gstreamer};
-    use crate::streamer::types::StreamResolution;
 
     #[test]
     // #[allow(dead_code)]

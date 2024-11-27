@@ -1,3 +1,3 @@
+pub mod live_stream;
 pub mod user;
-mod video;
-mod live_stream;
+pub mod video;

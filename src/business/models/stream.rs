@@ -1,4 +1,6 @@
-use crate::streamer::types::{CompoundStreamInfoTrait, PipelinesList, StreamResolution, StreamStorageTrait};
+use crate::streamer::types::{
+    CompoundStreamInfoTrait, PipelinesList, StreamResolution, StreamStorageTrait,
+};
 use std::sync::{Arc, Mutex};
 
 const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
@@ -43,7 +45,6 @@ impl StreamStorageTrait for StreamStorage {
     }
 }
 
-
 #[derive(Clone)]
 pub struct CompoundStreamInfo {
     pub stream_id: String,
@@ -63,13 +64,14 @@ impl CompoundStreamInfo {
             streams,
         }
     }
-
 }
 
 impl CompoundStreamInfoTrait for CompoundStreamInfo {
     fn compose_stream_url(&self, resolution: StreamResolution) -> String {
-        let rtmp_server_path = dotenvy::var(RTMP_SERVER_ENV).expect("RTMP server path is not defined");
-        let stream_path_prefix = dotenvy::var(STREAM_PATH_PREFIX_KEY).expect("Stream path prefix is not defined");
+        let rtmp_server_path =
+            dotenvy::var(RTMP_SERVER_ENV).expect("RTMP server path is not defined");
+        let stream_path_prefix =
+            dotenvy::var(STREAM_PATH_PREFIX_KEY).expect("Stream path prefix is not defined");
         format!(
             "{}/{}-{}_{}",
             rtmp_server_path,

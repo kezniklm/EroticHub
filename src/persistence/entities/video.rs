@@ -1,15 +1,17 @@
+use serde::{Deserialize, Serialize};
+
 #[derive(sqlx::FromRow)]
 pub struct Video {
-    pub id: u64,
-    pub artist_id: u64,
-    pub video_visibility: VideoVisibility,
+    pub id: i32,
+    pub artist_id: i32,
+    pub visibility: VideoVisibility,
     pub name: String,
     pub file_path: String,
     pub thumbnail_path: String,
-    pub description: String,
+    pub description: Option<String>,
 }
 
-#[allow(clippy::upper_case_acronyms)]
+#[derive(Clone, Debug, PartialEq, PartialOrd, Deserialize, Serialize, sqlx::Type)]
 pub enum VideoVisibility {
     ALL,
     REGISTERED,

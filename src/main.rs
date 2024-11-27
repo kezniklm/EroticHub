@@ -7,6 +7,7 @@ use log::{info, warn};
 
 use crate::api::controllers;
 use crate::business::facades::user::UserFacade;
+use crate::business::models::stream::StreamStorage;
 use crate::configuration::models::Configuration;
 use crate::persistence::repositories::user::PostgresUserRepo;
 use config::Config;
@@ -14,7 +15,6 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
-use crate::business::models::stream::StreamStorage;
 
 mod api;
 mod business;
