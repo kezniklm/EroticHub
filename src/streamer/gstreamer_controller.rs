@@ -6,16 +6,17 @@ use gstreamer::{ClockTime, Element, ElementFactory, MessageView, Pad, Pipeline, 
 use log::{debug, error, info};
 use std::sync::Arc;
 use std::thread;
+use std::thread::JoinHandle;
 use crate::streamer::types::{CompoundStreamInfoTrait, StreamResolution, StreamStorageTrait};
 
 pub fn init_gstreamer() -> std::result::Result<(), gstreamer::glib::Error> {
     gstreamer::init()
 }
 
-pub async fn create_streams(
+pub fn create_streams(
     stream_storage: Arc<dyn StreamStorageTrait>,
     compound_stream: Arc<dyn CompoundStreamInfoTrait>,
-) -> Result<()> {
+) -> Result<Vec<JoinHandle<()>>> {
     let mut pipelines = Vec::new();
     let mut handles = Vec::new();
     for resolution in compound_stream.get_resolutions().clone() {
@@ -24,40 +25,22 @@ pub async fn create_streams(
         pipelines.push(pipeline.clone());
 
         let stream_id = compound_stream.clone().get_stream_id().clone();
+        start_stream(pipeline.clone())?;
+
+        info!("Stream with ID: {}: {} started", stream_id, resolution.as_str());
         handles.push(thread::spawn(move || {
-            start_stream(stream_id.as_str(), pipeline.clone(), &resolution);
             pipeline_listen(pipeline, stream_id.as_str(), stream_storage);
         }));
     }
 
-    actix_rt::spawn(async move {
-        for handle in handles {
-            handle.join().expect("Cannot join the thread");
-        }
-    });
-
     stream_storage.push(compound_stream.clone(), pipelines);
 
-    Ok(())
+    Ok(handles)
 }
 
-fn start_stream(stream_id: &str, pipeline: Arc<Pipeline>, resolution: &StreamResolution) {
-    match pipeline.set_state(State::Playing) {
-        Ok(_) => {
-            info!(
-                        "Stream with ID: {}: {} started",
-                        stream_id,
-                        resolution.as_str()
-                    );
-        }
-        Err(_) => {
-            error!(
-                        "Failed to start the stream with ID: {}: {}!",
-                        stream_id,
-                        resolution.as_str()
-                    );
-        }
-    };
+fn start_stream(pipeline: Arc<Pipeline>) -> Result<()> {
+    pipeline.set_state(State::Playing)?;
+    Ok(())
 }
 
 fn pipeline_listen(
