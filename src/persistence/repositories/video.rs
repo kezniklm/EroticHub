@@ -6,7 +6,7 @@ use std::sync::Arc;
 #[async_trait]
 pub trait VideoRepo {
     async fn list_videos(&self) -> anyhow::Result<Vec<Video>>;
-    async fn save_video(&self, video: Video) -> anyhow::Result<()>;
+    async fn save_video(&self, video: Video) -> anyhow::Result<Video>;
 }
 
 #[derive(Debug, Clone)]
@@ -40,8 +40,9 @@ impl VideoRepo for PgVideoRepo {
         Ok(result)
     }
 
-    async fn save_video(&self, video: Video) -> anyhow::Result<()> {
-        let result = sqlx::query!(
+    async fn save_video(&self, video: Video) -> anyhow::Result<Video> {
+        let result = sqlx::query_as!(
+            Video,
             r#"
             INSERT INTO video(
                 artist_id,
@@ -61,8 +62,9 @@ impl VideoRepo for PgVideoRepo {
             video.description,
             video.visibility as VideoVisibility
         )
-        .fetch_one(self.pg_pool.as_ref());
+        .fetch_one(self.pg_pool.as_ref())
+        .await?;
 
-        Ok(())
+        Ok(result)
     }
 }

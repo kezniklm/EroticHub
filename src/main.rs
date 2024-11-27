@@ -61,6 +61,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
             .service(controllers::user::list_users)
+            .service(controllers::video::register_scope())
             .service(controllers::stream_controller::register_scope())
     })
     .bind(("127.0.0.1", 8000))?
