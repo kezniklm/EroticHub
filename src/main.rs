@@ -8,10 +8,12 @@ use log::{info, warn};
 use crate::api::controllers;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
+use crate::business::facades::video::VideoFacade;
 use crate::business::models::stream::StreamStorage;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::configuration::models::Configuration;
 use crate::persistence::repositories::user::PostgresUserRepo;
+use crate::persistence::repositories::video::PgVideoRepo;
 use config::Config;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
@@ -52,11 +54,14 @@ async fn main() -> anyhow::Result<()> {
     let pool = setup_db_pool().await?;
 
     let stream_storage = StreamStorage::new();
-    let user_repo = PostgresUserRepo::new(pool.clone());
-    let user_facade = UserFacade::new(Arc::new(user_repo));
+    let user_repo = Arc::new(PostgresUserRepo::new(pool.clone()));
+    let user_facade = Arc::new(UserFacade::new(user_repo));
 
-    let temp_file_repo = PgTempFileRepo::new(pool.clone());
-    let temp_file_facade = TempFileFacade::new(Arc::new(temp_file_repo));
+    let temp_file_repo = Arc::new(PgTempFileRepo::new(pool.clone()));
+    let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo));
+
+    let video_repo = Arc::new(PgVideoRepo::new(pool.clone()));
+    let video_facade = Arc::new(VideoFacade::new(temp_file_facade.clone(), video_repo));
 
     temp_file_facade
         .delete_all_temp_files()
@@ -74,6 +79,9 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::new(temp_file_facade.clone()))
+            .app_data(web::Data::from(user_facade.clone()))
+            .app_data(web::Data::from(temp_file_facade.clone()))
+            .app_data(web::Data::from(video_facade.clone()))
             .service(controllers::user::list_users)
             .service(controllers::video::register_scope())
             .service(controllers::stream::register_scope())

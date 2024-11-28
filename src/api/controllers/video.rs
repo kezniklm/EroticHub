@@ -1,5 +1,6 @@
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
-use crate::business::models::video::{ThumbnailUploadForm, VideoUploadForm};
+use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
+use crate::business::models::video::{ThumbnailUploadForm, VideoUploadData, VideoUploadForm};
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use actix_web::http::header::ContentType;
@@ -12,7 +13,18 @@ pub fn register_scope() -> Scope {
     let temp_scope = web::scope("/temp")
         .service(post_temp_video)
         .service(post_temp_thumbnail);
-    web::scope("/video").service(temp_scope)
+    web::scope("/video").service(temp_scope).service(save_video)
+}
+
+#[post("/")]
+pub async fn save_video(
+    web::Form(form): web::Form<VideoUploadData>,
+    video_facade: Data<VideoFacade>,
+) -> impl Responder {
+    match video_facade.save_video(1, form).await {
+        Ok(_) => HttpResponse::Ok(),
+        Err(_) => HttpResponse::InternalServerError(),
+    }
 }
 
 #[post("/video")]

@@ -1,6 +1,7 @@
+use std::future::Future;
 use crate::persistence::entities::temp_file::TempFile;
 use async_trait::async_trait;
-use sqlx::PgPool;
+use sqlx::{Executor, PgPool, Postgres, Transaction};
 use std::path::Path;
 use tempfile::NamedTempFile;
 
@@ -13,6 +14,8 @@ pub trait TempFileRepo {
     ) -> anyhow::Result<i32>;
     async fn get_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<Option<TempFile>>;
     async fn delete_all_files(&self, temp_directory_path: &Path) -> anyhow::Result<()>;
+    async fn delete_file(&self, file_id: i32) -> anyhow::Result<()>;
+
 }
 
 pub struct PgTempFileRepo {
@@ -22,6 +25,14 @@ pub struct PgTempFileRepo {
 impl PgTempFileRepo {
     pub fn new(pg_pool: PgPool) -> Self {
         Self { pg_pool }
+    }
+
+    async fn in_transaction<O, Fut>(&self, f: Fut) -> anyhow::Result<O>
+    where Fut: Future<Output=anyhow::Result<O>> + Sized,
+          O: Send + Sync
+    {
+        let result = f.await?;
+        Ok(result)
     }
 }
 
@@ -45,11 +56,14 @@ impl TempFileRepo for PgTempFileRepo {
             temp_file_entity.user_id,
             temp_file_entity.file_path
         )
-        .fetch_one(&mut *transaction)
-        .await?;
+            .fetch_one(&mut *transaction)
+            .await?;
 
         transaction.commit().await?;
-
+        let block = async {
+            Ok(32)
+        };
+        self.in_transaction(block).await?;
         Ok(result.id)
     }
 
@@ -63,8 +77,8 @@ impl TempFileRepo for PgTempFileRepo {
             file_id,
             user_id
         )
-        .fetch_optional(&self.pg_pool)
-        .await?;
+            .fetch_optional(&self.pg_pool)
+            .await?;
 
         Ok(result)
     }
@@ -81,4 +95,12 @@ impl TempFileRepo for PgTempFileRepo {
         transaction.commit().await?;
         Ok(())
     }
+
+    async fn delete_file(&self, file_id: i32) -> anyhow::Result<()> {
+        sqlx::query!("DELETE FROM temp_file WHERE id=$1", file_id)
+            .execute(&self.pg_pool)
+            .await?;
+        Ok(())
+    }
 }
+

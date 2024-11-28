@@ -25,6 +25,9 @@ pub struct ThumbnailUploadForm {
 pub struct VideoUploadData {
     pub video_visibility: VideoVisibility,
     pub name: String,
+    pub temp_thumbnail_id: i32,
+    pub temp_video_id: i32,
+    pub description: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]

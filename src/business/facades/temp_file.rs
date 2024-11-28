@@ -30,6 +30,13 @@ pub trait TempFileFacadeTrait {
         file: Option<String>,
         allowed_types: Vec<String>,
     ) -> anyhow::Result<()>;
+
+    async fn persist_permanently(
+        &self,
+        file_id: i32,
+        user_id: i32,
+        path: &Path,
+    ) -> anyhow::Result<()>;
 }
 
 #[derive(Clone)]
@@ -131,5 +138,22 @@ impl TempFileFacadeTrait for TempFileFacade {
         }
 
         Err(Error::msg("Unsupported MimeType"))
+    }
+
+    async fn persist_permanently(
+        &self,
+        file_id: i32,
+        user_id: i32,
+        new_path: &Path,
+    ) -> anyhow::Result<()> {
+        let temp_file = self
+            .temp_file_repo
+            .get_file(file_id, user_id)
+            .await?
+            .ok_or("Temporary file doesn't exist")?;
+        tokio::fs::rename(&Path::new(temp_file.file_path.as_str()), new_path).await?;
+
+        self.temp_file_repo.delete_file(file_id).await?;
+        Ok(())
     }
 }
