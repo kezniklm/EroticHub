@@ -6,8 +6,10 @@ use log::warn;
 use log::{info, warn};
 
 use crate::api::controllers;
+use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::models::stream::StreamStorage;
+use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::configuration::models::Configuration;
 use crate::persistence::repositories::user::PostgresUserRepo;
 use config::Config;
@@ -15,8 +17,6 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
-use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
-use crate::persistence::repositories::temp_file::PgTempFileRepo;
 
 mod api;
 mod business;
@@ -57,9 +57,15 @@ async fn main() -> anyhow::Result<()> {
 
     let temp_file_repo = PgTempFileRepo::new(pool.clone());
     let temp_file_facade = TempFileFacade::new(Arc::new(temp_file_repo));
-    
-    temp_file_facade.delete_all_temp_files().await.expect("Failed to delete temp file directory");
-    temp_file_facade.create_temp_directory().await.expect("Failed to create temp directory");
+
+    temp_file_facade
+        .delete_all_temp_files()
+        .await
+        .expect("Failed to delete temp file directory");
+    temp_file_facade
+        .create_temp_directory()
+        .await
+        .expect("Failed to create temp directory");
 
     HttpServer::new(move || {
         App::new()
@@ -90,3 +96,4 @@ fn init_configuration() -> anyhow::Result<Configuration> {
     info!("Config {} was loaded!", config_file);
     Ok(config)
 }
+
