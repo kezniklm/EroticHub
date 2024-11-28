@@ -1,4 +1,5 @@
 use crate::business::models::video::TempFileResponse;
+use crate::business::util::file::create_dir_if_not_exist;
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::repositories::temp_file::TempFileRepo;
 use anyhow::Error;
@@ -7,7 +8,7 @@ use log::{debug, warn};
 use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
-use tokio::fs::create_dir;
+use tokio::fs::{create_dir_all, File};
 use uuid::Uuid;
 
 const DEFAULT_TEMP_DIRECTORY: &str = "temp";
@@ -35,8 +36,8 @@ pub trait TempFileFacadeTrait {
         &self,
         file_id: i32,
         user_id: i32,
-        path: &Path,
-    ) -> anyhow::Result<()>;
+        path: String,
+    ) -> anyhow::Result<String>;
 }
 
 #[derive(Clone)]
@@ -100,11 +101,7 @@ impl TempFileFacadeTrait for TempFileFacade {
 
     async fn create_temp_directory(&self) -> anyhow::Result<()> {
         let temp_directory = self.get_temp_directory_path();
-        let path = Path::new(temp_directory.as_str());
-        if path.exists() {
-            return Ok(());
-        }
-        create_dir(path).await?;
+        create_dir_if_not_exist(temp_directory).await?;
         Ok(())
     }
 
@@ -144,16 +141,24 @@ impl TempFileFacadeTrait for TempFileFacade {
         &self,
         file_id: i32,
         user_id: i32,
-        new_path: &Path,
-    ) -> anyhow::Result<()> {
+        new_path: String,
+    ) -> anyhow::Result<String> {
         let temp_file = self
             .temp_file_repo
             .get_file(file_id, user_id)
             .await?
-            .ok_or("Temporary file doesn't exist")?;
-        tokio::fs::rename(&Path::new(temp_file.file_path.as_str()), new_path).await?;
+            .ok_or(Error::msg("Temporary file doesn't exist"))?;
+
+        let temp_file_path = Path::new(temp_file.file_path.as_str());
+
+        let new_path = format!(
+            "{new_path}/{}",
+            temp_file_path.file_name().unwrap().to_str().unwrap_or("")
+        );
+        println!("{:?}", new_path);
+        tokio::fs::rename(temp_file_path, &new_path).await?;
 
         self.temp_file_repo.delete_file(file_id).await?;
-        Ok(())
+        Ok(new_path)
     }
 }

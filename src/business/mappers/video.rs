@@ -1,9 +1,12 @@
-use crate::business::models::video::VideoUploadData as VideoUploadDataDto;
-use crate::persistence::entities::video::Video as VideoEntity;
+use crate::business::models::video::VideoVisibility as VideoVisibilityDto;
+use crate::persistence::entities::video::VideoVisibility as VideoVisibilityEntity;
 
-impl From<VideoUploadDataDto> for VideoEntity {
-    fn from(value: VideoUploadDataDto) -> Self {
-        // VideoEntity { }
-        todo!();
+impl From<&VideoVisibilityDto> for VideoVisibilityEntity {
+    fn from(value: &VideoVisibilityDto) -> Self {
+        match value {
+            VideoVisibilityDto::ALL => VideoVisibilityEntity::ALL,
+            VideoVisibilityDto::REGISTERED => VideoVisibilityEntity::REGISTERED,
+            VideoVisibilityDto::PAYING => VideoVisibilityEntity::PAYING,
+        }
     }
 }

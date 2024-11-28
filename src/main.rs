@@ -8,7 +8,7 @@ use log::{info, warn};
 use crate::api::controllers;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
-use crate::business::facades::video::VideoFacade;
+use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::stream::StreamStorage;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::configuration::models::Configuration;
@@ -60,9 +60,6 @@ async fn main() -> anyhow::Result<()> {
     let temp_file_repo = Arc::new(PgTempFileRepo::new(pool.clone()));
     let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo));
 
-    let video_repo = Arc::new(PgVideoRepo::new(pool.clone()));
-    let video_facade = Arc::new(VideoFacade::new(temp_file_facade.clone(), video_repo));
-
     temp_file_facade
         .delete_all_temp_files()
         .await
@@ -71,6 +68,14 @@ async fn main() -> anyhow::Result<()> {
         .create_temp_directory()
         .await
         .expect("Failed to create temp directory");
+
+    let video_repo = Arc::new(PgVideoRepo::new(pool.clone()));
+    let video_facade = Arc::new(VideoFacade::new(temp_file_facade.clone(), video_repo));
+
+    video_facade
+        .create_dirs()
+        .await
+        .expect("Failed to create video folder");
 
     HttpServer::new(move || {
         App::new()

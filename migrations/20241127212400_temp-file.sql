@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS temp_file (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES user_table(id) ON DELETE CASCADE,
+    file_path TEXT NOT NULL
+);

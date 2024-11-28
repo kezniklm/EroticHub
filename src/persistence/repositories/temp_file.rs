@@ -1,7 +1,6 @@
-use std::future::Future;
 use crate::persistence::entities::temp_file::TempFile;
 use async_trait::async_trait;
-use sqlx::{Executor, PgPool, Postgres, Transaction};
+use sqlx::{Executor, PgPool};
 use std::path::Path;
 use tempfile::NamedTempFile;
 
@@ -15,7 +14,6 @@ pub trait TempFileRepo {
     async fn get_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<Option<TempFile>>;
     async fn delete_all_files(&self, temp_directory_path: &Path) -> anyhow::Result<()>;
     async fn delete_file(&self, file_id: i32) -> anyhow::Result<()>;
-
 }
 
 pub struct PgTempFileRepo {
@@ -25,14 +23,6 @@ pub struct PgTempFileRepo {
 impl PgTempFileRepo {
     pub fn new(pg_pool: PgPool) -> Self {
         Self { pg_pool }
-    }
-
-    async fn in_transaction<O, Fut>(&self, f: Fut) -> anyhow::Result<O>
-    where Fut: Future<Output=anyhow::Result<O>> + Sized,
-          O: Send + Sync
-    {
-        let result = f.await?;
-        Ok(result)
     }
 }
 
@@ -56,14 +46,11 @@ impl TempFileRepo for PgTempFileRepo {
             temp_file_entity.user_id,
             temp_file_entity.file_path
         )
-            .fetch_one(&mut *transaction)
-            .await?;
+        .fetch_one(&mut *transaction)
+        .await?;
 
         transaction.commit().await?;
-        let block = async {
-            Ok(32)
-        };
-        self.in_transaction(block).await?;
+
         Ok(result.id)
     }
 
@@ -71,14 +58,14 @@ impl TempFileRepo for PgTempFileRepo {
         let result = sqlx::query_as!(
             TempFile,
             r#"
-            SELECT f.id, f.user_id, f.file_path FROM temp_file f JOIN user_table u ON f.id = u.id
-            WHERE f.id=$1 AND u.id=$2;
+            SELECT f.id, f.user_id, f.file_path FROM temp_file f
+            WHERE f.id=$1 AND f.user_id=$2;
         "#,
             file_id,
             user_id
         )
-            .fetch_optional(&self.pg_pool)
-            .await?;
+        .fetch_optional(&self.pg_pool)
+        .await?;
 
         Ok(result)
     }
@@ -90,7 +77,7 @@ impl TempFileRepo for PgTempFileRepo {
             .execute(&mut *transaction)
             .await?;
         tokio::fs::remove_dir_all(temp_directory_path).await?;
-        tokio::fs::create_dir(temp_directory_path).await?;
+        tokio::fs::create_dir_all(temp_directory_path).await?;
 
         transaction.commit().await?;
         Ok(())
@@ -103,4 +90,3 @@ impl TempFileRepo for PgTempFileRepo {
         Ok(())
     }
 }
-

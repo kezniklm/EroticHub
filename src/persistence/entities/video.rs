@@ -12,6 +12,7 @@ pub struct Video {
 }
 
 #[derive(Clone, Debug, PartialEq, PartialOrd, Deserialize, Serialize, sqlx::Type)]
+#[sqlx(type_name = "visibility_type")]
 pub enum VideoVisibility {
     ALL,
     REGISTERED,
