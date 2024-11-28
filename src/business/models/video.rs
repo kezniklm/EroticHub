@@ -26,3 +26,8 @@ pub struct VideoUploadData {
     pub video_visibility: VideoVisibility,
     pub name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct TempFileResponse {
+    pub temp_file_id: i32,
+}

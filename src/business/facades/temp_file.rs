@@ -1,10 +1,13 @@
+use std::io::Read;
 use std::path::Path;
 use std::sync::Arc;
+use anyhow::Error;
 use async_trait::async_trait;
 use log::debug;
 use tempfile::NamedTempFile;
 use tokio::fs::create_dir;
 use uuid::Uuid;
+use crate::business::models::video::TempFileResponse;
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::repositories::temp_file::TempFileRepo;
 
@@ -12,7 +15,7 @@ const DEFAULT_TEMP_DIRECTORY: &str = "temp";
 const TEMP_DIRECTORY_KEY: &str = "TEMP_DIRECTORY_PATH";
 #[async_trait]
 pub trait TempFileFacadeTrait {
-    async fn persist_temp_file(&self, temp_file: NamedTempFile, file_name: String, user_id: i32) -> anyhow::Result<i32>;
+    async fn persist_temp_file(&self, temp_file: NamedTempFile, file_name: String, user_id: i32) -> anyhow::Result<TempFileResponse>;
     /// Checks if temp file belongs to current user. Is so, stores it to given path
     async fn get_file_path(&self, user_id: i32, permanent_path: &Path);
     fn get_temp_directory_path(&self) -> String;
@@ -39,12 +42,11 @@ impl TempFileFacade {
         }
         String::new()
     }
-    // TODO: Clear database table and directory before each application start!
 }
 
 #[async_trait]
 impl TempFileFacadeTrait for TempFileFacade {
-    async fn persist_temp_file(&self, temp_file: NamedTempFile, file_name: String, user_id: i32) -> anyhow::Result<i32> {
+    async fn persist_temp_file(&self, temp_file: NamedTempFile, file_name: String, user_id: i32) -> anyhow::Result<TempFileResponse> {
         let uuid = Uuid::new_v4();
 
         let path_str = format!("./{}/{}.{}", self.get_temp_directory_path(), uuid, self.get_file_extension(file_name));
@@ -57,7 +59,10 @@ impl TempFileFacadeTrait for TempFileFacade {
         let temp_file_id = self.temp_file_repo.add_file(entity, temp_file).await?;
 
         debug!("Stored temp file with ID: {} and path: {}", &temp_file_id, &path_str);
-        Ok(temp_file_id)
+        let response = TempFileResponse {
+            temp_file_id,
+        };
+        Ok(response)
     }
 
     async fn get_file_path(&self, user_id: i32, permanent_path: &Path) {
@@ -85,7 +90,7 @@ impl TempFileFacadeTrait for TempFileFacade {
             return Ok(())
         }
         self.temp_file_repo.delete_all_files(temp_dir_path).await?;
-        
+
         debug!("All temp files were deleted!");
         Ok(())
     }
