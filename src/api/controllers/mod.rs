@@ -1,3 +1,3 @@
-pub mod stream_controller;
+pub mod stream;
 pub mod user;
 pub(crate) mod video;

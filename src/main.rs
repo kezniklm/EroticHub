@@ -76,7 +76,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::new(temp_file_facade.clone()))
             .service(controllers::user::list_users)
             .service(controllers::video::register_scope())
-            .service(controllers::stream_controller::register_scope())
+            .service(controllers::stream::register_scope())
     })
     .bind(("127.0.0.1", 8000))?
     .run()
