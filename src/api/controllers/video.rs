@@ -17,10 +17,9 @@ pub async fn post_temp_video(
     MultipartForm(form): MultipartForm<VideoUploadForm>,
     temp_file_facade: Data<TempFileFacade>
 ) -> HttpResponse {
-    println!("{}", form.file.file_name.unwrap());
-    println!("{}", form.file.content_type.unwrap());
+    let file_name = form.file.file_name.unwrap_or(String::new());
 
-    match temp_file_facade.persist_temp_file(form.file.file, 1).await {
+    match temp_file_facade.persist_temp_file(form.file.file, file_name, 1).await {
         Ok(_) => {
             HttpResponse::from(HttpResponse::Ok())
         }

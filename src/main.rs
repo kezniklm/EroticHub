@@ -57,6 +57,8 @@ async fn main() -> anyhow::Result<()> {
 
     let temp_file_repo = PgTempFileRepo::new(pool.clone());
     let temp_file_facade = TempFileFacade::new(Arc::new(temp_file_repo));
+    
+    temp_file_facade.delete_all_temp_files().await.expect("Failed to delete temp file directory");
     temp_file_facade.create_temp_directory().await.expect("Failed to create temp directory");
 
     HttpServer::new(move || {
