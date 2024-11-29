@@ -22,7 +22,7 @@ impl ArtistRepository {
 #[async_trait]
 impl ArtistRepoTrait for ArtistRepository {
     async fn list_artists(&self) -> anyhow::Result<Vec<Artist>> {
-        let artists = sqlx::query_as!(Artist, "SELECT * FROM artist_table")
+        let artists = sqlx::query_as!(Artist, "SELECT * FROM artist")
             .fetch_all(&self.pg_pool)
             .await?;
 
