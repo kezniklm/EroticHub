@@ -6,10 +6,12 @@ use log::warn;
 use log::{info, warn};
 
 use crate::api::controllers;
+use crate::business::facades::stream::StreamFacade;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::stream::StreamStorage;
+use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::configuration::models::Configuration;
 use crate::persistence::repositories::user::PostgresUserRepo;
@@ -19,8 +21,6 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
-use crate::business::facades::stream::StreamFacade;
-use crate::persistence::repositories::stream::PgStreamRepo;
 
 mod api;
 mod business;
@@ -80,7 +80,11 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to create video folder");
 
     let stream_repo = Arc::new(PgStreamRepo::new(pool.clone()));
-    let stream_facade = Arc::new(StreamFacade::new(video_facade.clone(), stream_storage.clone(), stream_repo.clone()));
+    let stream_facade = Arc::new(StreamFacade::new(
+        video_facade.clone(),
+        stream_storage.clone(),
+        stream_repo.clone(),
+    ));
 
     HttpServer::new(move || {
         App::new()

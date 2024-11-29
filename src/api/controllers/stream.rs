@@ -9,11 +9,12 @@ pub fn register_scope() -> Scope {
 }
 
 #[post("/start")]
-async fn start_stream(Form(request): Form<LiveStreamStart>, stream_facade: Data<StreamFacade>) -> impl Responder {
+async fn start_stream(
+    Form(request): Form<LiveStreamStart>,
+    stream_facade: Data<StreamFacade>,
+) -> impl Responder {
     match stream_facade.start_stream(request, 2).await {
-        Ok(stream_url) => {
-            HttpResponse::Ok().body(stream_url)
-        }
+        Ok(stream_url) => HttpResponse::Ok().body(stream_url),
         Err(err) => {
             error!("Failed to start the stream {:#?}", err);
             HttpResponse::InternalServerError().body("Failed to start the stream!")

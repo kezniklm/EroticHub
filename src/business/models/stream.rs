@@ -1,9 +1,9 @@
 use crate::streamer::types::{
     CompoundStreamInfoTrait, PipelinesList, StreamResolution, StreamStorageTrait,
 };
-use std::sync::{Arc, Mutex};
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
+use std::sync::{Arc, Mutex};
 
 const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
 const STREAM_PATH_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";

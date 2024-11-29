@@ -1,12 +1,12 @@
 use crate::business::facades::video::VideoFacadeTrait;
 use crate::business::models::stream::{CompoundStreamInfo, LiveStreamStart};
 use crate::persistence::entities::stream::{LiveStream, LiveStreamStatus};
-use crate::persistence::repositories::stream::{StreamRepoTrait};
+use crate::persistence::repositories::stream::StreamRepoTrait;
 use crate::streamer::gstreamer_controller::create_streams;
 use crate::streamer::types::{StreamResolution, StreamStorageTrait};
 use async_trait::async_trait;
-use std::sync::Arc;
 use log::{error, info};
+use std::sync::Arc;
 
 const NGINX_HLS_URL_KEY: &str = "NGINX_HLS_URL";
 const STREAM_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
@@ -14,7 +14,11 @@ const STREAM_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
 #[async_trait]
 pub trait StreamFacadeTrait {
     async fn schedule_stream(&self, video_id: i32, user_id: i32) -> anyhow::Result<()>;
-    async fn start_stream(&self, live_stream: LiveStreamStart, user_id: i32) -> anyhow::Result<String>;
+    async fn start_stream(
+        &self,
+        live_stream: LiveStreamStart,
+        user_id: i32,
+    ) -> anyhow::Result<String>;
 }
 
 pub struct StreamFacade {
@@ -27,7 +31,8 @@ impl StreamFacade {
     pub fn new(
         video_facade: Arc<dyn VideoFacadeTrait + Send + Sync>,
         stream_storage: Arc<dyn StreamStorageTrait + Send + Sync>,
-        stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>, ) -> Self {
+        stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
+    ) -> Self {
         Self {
             video_facade,
             stream_storage,
@@ -58,8 +63,13 @@ impl StreamFacade {
         Ok(stream_url)
     }
 
-    async fn mark_stream_as_ended(stream_info: CompoundStreamInfo, pg_stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>) -> anyhow::Result<()> {
-        pg_stream_repo.change_status(stream_info.stream_id.parse()?, LiveStreamStatus::ENDED).await?;
+    async fn mark_stream_as_ended(
+        stream_info: CompoundStreamInfo,
+        pg_stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
+    ) -> anyhow::Result<()> {
+        pg_stream_repo
+            .change_status(stream_info.stream_id.parse()?, LiveStreamStatus::ENDED)
+            .await?;
 
         Ok(())
     }
@@ -79,10 +89,20 @@ impl StreamFacadeTrait for StreamFacade {
         todo!()
     }
 
-    async fn start_stream(&self, live_stream: LiveStreamStart, user_id: i32) -> anyhow::Result<String> {
-        let video = self.video_facade.get_video_entity(live_stream.video_id, user_id).await?;
+    async fn start_stream(
+        &self,
+        live_stream: LiveStreamStart,
+        user_id: i32,
+    ) -> anyhow::Result<String> {
+        let video = self
+            .video_facade
+            .get_video_entity(live_stream.video_id, user_id)
+            .await?;
 
-        let stream_id = self.stream_repo.add_stream(LiveStream::from(&live_stream)).await?;
+        let stream_id = self
+            .stream_repo
+            .add_stream(LiveStream::from(&live_stream))
+            .await?;
 
         let stream_info = CompoundStreamInfo::new(
             stream_id.to_string(),
@@ -97,6 +117,3 @@ impl StreamFacadeTrait for StreamFacade {
         Ok(stream_url)
     }
 }
-
-
-

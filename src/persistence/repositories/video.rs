@@ -67,7 +67,7 @@ impl VideoRepo for PgVideoRepo {
 
         Ok(result)
     }
-    
+
     async fn get_video_by_id(&self, video_id: i32) -> anyhow::Result<Video> {
         let result = sqlx::query_as!(
             Video,
@@ -83,8 +83,10 @@ impl VideoRepo for PgVideoRepo {
             FROM video WHERE id = $1
             "#,
             video_id
-        ).fetch_one(&self.pg_pool).await?;
-        
+        )
+        .fetch_one(&self.pg_pool)
+        .await?;
+
         Ok(result)
     }
 }

@@ -1,7 +1,7 @@
-use crate::business::models::video::VideoVisibility as VideoVisibilityDto;
 use crate::business::models::video::Video as VideoDto;
-use crate::persistence::entities::video::VideoVisibility as VideoVisibilityEntity;
+use crate::business::models::video::VideoVisibility as VideoVisibilityDto;
 use crate::persistence::entities::video::Video as VideoEntity;
+use crate::persistence::entities::video::VideoVisibility as VideoVisibilityEntity;
 
 impl From<&VideoVisibilityDto> for VideoVisibilityEntity {
     fn from(value: &VideoVisibilityDto) -> Self {

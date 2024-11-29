@@ -1,13 +1,13 @@
-use std::path::Path;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
+use crate::business::models;
 use crate::business::models::video::VideoUploadData;
 use crate::business::util::file::create_dir_if_not_exist;
 use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
-use async_trait::async_trait;
-use std::sync::Arc;
 use actix_files::NamedFile;
-use crate::business::models;
+use async_trait::async_trait;
+use std::path::Path;
+use std::sync::Arc;
 
 const DEFAULT_VIDEO_DIRECTORY: &str = "./resources/videos";
 const DEFAULT_THUMBNAILS_PATH: &str = "./resources/thumbnails";
@@ -16,7 +16,11 @@ const THUMBNAIL_DIRECTORY_KEY: &str = "THUMBNAIL_DIRECTORY_PATH";
 
 #[async_trait]
 pub trait VideoFacadeTrait {
-    async fn save_video(&self, user_id: i32, video: VideoUploadData) -> anyhow::Result<models::video::Video>;
+    async fn save_video(
+        &self,
+        user_id: i32,
+        video: VideoUploadData,
+    ) -> anyhow::Result<models::video::Video>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
     async fn create_dirs(&self) -> anyhow::Result<()>;
     async fn get_video_entity(&self, video_id: i32, user_id: i32) -> anyhow::Result<Video>;
@@ -56,7 +60,11 @@ impl VideoFacadeTrait for VideoFacade {
     /// * `user_id` - ID of an artist which want to save the video.
     /// * `video_model` - Includes IDs of temporary files and needed metadata to correctly store
     /// the video
-    async fn save_video(&self, user_id: i32, video_model: VideoUploadData) -> anyhow::Result<models::video::Video> {
+    async fn save_video(
+        &self,
+        user_id: i32,
+        video_model: VideoUploadData,
+    ) -> anyhow::Result<models::video::Video> {
         let (video_dir_path, thumbnail_dir_path) = self.get_video_thumbnail_dirs();
 
         let video_path = self
@@ -121,7 +129,7 @@ impl VideoFacadeTrait for VideoFacade {
     }
 
     /// Serves directly video file for video player
-    /// 
+    ///
     /// TODO: Check if user can access the video!
     ///
     /// * `video_id` - ID of the video you want to get
@@ -130,7 +138,7 @@ impl VideoFacadeTrait for VideoFacade {
         let video_entity = self.video_repo.get_video_by_id(video_id).await?;
         let path = Path::new(video_entity.file_path.as_str());
         let file = NamedFile::open_async(path).await?;
-        
+
         Ok(file)
     }
 }
