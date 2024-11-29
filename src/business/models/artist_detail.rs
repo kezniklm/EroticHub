@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
-pub struct Artist {
+pub struct ArtistDetail {
     pub id: i32,
     pub user_id: i32,
-    pub description: Option<String>,
+    pub description: String,
 }
