@@ -1,12 +1,14 @@
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
-use crate::business::models::video::{ThumbnailUploadForm, VideoUploadData, VideoUploadForm};
+use crate::business::models::video::{PlayableVideoReq, ThumbnailUploadForm, VideoUploadData, VideoUploadForm};
+use actix_files::NamedFile;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
+use actix_web::error::DispatchError::InternalError;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
-use actix_web::web::Data;
-use actix_web::{post, web, HttpResponse, Responder, Scope};
+use actix_web::web::{Data, Query};
+use actix_web::{get, post, web, Error, HttpResponse, Responder, ResponseError, Result, Scope};
 use log::error;
 use serde::Serialize;
 use tempfile::NamedTempFile;
@@ -15,7 +17,7 @@ pub fn register_scope() -> Scope {
     let temp_scope = web::scope("/temp")
         .service(post_temp_video)
         .service(post_temp_thumbnail);
-    web::scope("/video").service(temp_scope).service(save_video)
+    web::scope("/video").service(temp_scope).service(save_video).service(get_video)
 }
 
 #[post("/")]
@@ -35,6 +37,19 @@ pub async fn save_video(
     }
 }
 
+#[get("")]
+pub async fn get_video(Query(request): Query<PlayableVideoReq>, video_facade: Data<VideoFacade>) -> Result<NamedFile> {
+    match video_facade.get_playable_video(request.id, 1).await {
+        Ok(file) => {
+            Ok(file)
+        }
+        Err(err) => {
+            error!("Error while returning playable video: {:#?}", err);
+            Err(Error::from(actix_web::error::InternalError::new("Loading of video file failed", StatusCode::INTERNAL_SERVER_ERROR)))
+        }
+    }
+}
+
 #[post("/video")]
 pub async fn post_temp_video(
     MultipartForm(form): MultipartForm<VideoUploadForm>,
@@ -42,7 +57,7 @@ pub async fn post_temp_video(
 ) -> HttpResponse {
     let file_name = form.file.file_name.clone().unwrap_or(String::new());
     let allowed_mime_types = vec![String::from("video/mp4")]; // TODO: remove
-                                                              // TODO: permissions - check if user can upload videos
+    // TODO: permissions - check if user can upload videos
 
     let content_type = get_content_type_string(&form.file);
     if temp_file_facade
@@ -62,7 +77,7 @@ pub async fn post_temp_thumbnail(
 ) -> impl Responder {
     let file_name = form.file.file_name.clone().unwrap_or(String::new());
     let allowed_mime_types = vec![String::from("image/png")]; // TODO: remove
-                                                              // TODO: permissions - check if user can upload videos
+    // TODO: permissions - check if user can upload videos
 
     let content_type = get_content_type_string(&form.file);
     if temp_file_facade

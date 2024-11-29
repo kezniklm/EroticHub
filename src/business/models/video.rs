@@ -43,3 +43,8 @@ pub struct Video {
     pub name: String,
     pub description: Option<String>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct PlayableVideoReq {
+    pub id: i32,
+}

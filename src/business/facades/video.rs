@@ -1,3 +1,4 @@
+use std::path::Path;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::models::video::VideoUploadData;
 use crate::business::util::file::create_dir_if_not_exist;
@@ -5,6 +6,7 @@ use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
 use async_trait::async_trait;
 use std::sync::Arc;
+use actix_files::NamedFile;
 use crate::business::models;
 
 const DEFAULT_VIDEO_DIRECTORY: &str = "./resources/videos";
@@ -18,6 +20,7 @@ pub trait VideoFacadeTrait {
     fn get_video_thumbnail_dirs(&self) -> (String, String);
     async fn create_dirs(&self) -> anyhow::Result<()>;
     async fn get_video_entity(&self, video_id: i32, user_id: i32) -> anyhow::Result<Video>;
+    async fn get_playable_video(&self, video_id: i32, user_id: i32) -> anyhow::Result<NamedFile>;
 }
 
 #[derive(Clone)]
@@ -76,7 +79,7 @@ impl VideoFacadeTrait for VideoFacade {
         };
 
         let video_entity = self.video_repo.save_video(entity).await?;
-        
+
         Ok(models::video::Video::from(&video_entity))
     }
 
@@ -105,15 +108,29 @@ impl VideoFacadeTrait for VideoFacade {
 
     /// For internal usage only!
     /// Returns video entity by given video_id for further processing (e.g. in stream).
-    /// 
+    ///
     /// TODO: Check if user can access the video!
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `video_id` - ID of the video you want to get
     /// * `user_id` - ID of an user that requested the video
     async fn get_video_entity(&self, video_id: i32, _user_id: i32) -> anyhow::Result<Video> {
         let video_entity = self.video_repo.get_video_by_id(video_id).await?;
         Ok(video_entity)
+    }
+
+    /// Serves directly video file for video player
+    /// 
+    /// TODO: Check if user can access the video!
+    ///
+    /// * `video_id` - ID of the video you want to get
+    /// * `user_id` - ID of an user that requested the video
+    async fn get_playable_video(&self, video_id: i32, _user_id: i32) -> anyhow::Result<NamedFile> {
+        let video_entity = self.video_repo.get_video_by_id(video_id).await?;
+        let path = Path::new(video_entity.file_path.as_str());
+        let file = NamedFile::open_async(path).await?;
+        
+        Ok(file)
     }
 }
