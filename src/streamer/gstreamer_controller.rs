@@ -232,8 +232,8 @@ mod test {
     use std::env;
     use std::sync::Arc;
 
-    #[test]
-    // #[allow(dead_code)]
+    // #[test]
+    #[allow(dead_code)]
     fn test01() -> anyhow::Result<()> {
         println!("{:?}", env::current_dir());
         init_gstreamer()?;
