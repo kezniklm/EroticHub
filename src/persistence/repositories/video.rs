@@ -4,6 +4,7 @@ use sqlx::PgPool;
 
 #[async_trait]
 pub trait VideoRepo {
+    #[allow(dead_code)]
     async fn list_videos(&self) -> anyhow::Result<Vec<Video>>;
     async fn save_video(&self, video: Video) -> anyhow::Result<Video>;
     async fn get_video_by_id(&self, video_id: i32) -> anyhow::Result<Video>;

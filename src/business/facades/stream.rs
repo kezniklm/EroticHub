@@ -5,7 +5,7 @@ use crate::persistence::repositories::stream::StreamRepoTrait;
 use crate::streamer::gstreamer_controller::create_streams;
 use crate::streamer::types::{StreamResolution, StreamStorageTrait};
 use async_trait::async_trait;
-use log::{error, info};
+use log::error;
 use std::sync::Arc;
 
 const NGINX_HLS_URL_KEY: &str = "NGINX_HLS_URL";
@@ -13,6 +13,7 @@ const STREAM_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
 
 #[async_trait]
 pub trait StreamFacadeTrait {
+    #[allow(dead_code)]
     async fn schedule_stream(&self, video_id: i32, user_id: i32) -> anyhow::Result<()>;
     async fn start_stream(
         &self,
@@ -68,7 +69,7 @@ impl StreamFacade {
         pg_stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
     ) -> anyhow::Result<()> {
         pg_stream_repo
-            .change_status(stream_info.stream_id.parse()?, LiveStreamStatus::ENDED)
+            .change_status(stream_info.stream_id.parse()?, LiveStreamStatus::Ended)
             .await?;
 
         Ok(())
@@ -85,7 +86,7 @@ impl StreamFacade {
 
 #[async_trait]
 impl StreamFacadeTrait for StreamFacade {
-    async fn schedule_stream(&self, video_id: i32, user_id: i32) -> anyhow::Result<()> {
+    async fn schedule_stream(&self, _video_id: i32, _user_id: i32) -> anyhow::Result<()> {
         todo!()
     }
 

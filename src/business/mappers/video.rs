@@ -6,9 +6,9 @@ use crate::persistence::entities::video::VideoVisibility as VideoVisibilityEntit
 impl From<&VideoVisibilityDto> for VideoVisibilityEntity {
     fn from(value: &VideoVisibilityDto) -> Self {
         match value {
-            VideoVisibilityDto::ALL => VideoVisibilityEntity::ALL,
-            VideoVisibilityDto::REGISTERED => VideoVisibilityEntity::REGISTERED,
-            VideoVisibilityDto::PAYING => VideoVisibilityEntity::PAYING,
+            VideoVisibilityDto::All => VideoVisibilityEntity::All,
+            VideoVisibilityDto::Registered => VideoVisibilityEntity::Registered,
+            VideoVisibilityDto::Paying => VideoVisibilityEntity::Paying,
         }
     }
 }
@@ -16,9 +16,9 @@ impl From<&VideoVisibilityDto> for VideoVisibilityEntity {
 impl From<&VideoVisibilityEntity> for VideoVisibilityDto {
     fn from(value: &VideoVisibilityEntity) -> Self {
         match value {
-            VideoVisibilityEntity::ALL => VideoVisibilityDto::ALL,
-            VideoVisibilityEntity::REGISTERED => VideoVisibilityDto::REGISTERED,
-            VideoVisibilityEntity::PAYING => VideoVisibilityDto::PAYING,
+            VideoVisibilityEntity::All => VideoVisibilityDto::All,
+            VideoVisibilityEntity::Registered => VideoVisibilityDto::Registered,
+            VideoVisibilityEntity::Paying => VideoVisibilityDto::Paying,
         }
     }
 }

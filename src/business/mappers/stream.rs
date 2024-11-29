@@ -7,7 +7,7 @@ impl From<&LiveStreamStart> for LiveStream {
             id: -1,
             video_id: value.video_id,
             start_time: chrono::Local::now(),
-            status: LiveStreamStatus::RUNNING,
+            status: LiveStreamStatus::Running,
         }
     }
 }

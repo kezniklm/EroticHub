@@ -1,6 +1,6 @@
 use crate::persistence::entities::temp_file::TempFile;
 use async_trait::async_trait;
-use sqlx::{Executor, PgPool};
+use sqlx::PgPool;
 use std::path::Path;
 use tempfile::NamedTempFile;
 

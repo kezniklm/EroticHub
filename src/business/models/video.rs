@@ -3,10 +3,11 @@ use actix_multipart::form::MultipartForm;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum VideoVisibility {
-    ALL,
-    REGISTERED,
-    PAYING,
+    All,
+    Registered,
+    Paying,
 }
 
 #[derive(MultipartForm)]
