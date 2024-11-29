@@ -3,6 +3,7 @@ use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{
     PlayableVideoReq, ThumbnailUploadForm, VideoUploadData, VideoUploadForm,
 };
+use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
@@ -60,10 +61,11 @@ pub async fn get_video(
 pub async fn post_temp_video(
     MultipartForm(form): MultipartForm<VideoUploadForm>,
     temp_file_facade: Data<TempFileFacade>,
+    config: Data<Configuration>,
 ) -> HttpResponse {
     let file_name = form.file.file_name.clone().unwrap_or(String::new());
-    let allowed_mime_types = vec![String::from("video/mp4")]; // TODO: remove
-                                                              // TODO: permissions - check if user can upload videos
+    let allowed_mime_types = config.app.video.accepted_mime_type.clone();
+    // TODO: permissions - check if user can upload videos
 
     let content_type = get_content_type_string(&form.file);
     if temp_file_facade
@@ -80,10 +82,11 @@ pub async fn post_temp_video(
 pub async fn post_temp_thumbnail(
     MultipartForm(form): MultipartForm<ThumbnailUploadForm>,
     temp_file_facade: Data<TempFileFacade>,
+    config: Data<Configuration>,
 ) -> impl Responder {
     let file_name = form.file.file_name.clone().unwrap_or(String::new());
-    let allowed_mime_types = vec![String::from("image/png")]; // TODO: remove
-                                                              // TODO: permissions - check if user can upload videos
+    let allowed_mime_types = config.app.thumbnail.accepted_mime_type.clone();
+    // TODO: permissions - check if user can upload videos
 
     let content_type = get_content_type_string(&form.file);
     if temp_file_facade

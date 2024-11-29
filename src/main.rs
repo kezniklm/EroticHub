@@ -2,7 +2,6 @@ use crate::streamer::gstreamer_controller::init_gstreamer;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use env_logger::Env;
-use log::warn;
 use log::{info, warn};
 
 use crate::api::controllers;
@@ -11,9 +10,9 @@ use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::stream::StreamStorage;
+use crate::configuration::models::Configuration;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
-use crate::configuration::models::Configuration;
 use crate::persistence::repositories::user::PostgresUserRepo;
 use crate::persistence::repositories::video::PgVideoRepo;
 use config::Config;
@@ -27,7 +26,6 @@ mod business;
 mod configuration;
 mod persistence;
 mod streamer;
-
 
 const CONFIG_FILE_KEY: &str = "CONFIG_FILE_PATH";
 
@@ -51,7 +49,8 @@ async fn main() -> anyhow::Result<()> {
     init_gstreamer()
         .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
     let config = init_configuration().expect("Failed to load config.yaml");
-    init_gstream().expect("Failed to initialize GStreamer. Check if you have it installed on your system");
+    init_gstreamer()
+        .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
 
     let pool = setup_db_pool().await?;
 
@@ -89,12 +88,12 @@ async fn main() -> anyhow::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
             .app_data(web::Data::from(stream_facade.clone()))
-            .app_data(web::Data::new(stream_storage.clone()))
-            .app_data(web::Data::new(user_facade.clone()))
-            .app_data(web::Data::new(config.clone()))
-            .app_data(web::Data::new(temp_file_facade.clone()))
+            .app_data(web::Data::from(stream_storage.clone()))
+            .app_data(web::Data::from(user_facade.clone()))
+            .app_data(web::Data::from(temp_file_facade.clone()))
             .app_data(web::Data::from(user_facade.clone()))
             .app_data(web::Data::from(temp_file_facade.clone()))
             .app_data(web::Data::from(video_facade.clone()))
@@ -120,4 +119,3 @@ fn init_configuration() -> anyhow::Result<Configuration> {
     info!("Config {} was loaded!", config_file);
     Ok(config)
 }
-
