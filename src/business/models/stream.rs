@@ -2,6 +2,8 @@ use crate::streamer::types::{
     CompoundStreamInfoTrait, PipelinesList, StreamResolution, StreamStorageTrait,
 };
 use std::sync::{Arc, Mutex};
+use chrono::{DateTime, Local};
+use serde::{Deserialize, Serialize};
 
 const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
 const STREAM_PATH_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
@@ -67,7 +69,7 @@ impl CompoundStreamInfo {
 }
 
 impl CompoundStreamInfoTrait for CompoundStreamInfo {
-    fn compose_stream_url(&self, resolution: StreamResolution) -> String {
+    fn compose_rtmp_url(&self, resolution: StreamResolution) -> String {
         let rtmp_server_path =
             dotenvy::var(RTMP_SERVER_ENV).expect("RTMP server path is not defined");
         let stream_path_prefix =
@@ -92,4 +94,15 @@ impl CompoundStreamInfoTrait for CompoundStreamInfo {
     fn get_resolutions(&self) -> &Vec<StreamResolution> {
         &self.streams
     }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LiveStreamSchedule {
+    pub video_id: i32,
+    pub start_time: DateTime<Local>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LiveStreamStart {
+    pub video_id: i32,
 }

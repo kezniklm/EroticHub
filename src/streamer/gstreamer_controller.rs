@@ -122,7 +122,7 @@ fn add_elements_to_pipeline(
     resolution: &StreamResolution,
 ) -> Result<()> {
     let (width, height) = resolution.get_resolution();
-    let rtmp_url = stream.compose_stream_url(resolution.clone());
+    let rtmp_url = stream.compose_rtmp_url(resolution.clone());
 
     // Video elements
     let file_src = build_element(

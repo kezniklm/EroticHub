@@ -10,7 +10,7 @@ pub trait StreamStorageTrait: Send + Sync {
 }
 
 pub trait CompoundStreamInfoTrait: Send + Sync {
-    fn compose_stream_url(&self, resolution: StreamResolution) -> String;
+    fn compose_rtmp_url(&self, resolution: StreamResolution) -> String;
     fn get_stream_id(&self) -> String;
     fn get_video_path(&self) -> String;
     fn get_resolutions(&self) -> &Vec<StreamResolution>;

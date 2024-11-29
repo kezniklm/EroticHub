@@ -6,6 +6,7 @@ use sqlx::PgPool;
 pub trait VideoRepo {
     async fn list_videos(&self) -> anyhow::Result<Vec<Video>>;
     async fn save_video(&self, video: Video) -> anyhow::Result<Video>;
+    async fn get_video_by_id(&self, video_id: i32) -> anyhow::Result<Video>;
 }
 
 #[derive(Debug, Clone)]
@@ -64,6 +65,26 @@ impl VideoRepo for PgVideoRepo {
         .fetch_one(&self.pg_pool)
         .await?;
 
+        Ok(result)
+    }
+    
+    async fn get_video_by_id(&self, video_id: i32) -> anyhow::Result<Video> {
+        let result = sqlx::query_as!(
+            Video,
+            r#"
+            SELECT 
+            id, 
+            artist_id, 
+            visibility AS "visibility: VideoVisibility", 
+            name, 
+            file_path, 
+            thumbnail_path, 
+            description
+            FROM video WHERE id = $1
+            "#,
+            video_id
+        ).fetch_one(&self.pg_pool).await?;
+        
         Ok(result)
     }
 }

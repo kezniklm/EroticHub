@@ -5,6 +5,7 @@ use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
 use async_trait::async_trait;
 use std::sync::Arc;
+use crate::business::models;
 
 const DEFAULT_VIDEO_DIRECTORY: &str = "./resources/videos";
 const DEFAULT_THUMBNAILS_PATH: &str = "./resources/thumbnails";
@@ -13,9 +14,10 @@ const THUMBNAIL_DIRECTORY_KEY: &str = "THUMBNAIL_DIRECTORY_PATH";
 
 #[async_trait]
 pub trait VideoFacadeTrait {
-    async fn save_video(&self, user_id: i32, video: VideoUploadData) -> anyhow::Result<()>;
+    async fn save_video(&self, user_id: i32, video: VideoUploadData) -> anyhow::Result<models::video::Video>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
     async fn create_dirs(&self) -> anyhow::Result<()>;
+    async fn get_video_entity(&self, video_id: i32, user_id: i32) -> anyhow::Result<Video>;
 }
 
 #[derive(Clone)]
@@ -51,7 +53,7 @@ impl VideoFacadeTrait for VideoFacade {
     /// * `user_id` - ID of an artist which want to save the video.
     /// * `video_model` - Includes IDs of temporary files and needed metadata to correctly store
     /// the video
-    async fn save_video(&self, user_id: i32, video_model: VideoUploadData) -> anyhow::Result<()> {
+    async fn save_video(&self, user_id: i32, video_model: VideoUploadData) -> anyhow::Result<models::video::Video> {
         let (video_dir_path, thumbnail_dir_path) = self.get_video_thumbnail_dirs();
 
         let video_path = self
@@ -73,9 +75,9 @@ impl VideoFacadeTrait for VideoFacade {
             description: video_model.description,
         };
 
-        self.video_repo.save_video(entity).await?;
-
-        Ok(())
+        let video_entity = self.video_repo.save_video(entity).await?;
+        
+        Ok(models::video::Video::from(&video_entity))
     }
 
     /// Function returns path to both video and thumbnail folder, where the files are stored.
@@ -99,5 +101,19 @@ impl VideoFacadeTrait for VideoFacade {
         create_dir_if_not_exist(thumbnail_path).await?;
 
         Ok(())
+    }
+
+    /// For internal usage only!
+    /// Returns video entity by given video_id for further processing (e.g. in stream).
+    /// 
+    /// TODO: Check if user can access the video!
+    /// 
+    /// # Arguments
+    /// 
+    /// * `video_id` - ID of the video you want to get
+    /// * `user_id` - ID of an user that requested the video
+    async fn get_video_entity(&self, video_id: i32, _user_id: i32) -> anyhow::Result<Video> {
+        let video_entity = self.video_repo.get_video_by_id(video_id).await?;
+        Ok(video_entity)
     }
 }

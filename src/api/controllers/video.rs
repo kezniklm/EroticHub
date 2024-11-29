@@ -8,6 +8,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Data;
 use actix_web::{post, web, HttpResponse, Responder, Scope};
 use log::error;
+use serde::Serialize;
 use tempfile::NamedTempFile;
 
 pub fn register_scope() -> Scope {
@@ -23,9 +24,8 @@ pub async fn save_video(
     video_facade: Data<VideoFacade>,
 ) -> impl Responder {
     match video_facade.save_video(1, form).await {
-        Ok(_) => HttpResponse::Ok()
-            .content_type(ContentType::plaintext())
-            .finish(),
+        Ok(video) => HttpResponse::Ok()
+            .json(video),
         Err(err) => {
             error!("Error while saving video: {:#?}", err);
             HttpResponse::InternalServerError()

@@ -19,6 +19,8 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
+use crate::business::facades::stream::StreamFacade;
+use crate::persistence::repositories::stream::PgStreamRepo;
 
 mod api;
 mod business;
@@ -53,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = setup_db_pool().await?;
 
-    let stream_storage = StreamStorage::new();
+    let stream_storage = Arc::new(StreamStorage::new());
     let user_repo = Arc::new(PostgresUserRepo::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
 
@@ -77,9 +79,14 @@ async fn main() -> anyhow::Result<()> {
         .await
         .expect("Failed to create video folder");
 
+    let stream_repo = Arc::new(PgStreamRepo::new(pool.clone()));
+    let stream_facade = Arc::new(StreamFacade::new(video_facade.clone(), stream_storage.clone(), stream_repo.clone()));
+
     HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
+            .app_data(web::Data::from(stream_storage.clone()))
+            .app_data(web::Data::from(stream_facade.clone()))
             .app_data(web::Data::new(stream_storage.clone()))
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
