@@ -8,7 +8,6 @@ use log::{debug, warn};
 use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
-use tokio::fs::{create_dir_all, File};
 use uuid::Uuid;
 
 const DEFAULT_TEMP_DIRECTORY: &str = "temp";
@@ -21,8 +20,7 @@ pub trait TempFileFacadeTrait {
         file_name: String,
         user_id: i32,
     ) -> anyhow::Result<TempFileResponse>;
-    /// Checks if temp file belongs to current user. Is so, stores it to given path
-    async fn get_file_path(&self, user_id: i32, permanent_path: &Path);
+
     fn get_temp_directory_path(&self) -> String;
     async fn create_temp_directory(&self) -> anyhow::Result<()>;
     async fn delete_all_temp_files(&self) -> anyhow::Result<()>;
@@ -61,6 +59,17 @@ impl TempFileFacade {
 
 #[async_trait]
 impl TempFileFacadeTrait for TempFileFacade {
+    /// Persists temporary file
+    ///
+    /// # Arguments
+    /// * `temp_file` - representation of the temporary file received through an endpoint
+    /// * `file_name` - name of the file including extension received through an endpoint
+    /// * `user_id` - ID of the user that performed the action
+    ///
+    /// # Returns
+    ///
+    /// * `TempFileResponse` - struct with ID of a temporary file, which can be sent back to client,
+    /// and later used for requesting the temporary file.
     async fn persist_temp_file(
         &self,
         temp_file: NamedTempFile,
@@ -89,10 +98,6 @@ impl TempFileFacadeTrait for TempFileFacade {
         );
         let response = TempFileResponse { temp_file_id };
         Ok(response)
-    }
-
-    async fn get_file_path(&self, user_id: i32, permanent_path: &Path) {
-        todo!()
     }
 
     fn get_temp_directory_path(&self) -> String {
@@ -137,11 +142,27 @@ impl TempFileFacadeTrait for TempFileFacade {
         Err(Error::msg("Unsupported MimeType"))
     }
 
+    /// Persists temporary file permanently to the given location
+    ///
+    /// Function removes the temporary file from the database and moves the actual file to the
+    /// permanent storage on file system. For security reason, underlying request to repository
+    /// checks if the user_id matches with user which created the temporary file. If not, Error is
+    /// returned.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_id` - ID of the temporary file.
+    /// * `user_id` - ID of the user who performed the store action.
+    /// * `permanent_path` - String with the path where to move the temporary file.
+    ///
+    /// # Returns
+    ///
+    /// - new path to the saved file as String.
     async fn persist_permanently(
         &self,
         file_id: i32,
         user_id: i32,
-        new_path: String,
+        permanent_path: String,
     ) -> anyhow::Result<String> {
         let temp_file = self
             .temp_file_repo
@@ -152,7 +173,7 @@ impl TempFileFacadeTrait for TempFileFacade {
         let temp_file_path = Path::new(temp_file.file_path.as_str());
 
         let new_path = format!(
-            "{new_path}/{}",
+            "{permanent_path}/{}",
             temp_file_path.file_name().unwrap().to_str().unwrap_or("")
         );
         println!("{:?}", new_path);

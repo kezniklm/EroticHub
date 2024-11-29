@@ -4,7 +4,6 @@ use crate::business::util::file::create_dir_if_not_exist;
 use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
 use async_trait::async_trait;
-use std::path::Path;
 use std::sync::Arc;
 
 const DEFAULT_VIDEO_DIRECTORY: &str = "./resources/videos";
@@ -39,27 +38,39 @@ impl VideoFacade {
 
 #[async_trait]
 impl VideoFacadeTrait for VideoFacade {
-    async fn save_video(&self, user_id: i32, video: VideoUploadData) -> anyhow::Result<()> {
+    /// Permanently saves video with the given attributes
+    ///
+    /// This function calls [`business::facades::temp_file`] service to store temporary files
+    /// permanently on the given location.
+    ///
+    /// # TODO
+    /// Facade has to check if user (represented by user_id) is an artist and can save videos.
+    ///
+    /// # Arguments
+    ///
+    /// * `user_id` - ID of an artist which want to save the video.
+    /// * `video_model` - Includes IDs of temporary files and needed metadata to correctly store
+    /// the video
+    async fn save_video(&self, user_id: i32, video_model: VideoUploadData) -> anyhow::Result<()> {
         let (video_dir_path, thumbnail_dir_path) = self.get_video_thumbnail_dirs();
 
-        // TODO: transactional handling of the files.
         let video_path = self
             .temp_file_facade
-            .persist_permanently(video.temp_video_id, user_id, video_dir_path)
+            .persist_permanently(video_model.temp_video_id, user_id, video_dir_path)
             .await?;
         let thumbnail_path = self
             .temp_file_facade
-            .persist_permanently(video.temp_thumbnail_id, user_id, thumbnail_dir_path)
+            .persist_permanently(video_model.temp_thumbnail_id, user_id, thumbnail_dir_path)
             .await?;
 
         let entity = Video {
             id: -1,
             artist_id: user_id,
-            visibility: VideoVisibility::from(&video.video_visibility),
-            name: video.name,
+            visibility: VideoVisibility::from(&video_model.video_visibility),
+            name: video_model.name,
             file_path: video_path,
             thumbnail_path,
-            description: video.description,
+            description: video_model.description,
         };
 
         self.video_repo.save_video(entity).await?;
@@ -67,6 +78,13 @@ impl VideoFacadeTrait for VideoFacade {
         Ok(())
     }
 
+    /// Function returns path to both video and thumbnail folder, where the files are stored.
+    ///
+    /// # Returns
+    ///
+    /// Tuple with:
+    /// - Path to video directory as String
+    /// - Path to thumbnails directory as String
     fn get_video_thumbnail_dirs(&self) -> (String, String) {
         let video =
             dotenvy::var(VIDEOS_DIRECTORY_KEY).unwrap_or(DEFAULT_VIDEO_DIRECTORY.to_string());
