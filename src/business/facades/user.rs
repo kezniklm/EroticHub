@@ -1,7 +1,7 @@
 use crate::business::mappers::generic::ToMappedList;
 use crate::business::models::user_detail::UserDetail;
 use crate::business::models::user_list::UserList;
-use crate::persistence::repositories::user::UserRepoTrait;
+use crate::persistence::repositories::user::UserRepositoryTrait;
 use async_trait::async_trait;
 use std::fmt::Debug;
 use std::sync::Arc;
@@ -13,11 +13,11 @@ pub trait UserFacadeTrait {
 
 #[derive(Debug, Clone)]
 pub struct UserFacade {
-    user_repository: Arc<dyn UserRepoTrait + Send + Sync>,
+    user_repository: Arc<dyn UserRepositoryTrait + Send + Sync>,
 }
 
 impl UserFacade {
-    pub fn new(user_repository: Arc<dyn UserRepoTrait + Send + Sync>) -> Self {
+    pub fn new(user_repository: Arc<dyn UserRepositoryTrait + Send + Sync>) -> Self {
         Self { user_repository }
     }
 }
