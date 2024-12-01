@@ -33,6 +33,4 @@ actix-multipart = "0.7.2"
 tempfile = "3.14.0"
 uuid = { version = "1.11.0", features = ["fast-rng", "v4"] }
 config = { version = "0.14.1", features = ["yaml"] }
-
-[dev-dependencies]
 test-context = "0.3.0"

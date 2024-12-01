@@ -19,7 +19,7 @@ use crate::persistence::repositories::artist::ArtistRepository;
 use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
-use crate::persistence::repositories::user::PostgresUserRepo;
+use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
 use config::Config;
 use sqlx::postgres::PgPoolOptions;
@@ -62,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
     let pool = setup_db_pool().await?;
 
     let stream_storage = Arc::new(StreamStorage::new());
-    let user_repo = Arc::new(PostgresUserRepo::new(pool.clone()));
+    let user_repo = Arc::new(UserRepository::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
 
     let artist_repo = Arc::new(ArtistRepository::new(pool.clone()));
