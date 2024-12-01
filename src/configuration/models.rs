@@ -2,13 +2,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Configuration {
-    app: AppConfiguration,
+    pub app: AppConfiguration,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AppConfiguration {
-    video: VideoConfig,
-    thumbnail: Thumbnail,
+    pub video: VideoConfig,
+    pub thumbnail: Thumbnail,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
