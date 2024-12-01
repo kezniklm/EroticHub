@@ -4,7 +4,7 @@ use sqlx::PgPool;
 use std::fmt::Debug;
 
 #[async_trait]
-pub trait UserRepoTrait: Debug {
+pub trait UserRepositoryTrait: Debug {
     async fn create_user(&self, user: User) -> anyhow::Result<User>;
     async fn get_user_by_id(&self, user_id: i32) -> anyhow::Result<Option<User>>;
     async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>>;
@@ -27,7 +27,7 @@ impl UserRepository {
 }
 
 #[async_trait]
-impl UserRepoTrait for UserRepository {
+impl UserRepositoryTrait for UserRepository {
     async fn create_user(&self, user: User) -> anyhow::Result<User> {
         let user = sqlx::query_as!(
             User,
