@@ -13,6 +13,7 @@ use std::sync::Arc;
 
 mod api;
 mod business;
+mod common;
 mod configuration;
 mod persistence;
 
