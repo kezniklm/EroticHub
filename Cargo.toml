@@ -20,6 +20,4 @@ actix-web = "4.9.0"
 log = "0.4.22"
 config = {version = "0.14.1", features = ["yaml"]}
 uuid = { version = "1.11.0", features = ["v4"] }
-
-[dev-dependencies]
 test-context = "0.3.0"
