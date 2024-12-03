@@ -43,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .service(actix_files::Files::new("/static", "./static"))
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
             .service(controllers::user::list_users)
