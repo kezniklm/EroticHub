@@ -87,6 +87,7 @@ async fn main() -> anyhow::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
