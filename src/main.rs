@@ -4,7 +4,8 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 use log::{info, warn};
 
-use crate::api::controllers;
+use crate::api::routes::user::user_routes;
+use crate::api::routes::video::video_routes;
 use crate::business::facades::stream::StreamFacade;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
@@ -98,7 +99,8 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::from(user_facade.clone()))
             .app_data(web::Data::from(temp_file_facade.clone()))
             .app_data(web::Data::from(video_facade.clone()))
-            .service(controllers::user::list_users)
+            .configure(video_routes)
+            .configure(user_routes)
             .service(controllers::video::register_scope())
             .service(controllers::stream::register_scope())
     })
