@@ -10,9 +10,11 @@ use actix_multipart::form::MultipartForm;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Query};
-use actix_web::{get, post, web, Error, HttpResponse, Responder, Result, Scope};
+use actix_web::{get, post, web, Error, HttpResponse, Responder, Result, Scope, HttpResponse};
 use log::error;
 use tempfile::NamedTempFile;
+use crate::api::templates::video::list::template::VideoListTemplate;
+use askama::Template;
 
 pub fn register_scope() -> Scope {
     let temp_scope = web::scope("/temp")
@@ -121,4 +123,13 @@ fn get_content_type_string(temp_file: &TempFile) -> Option<String> {
         .content_type
         .clone()
         .map(|content_type| content_type.to_string())
+}
+
+pub async fn list_videos() -> impl Responder {
+    let template = VideoListTemplate {};
+
+    match template.render() {
+        Ok(rendered) => HttpResponse::Ok().content_type("text/html").body(rendered),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
