@@ -4,6 +4,7 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 use log::{info, warn};
 
+use crate::api::controllers;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
 use crate::business::facades::stream::StreamFacade;

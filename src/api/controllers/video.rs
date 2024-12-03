@@ -1,3 +1,4 @@
+use crate::api::templates::video::list::template::VideoListTemplate;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{
@@ -10,11 +11,10 @@ use actix_multipart::form::MultipartForm;
 use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Query};
-use actix_web::{get, post, web, Error, HttpResponse, Responder, Result, Scope, HttpResponse};
+use actix_web::{get, post, web, Error, HttpResponse, Responder, Result, Scope};
+use askama::Template;
 use log::error;
 use tempfile::NamedTempFile;
-use crate::api::templates::video::list::template::VideoListTemplate;
-use askama::Template;
 
 pub fn register_scope() -> Scope {
     let temp_scope = web::scope("/temp")
