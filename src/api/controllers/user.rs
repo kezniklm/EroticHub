@@ -1,10 +1,18 @@
+use crate::api::templates::user::list::template::UserListTemplate;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder};
+use askama::Template;
 
-#[get("/")]
 pub async fn list_users(user_facade: web::Data<UserFacade>) -> impl Responder {
-    match user_facade.list_users().await {
-        Ok(users) => HttpResponse::Ok().json(users),
+    let users = match user_facade.list_users().await {
+        Ok(users) => users,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+
+    let template = UserListTemplate { users };
+
+    match template.render() {
+        Ok(rendered) => HttpResponse::Ok().content_type("text/html").body(rendered),
         Err(_) => HttpResponse::InternalServerError().finish(),
     }
 }
