@@ -1,7 +1,8 @@
 use actix_web::{web, App, HttpServer};
 use log::{info, warn};
 
-use crate::api::controllers;
+use crate::api::routes::user::user_routes;
+use crate::api::routes::video::video_routes;
 use crate::business::facades::user::UserFacade;
 use crate::configuration::models::Configuration;
 use crate::persistence::repositories::user::PostgresUserRepo;
@@ -46,7 +47,8 @@ async fn main() -> anyhow::Result<()> {
             .service(actix_files::Files::new("/static", "./static"))
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
-            .service(controllers::user::list_users)
+            .configure(video_routes)
+            .configure(user_routes)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
