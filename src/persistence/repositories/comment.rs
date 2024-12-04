@@ -1,12 +1,12 @@
-use crate::persistence::entities::comment::Comment;
+use crate::persistence::entities::comment::CommentEntity;
 use async_trait::async_trait;
 use sqlx::PgPool;
 use std::fmt::Debug;
 
 #[async_trait]
 pub trait CommentRepoTrait: Debug {
-    async fn comments_to_video(&self, video_id: i32) -> anyhow::Result<Vec<Comment>>;
-    async fn user_comments(&self, video_id: i32) -> anyhow::Result<Vec<Comment>>;
+    async fn list_comments_to_video(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>>;
+    async fn user_comments(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>>;
 }
 
 #[derive(Debug, Clone)]
@@ -22,9 +22,9 @@ impl CommentRepository {
 
 #[async_trait]
 impl CommentRepoTrait for CommentRepository {
-    async fn comments_to_video(&self, video_id: i32) -> anyhow::Result<Vec<Comment>> {
+    async fn list_comments_to_video(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>> {
         let comments = sqlx::query_as!(
-            Comment,
+            CommentEntity,
             "SELECT * FROM comment WHERE video_id = $1",
             video_id
         )
@@ -34,11 +34,14 @@ impl CommentRepoTrait for CommentRepository {
         Ok(comments)
     }
 
-    async fn user_comments(&self, user_id: i32) -> anyhow::Result<Vec<Comment>> {
-        let comments =
-            sqlx::query_as!(Comment, "SELECT * FROM comment WHERE user_id = $1", user_id)
-                .fetch_all(&self.pg_pool)
-                .await?;
+    async fn user_comments(&self, user_id: i32) -> anyhow::Result<Vec<CommentEntity>> {
+        let comments = sqlx::query_as!(
+            CommentEntity,
+            "SELECT * FROM comment WHERE user_id = $1",
+            user_id
+        )
+        .fetch_all(&self.pg_pool)
+        .await?;
 
         Ok(comments)
     }

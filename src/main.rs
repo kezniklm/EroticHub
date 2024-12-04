@@ -6,6 +6,7 @@ use log::{info, warn};
 
 use crate::api::controllers;
 use crate::business::facades::artist::ArtistFacade;
+use crate::business::facades::comment::CommentFacade;
 use crate::business::facades::stream::StreamFacade;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
@@ -13,6 +14,7 @@ use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::stream::StreamStorage;
 use crate::configuration::models::Configuration;
 use crate::persistence::repositories::artist::ArtistRepository;
+use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::user::PostgresUserRepo;
@@ -88,8 +90,9 @@ async fn main() -> anyhow::Result<()> {
     ));
 
     let artist_repo = ArtistRepository::new(pool.clone());
-
     let artist_facade = ArtistFacade::new(Arc::new(artist_repo));
+    let comment_repo = CommentRepository::new(pool.clone());
+    let comment_facade = CommentFacade::new(Arc::new(comment_repo));
 
     HttpServer::new(move || {
         App::new()
@@ -105,6 +108,9 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::from(video_facade.clone()))
             .service(controllers::user::list_users)
             .app_data(web::Data::new(artist_facade.clone()))
+            .service(controllers::artist::list_artists)
+            .app_data(web::Data::new(comment_facade.clone()))
+            .service(controllers::comment::list_comments_to_video)
             .service(controllers::artists::list_artists)
             .service(controllers::video::register_scope())
             .service(controllers::stream::register_scope())

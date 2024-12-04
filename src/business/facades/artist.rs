@@ -1,6 +1,6 @@
 use crate::business::mappers::generic::ToMappedList;
 use crate::business::models::artist_detail::ArtistDetail;
-use crate::persistence::repositories::artist::{ArtistRepoTrait, ArtistRepository};
+use crate::persistence::repositories::artist::ArtistRepoTrait;
 use async_trait::async_trait;
 use std::fmt::Debug;
 use std::sync::Arc;
