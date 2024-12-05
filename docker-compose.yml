@@ -15,3 +15,17 @@ services: # List of services to run
     restart: always
     ports:
       - "8080:8080"
+  nginx:
+    container_name: nginx-rtmp
+    build: docker/nginx-rtmp/.
+    restart: always
+    tty: true
+    ports:
+      - "1935:1935"
+      - "8081:80"
+  redis:
+    # Redis database service
+    image: redis # Use the official Redis image (https://hub.docker.com/_/redis)
+    restart: always # If container stops, always restart it
+    ports:
+      - "6379:6379" # Maps the port host:container

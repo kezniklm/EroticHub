@@ -30,10 +30,11 @@ ALTER TABLE user_table
 ADD COLUMN artist_id INTEGER REFERENCES artist(id) ON DELETE SET NULL,
 ADD COLUMN paying_member_id INTEGER REFERENCES paying_member(id) ON DELETE SET NULL;
 
+CREATE TYPE visibility_type AS ENUM ('ALL', 'REGISTERED', 'PAYING');
 CREATE TABLE IF NOT EXISTS video (
   id SERIAL PRIMARY KEY,
   artist_id INTEGER NOT NULL REFERENCES artist(id) ON DELETE CASCADE,
-  visibility TEXT NOT NULL CHECK (visibility IN ('ALL', 'REGISTERED', 'PAYING')),
+  visibility visibility_type NOT NULL,
   name TEXT NOT NULL,
   file_path TEXT NOT NULL,
   thumbnail_path TEXT NOT NULL,
