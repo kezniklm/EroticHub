@@ -1,8 +1,12 @@
 use crate::streamer::gstreamer_controller::init_gstreamer;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
+use api::routes::payment::payment_routes;
+use business::facades::payment::PaymentFacade;
 use env_logger::Env;
 use log::{info, warn};
+use persistence::repositories::paying_member::PostgresPayingMemberRepo;
+use persistence::repositories::payment_method::PostgresPaymentMethodRepo;
 
 use crate::api::controllers;
 use crate::api::routes::user::user_routes;
@@ -87,6 +91,10 @@ async fn main() -> anyhow::Result<()> {
         stream_repo.clone(),
     ));
 
+    let paying_member_repo = Arc::new(PostgresPayingMemberRepo::new(pool.clone()));
+    let payment_method_repo = Arc::new(PostgresPaymentMethodRepo::new(pool.clone()));
+    let payment_facade = Arc::new(PaymentFacade::new(paying_member_repo, payment_method_repo));
+
     HttpServer::new(move || {
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
@@ -100,8 +108,10 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::from(user_facade.clone()))
             .app_data(web::Data::from(temp_file_facade.clone()))
             .app_data(web::Data::from(video_facade.clone()))
+            .app_data(web::Data::from(payment_facade.clone()))
             .configure(video_routes)
             .configure(user_routes)
+            .configure(payment_routes)
             .service(controllers::video::register_scope())
             .service(controllers::stream::register_scope())
     })
