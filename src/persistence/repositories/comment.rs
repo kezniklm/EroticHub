@@ -6,7 +6,7 @@ use std::fmt::Debug;
 #[async_trait]
 pub trait CommentRepoTrait: Debug {
     async fn list_comments_to_video(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>>;
-    async fn user_comments(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>>;
+    // async fn user_comments(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>>;
 }
 
 #[derive(Debug, Clone)]
@@ -34,15 +34,15 @@ impl CommentRepoTrait for CommentRepository {
         Ok(comments)
     }
 
-    async fn user_comments(&self, user_id: i32) -> anyhow::Result<Vec<CommentEntity>> {
-        let comments = sqlx::query_as!(
-            CommentEntity,
-            "SELECT * FROM comment WHERE user_id = $1",
-            user_id
-        )
-        .fetch_all(&self.pg_pool)
-        .await?;
-
-        Ok(comments)
-    }
+    // async fn user_comments(&self, user_id: i32) -> anyhow::Result<Vec<CommentEntity>> {
+    //     let comments = sqlx::query_as!(
+    //         CommentEntity,
+    //         "SELECT * FROM comment WHERE user_id = $1",
+    //         user_id
+    //     )
+    //     .fetch_all(&self.pg_pool)
+    //     .await?;
+    //
+    //     Ok(comments)
+    // }
 }
