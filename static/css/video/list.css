@@ -1,0 +1,125 @@
+.arrow-wrapper {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    opacity: 1;
+    visibility: visible;
+    padding-left: 20px;
+    background: transparent;
+}
+
+.arrow-wrapper.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.arrow-wrapper.left {
+    left: 0;
+    background: linear-gradient(95deg, #000 50%, rgba(0, 0, 0, 0) 100%);
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
+    padding-right: 20px;
+}
+
+.arrow-wrapper.right {
+    right: 0;
+    background: linear-gradient(275deg, #000 50%, rgba(0, 0, 0, 0) 100%);
+    border-top-left-radius: 50%;
+    border-bottom-left-radius: 50%;
+    padding-left: 20px;
+}
+
+.arrow {
+    min-width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.arrow:hover {
+    transform: scale(1.2);
+    color: #ff9900;
+}
+
+.tags-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    height: 60px;
+}
+
+.tags-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 10px 0;
+}
+
+.tags-container::-webkit-scrollbar {
+    display: none;
+}
+
+.tag {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    cursor: pointer;
+    background-color: white;
+    color: #6c757d;
+    margin-right: 10px;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+.tag:hover {
+    background-color: #151515;
+    color: #495057;
+}
+
+.tag.selected {
+    background-color: #ff9900;
+    color: white;
+    border-color: #ff9900;
+}
+
+.banner img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+h2 {
+    margin-top: 20px;
+    font-size: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+h2 span {
+    display: flex;
+    align-items: center;
+}
+
+#country-flag {
+    display: none;
+    width: 24px;
+    height: 16px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
