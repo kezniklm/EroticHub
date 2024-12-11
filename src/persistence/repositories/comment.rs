@@ -25,7 +25,7 @@ impl CommentRepoTrait for CommentRepository {
     async fn list_comments_to_video(&self, video_id: i32) -> anyhow::Result<Vec<CommentEntity>> {
         let comments = sqlx::query_as!(
             CommentEntity,
-            "SELECT * FROM comment WHERE video_id = $1",
+            "SELECT id, user_id, video_id, content  FROM comment WHERE video_id = $1",
             video_id
         )
         .fetch_all(&self.pg_pool)
