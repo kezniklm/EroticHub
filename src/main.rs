@@ -7,6 +7,8 @@ use log::{info, warn};
 use crate::api::controllers;
 use crate::business::facades::artist::ArtistFacade;
 use crate::business::facades::comment::CommentFacade;
+use crate::api::routes::user::user_routes;
+use crate::api::routes::video::video_routes;
 use crate::business::facades::stream::StreamFacade;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
@@ -96,6 +98,7 @@ async fn main() -> anyhow::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
@@ -111,6 +114,8 @@ async fn main() -> anyhow::Result<()> {
             .service(controllers::user::list_users)
             .service(controllers::artist::list_artists)
             .service(controllers::comment::list_comments_to_video)
+            .configure(video_routes)
+            .configure(user_routes)
             .service(controllers::video::register_scope())
             .service(controllers::stream::register_scope())
     })

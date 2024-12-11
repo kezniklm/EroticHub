@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block extra_script %}
+<script src="static/js/video/list.js"></script>
+{% endblock %}
+
+{% block extra_styles %}
+<link rel="stylesheet" type="text/css" href="static/css/video/list.css" onerror="this.href='../../../static/base.css';">
+{% endblock %}
+
+{% block content %}
+<div class="container centered-content">
+    <div class="banner">
+        <img src="https://placehold.co/2000x350?text=Banner" alt="Banner">
+    </div>
+
+    <h2 id="location-heading">
+        Hot Videos in
+        <span style="margin-left: 10px;">
+            <span id="country-name">your location</span>
+            <img id="country-flag" alt="Country Flag">
+        </span>
+    </h2>
+
+    <div class="tags-wrapper">
+        <div class="arrow-wrapper left">
+            <button class="arrow btn" onclick="scrollTags('left')">
+                <i class="bi bi-chevron-left"></i>
+            </button>
+        </div>
+
+        <div class="tags-wrapper">
+            <div class="arrow-wrapper left hidden">
+                <button class="arrow btn" onclick="scrollTags('left')">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+            </div>
+
+            <div class="tags-container flex-grow-1 mx-3 d-flex overflow-auto" onscroll="checkScroll()">
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Teen" class="d-none" onchange="toggleTag(this)">
+                    <span>Teen</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="MILF" class="d-none" onchange="toggleTag(this)">
+                    <span>MILF</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Amateur" class="d-none" onchange="toggleTag(this)">
+                    <span>Amateur</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Hentai" class="d-none" onchange="toggleTag(this)">
+                    <span>Hentai</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Big Tits" class="d-none" onchange="toggleTag(this)">
+                    <span>Big Tits</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Category 6" class="d-none" onchange="toggleTag(this)">
+                    <span>Category 6</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Category 7" class="d-none" onchange="toggleTag(this)">
+                    <span>Category 7</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Teen" class="d-none" onchange="toggleTag(this)">
+                    <span>Teen</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="MILF" class="d-none" onchange="toggleTag(this)">
+                    <span>MILF</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Amateur" class="d-none" onchange="toggleTag(this)">
+                    <span>Amateur</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Hentai" class="d-none" onchange="toggleTag(this)">
+                    <span>Hentai</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Big Tits" class="d-none" onchange="toggleTag(this)">
+                    <span>Big Tits</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Category 6" class="d-none" onchange="toggleTag(this)">
+                    <span>Category 6</span>
+                </label>
+                <label class="tag btn me-2">
+                    <input type="checkbox" name="category" value="Category 7" class="d-none" onchange="toggleTag(this)">
+                    <span>Category 7</span>
+                </label>
+            </div>
+
+            <div class="arrow-wrapper right">
+                <button class="arrow btn" onclick="scrollTags('right')">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Grid -->
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="video-card">
+                    <img src="https://via.placeholder.com/200x150.png?text=Video+1" alt="Video 1" class="video-img">
+                    <div class="title">Video Title 1</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="video-card">
+                    <img src="https://via.placeholder.com/300x200.png?text=Video+2" alt="Video 2" class="video-img">
+                    <div class="title">Video Title 2</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="video-card">
+                    <img src="https://via.placeholder.com/250x250.png?text=Video+3" alt="Video 3" class="video-img">
+                    <div class="title">Video Title 3</div>
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="video-card">
+                    <img src="https://via.placeholder.com/400x300.png?text=Video+4" alt="Video 4" class="video-img">
+                    <div class="title">Video Title 4</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

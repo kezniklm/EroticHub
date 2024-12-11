@@ -1,3 +1,4 @@
+use crate::api::templates::video::list::template::VideoListTemplate;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{
@@ -11,6 +12,7 @@ use actix_web::http::header::ContentType;
 use actix_web::http::StatusCode;
 use actix_web::web::{Data, Query};
 use actix_web::{get, post, web, Error, HttpResponse, Responder, Result, Scope};
+use askama::Template;
 use log::error;
 use tempfile::NamedTempFile;
 
@@ -121,4 +123,13 @@ fn get_content_type_string(temp_file: &TempFile) -> Option<String> {
         .content_type
         .clone()
         .map(|content_type| content_type.to_string())
+}
+
+pub async fn list_videos() -> impl Responder {
+    let template = VideoListTemplate {};
+
+    match template.render() {
+        Ok(rendered) => HttpResponse::Ok().content_type("text/html").body(rendered),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }
