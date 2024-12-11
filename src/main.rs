@@ -7,12 +7,16 @@ use log::{info, warn};
 use crate::api::controllers;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
+use crate::business::facades::artist::ArtistFacade;
+use crate::business::facades::comment::CommentFacade;
 use crate::business::facades::stream::StreamFacade;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::stream::StreamStorage;
 use crate::configuration::models::Configuration;
+use crate::persistence::repositories::artist::ArtistRepository;
+use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::user::PostgresUserRepo;
@@ -60,6 +64,12 @@ async fn main() -> anyhow::Result<()> {
     let user_repo = Arc::new(PostgresUserRepo::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
 
+    let artist_repo = Arc::new(ArtistRepository::new(pool.clone()));
+    let artist_facade = Arc::new(ArtistFacade::new(artist_repo));
+
+    let comment_repo = Arc::new(CommentRepository::new(pool.clone()));
+    let comment_facade = Arc::new(CommentFacade::new(comment_repo));
+
     let temp_file_repo = Arc::new(PgTempFileRepo::new(pool.clone()));
     let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo));
 
@@ -100,6 +110,8 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::from(user_facade.clone()))
             .app_data(web::Data::from(temp_file_facade.clone()))
             .app_data(web::Data::from(video_facade.clone()))
+            .app_data(web::Data::from(artist_facade.clone()))
+            .app_data(web::Data::from(comment_facade.clone()))
             .configure(video_routes)
             .configure(user_routes)
             .service(controllers::video::register_scope())

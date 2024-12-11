@@ -51,3 +51,8 @@ Add a migration:
 ```bash
 sqlx migrate add <migration_name>
 ```
+
+### Install pre-commit for git hooks
+```bash
+pip install pre-commit
+```
