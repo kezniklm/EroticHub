@@ -1,8 +1,3 @@
-use crate::streamer::gstreamer_controller::init_gstreamer;
-use actix_web::middleware::Logger;
-use actix_web::{middleware, web, App, HttpServer};
-use env_logger::Env;
-use log::{info, warn};
 use crate::api::controllers;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
@@ -20,7 +15,12 @@ use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
+use crate::streamer::gstreamer_controller::init_gstreamer;
+use actix_web::middleware::{Logger, NormalizePath};
+use actix_web::{web, App, HttpServer};
 use config::Config;
+use env_logger::Env;
+use log::{info, warn};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
@@ -28,7 +28,6 @@ use std::sync::Arc;
 
 mod api;
 mod business;
-mod common;
 mod common;
 mod configuration;
 mod persistence;
@@ -102,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
-            .wrap(middleware::NormalizePath::default())
+            .wrap(NormalizePath::default())
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
             .app_data(web::Data::from(stream_facade.clone()))
