@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("htmx:load", function () {
     checkScroll();
     fetchUserCountry();
 });
@@ -15,6 +15,10 @@ function scrollTags(direction) {
 
 function checkScroll() {
     const tagsContainer = document.querySelector('.tags-container');
+
+    if (tagsContainer == null) {
+        return;
+    }
     const rightArrowWrapper = document.querySelector('.arrow-wrapper.right');
     const leftArrowWrapper = document.querySelector('.arrow-wrapper.left');
 
@@ -48,16 +52,20 @@ function toggleTag(checkbox) {
 
 async function fetchUserCountry() {
     try {
+        const countryNameElement = document.getElementById("country-name");
+        if (countryNameElement == null) {
+            return;
+        }
+
+        const flagElement = document.getElementById("country-flag");
+
         const response = await fetch('https://get.geojs.io/v1/ip/country.json');
         const data = await response.json();
 
         const country = data.name || "your location";
         const countryCode = data.country || "";
 
-        const countryNameElement = document.getElementById("country-name");
         countryNameElement.textContent = country;
-
-        const flagElement = document.getElementById("country-flag");
 
         if (countryCode) {
             flagElement.src = `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
