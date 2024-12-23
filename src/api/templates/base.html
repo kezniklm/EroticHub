@@ -35,7 +35,8 @@
 -top">
     <div class="container">
         <!-- Logo -->
-        <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container" hx-swap="outerHTML">Erotic<span>Hub</span></a>
+        <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container"
+           hx-swap="outerHTML">Erotic<span>Hub</span></a>
         <!-- Toggler -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -100,7 +101,7 @@
 </div>
 {% endif %}
 <div class="container centered-content" id="content-container">
-    {% block content %} {% endblock %}
+    {{ child_template|safe }}
 </div>
 
 {% if !htmx_request.hx_request %}
