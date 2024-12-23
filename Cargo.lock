@@ -246,6 +246,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
 ]
 
 [[package]]
@@ -383,6 +384,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "69f7f8c3906b62b754cd5326047894316021dcfe5a194c8ea52bdd94934a3457"
 
 [[package]]
+name = "arc-swap"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69f7f8c3906b62b754cd5326047894316021dcfe5a194c8ea52bdd94934a3457"
+
+[[package]]
 name = "arraydeque"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -450,6 +457,7 @@ checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -906,6 +914,7 @@ dependencies = [
  "quote",
  "rustc_version",
  "syn",
+ "syn",
 ]
 
 [[package]]
@@ -928,6 +937,7 @@ checksum = "97369cbbc041bc366949bc74d34658d6cda5621039731c6310521892a3a20ae0"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -1008,11 +1018,13 @@ dependencies = [
  "chrono",
  "config",
  "deadpool-redis",
+ "deadpool-redis",
  "dotenvy",
  "env_logger",
  "gstreamer",
  "gstreamer-video",
  "log",
+ "redis",
  "redis",
  "serde",
  "serde_json",
@@ -1047,7 +1059,14 @@ dependencies = [
 [[package]]
 name = "event-listener"
 version = "5.3.1"
+version = "5.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6032be9bd27023a771701cc49f9f053c751055f71efb2e0ae5c15809093675ba"
+dependencies = [
+ "concurrent-queue",
+ "parking",
+ "pin-project-lite",
+]
 checksum = "6032be9bd27023a771701cc49f9f053c751055f71efb2e0ae5c15809093675ba"
 dependencies = [
  "concurrent-queue",
@@ -1179,6 +1198,7 @@ checksum = "162ee34ebcb7c64a8abebc059ce0fee27c2262618d7b60ed8faf72fef13c3650"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -1449,9 +1469,20 @@ dependencies = [
 [[package]]
 name = "hashlink"
 version = "0.9.1"
+name = "hashlink"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ba4ff7128dee98c7dc9794b6a411377e1404dba1c97deb8d1a55297bd25d8af"
+checksum = "6ba4ff7128dee98c7dc9794b6a411377e1404dba1c97deb8d1a55297bd25d8af"
 dependencies = [
+ "hashbrown 0.14.5",
+]
+
+[[package]]
+name = "heck"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
  "hashbrown 0.14.5",
 ]
 
@@ -1683,6 +1714,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
 ]
 
 [[package]]
@@ -1819,7 +1851,9 @@ checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
 [[package]]
 name = "libsqlite3-sys"
 version = "0.30.1"
+version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e99fb7a497b1e3339bc746195567ed8d3e24945ecd636e3619d20b9de9e9149"
 checksum = "2e99fb7a497b1e3339bc746195567ed8d3e24945ecd636e3619d20b9de9e9149"
 dependencies = [
  "cc",
@@ -1975,6 +2009,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "num-bigint"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5e44f723f1133c9deac646763579fdb3ac745e418f2a7af9cd0c431da1f20b9"
+dependencies = [
+ "num-integer",
+ "num-traits",
+]
+
+[[package]]
 name = "num-bigint-dig"
 version = "0.8.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2048,6 +2092,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "num_cpus"
+version = "1.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4161fcb6d602d4d2081af7c3a45852d875a03dd337a6bfdd6e06407b61342a43"
+dependencies = [
+ "hermit-abi",
+ "libc",
+]
+
+[[package]]
 name = "object"
 version = "0.36.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2085,6 +2139,7 @@ checksum = "a948666b637a0f465e8564c73e89d4dde00d72d4d473cc972f390fc3dcee7d9c"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -2124,6 +2179,12 @@ dependencies = [
  "dlv-list",
  "hashbrown 0.14.5",
 ]
+
+[[package]]
+name = "parking"
+version = "2.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f38d5652c16fde515bb1ecef450ab0f6a219d619a7274976324d5e377f7dceba"
 
 [[package]]
 name = "parking"
@@ -2218,6 +2279,7 @@ dependencies = [
  "pest_meta",
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -2341,6 +2403,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 dependencies = [
  "getrandom",
+]
+
+[[package]]
+name = "redis"
+version = "0.27.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "81cccf17a692ce51b86564334614d72dcae1def0fd5ecebc9f02956da74352b5"
+dependencies = [
+ "arc-swap",
+ "async-trait",
+ "bytes",
+ "combine",
+ "futures-util",
+ "itoa",
+ "num-bigint",
+ "percent-encoding",
+ "pin-project-lite",
+ "ryu",
+ "tokio",
+ "tokio-native-tls",
+ "tokio-util",
+ "url",
 ]
 
 [[package]]
@@ -2547,6 +2631,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
 ]
 
 [[package]]
@@ -2655,6 +2740,9 @@ checksum = "3c5e1a9a646d36c3599cd173a41282daf47c44583ad367b8e6837255952e5c67"
 dependencies = [
  "serde",
 ]
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "socket2"
@@ -2708,7 +2796,9 @@ dependencies = [
 [[package]]
 name = "sqlx"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93334716a037193fac19df402f8571269c84a00852f6a7066b5d2616dcd64d3e"
 checksum = "93334716a037193fac19df402f8571269c84a00852f6a7066b5d2616dcd64d3e"
 dependencies = [
  "sqlx-core",
@@ -2721,7 +2811,9 @@ dependencies = [
 [[package]]
 name = "sqlx-core"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4d8060b456358185f7d50c55d9b5066ad956956fddec42ee2e8567134a8936e"
 checksum = "d4d8060b456358185f7d50c55d9b5066ad956956fddec42ee2e8567134a8936e"
 dependencies = [
  "atoi",
@@ -2737,6 +2829,8 @@ dependencies = [
  "futures-intrusive",
  "futures-io",
  "futures-util",
+ "hashbrown 0.14.5",
+ "hashlink 0.9.1",
  "hashbrown 0.14.5",
  "hashlink 0.9.1",
  "hex",
@@ -2762,7 +2856,9 @@ dependencies = [
 [[package]]
 name = "sqlx-macros"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cac0692bcc9de3b073e8d747391827297e075c7710ff6276d9f7a1f3d58c6657"
 checksum = "cac0692bcc9de3b073e8d747391827297e075c7710ff6276d9f7a1f3d58c6657"
 dependencies = [
  "proc-macro2",
@@ -2770,12 +2866,15 @@ dependencies = [
  "sqlx-core",
  "sqlx-macros-core",
  "syn",
+ "syn",
 ]
 
 [[package]]
 name = "sqlx-macros-core"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1804e8a7c7865599c9c79be146dc8a9fd8cc86935fa641d3ea58e5f0688abaa5"
 checksum = "1804e8a7c7865599c9c79be146dc8a9fd8cc86935fa641d3ea58e5f0688abaa5"
 dependencies = [
  "dotenvy",
@@ -2793,6 +2892,7 @@ dependencies = [
  "sqlx-postgres",
  "sqlx-sqlite",
  "syn",
+ "syn",
  "tempfile",
  "tokio",
  "url",
@@ -2801,7 +2901,9 @@ dependencies = [
 [[package]]
 name = "sqlx-mysql"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64bb4714269afa44aef2755150a0fc19d756fb580a67db8885608cf02f47d06a"
 checksum = "64bb4714269afa44aef2755150a0fc19d756fb580a67db8885608cf02f47d06a"
 dependencies = [
  "atoi",
@@ -2844,7 +2946,9 @@ dependencies = [
 [[package]]
 name = "sqlx-postgres"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6fa91a732d854c5d7726349bb4bb879bb9478993ceb764247660aee25f67c2f8"
 checksum = "6fa91a732d854c5d7726349bb4bb879bb9478993ceb764247660aee25f67c2f8"
 dependencies = [
  "atoi",
@@ -2883,7 +2987,9 @@ dependencies = [
 [[package]]
 name = "sqlx-sqlite"
 version = "0.8.2"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d5b2cf34a45953bfd3daaf3db0f7a7878ab9b7a6b91b422d24a7a9e4c857b680"
 checksum = "d5b2cf34a45953bfd3daaf3db0f7a7878ab9b7a6b91b422d24a7a9e4c857b680"
 dependencies = [
  "atoi",
@@ -2898,6 +3004,7 @@ dependencies = [
  "log",
  "percent-encoding",
  "serde",
+ "serde_urlencoded",
  "serde_urlencoded",
  "sqlx-core",
  "tracing",
@@ -3006,6 +3113,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
 ]
 
 [[package]]
@@ -3025,6 +3133,7 @@ checksum = "4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -3119,6 +3228,17 @@ checksum = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
+]
+
+[[package]]
+name = "tokio-native-tls"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
+dependencies = [
+ "native-tls",
+ "tokio",
  "syn",
 ]
 
@@ -3225,6 +3345,7 @@ checksum = "395ae124c09f9e6918a2310af6038fba074bcf474ac352496d5910dd59a2226d"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
@@ -3392,6 +3513,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
  "wasm-bindgen-shared",
 ]
 
@@ -3413,6 +3535,7 @@ checksum = "98c9ae5a76e46f4deecd0f0255cc223cfa18dc9b261213b8aa0c7b36f61b3f1d"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
  "wasm-bindgen-backend",
  "wasm-bindgen-shared",
@@ -3643,6 +3766,7 @@ dependencies = [
  "arraydeque",
  "encoding_rs",
  "hashlink 0.8.4",
+ "hashlink 0.8.4",
 ]
 
 [[package]]
@@ -3666,6 +3790,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
  "synstructure",
 ]
 
@@ -3688,6 +3813,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "syn",
 ]
 
 [[package]]
@@ -3707,6 +3833,7 @@ checksum = "595eed982f7d355beb85837f651fa22e90b3c044842dc7f2c2842c086f295808"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
  "synstructure",
 ]
@@ -3736,6 +3863,7 @@ checksum = "6eafa6dfb17584ea3e2bd6e76e0cc15ad7af12b09abdd1ca55961bed9b1063c6"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
  "syn",
 ]
 
