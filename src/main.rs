@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
-            .wrap(NormalizePath::default())
+            .wrap(NormalizePath::trim())
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
             .app_data(web::Data::from(stream_facade.clone()))
