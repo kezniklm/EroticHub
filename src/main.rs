@@ -1,9 +1,8 @@
 use crate::streamer::gstreamer_controller::init_gstreamer;
 use actix_web::middleware::Logger;
-use actix_web::{web, App, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use env_logger::Env;
 use log::{info, warn};
-
 use crate::api::controllers;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
@@ -102,6 +101,7 @@ async fn main() -> anyhow::Result<()> {
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
+            .wrap(middleware::NormalizePath::default())
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
             .app_data(web::Data::from(stream_facade.clone()))
