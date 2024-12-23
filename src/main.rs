@@ -1,4 +1,4 @@
-use actix_web::{web, App, HttpServer};
+use actix_web::{middleware, web, App, HttpServer};
 use log::{info, warn};
 
 use crate::api::controllers;
@@ -46,6 +46,7 @@ async fn main() -> anyhow::Result<()> {
         App::new()
             .app_data(web::Data::new(user_facade.clone()))
             .app_data(web::Data::new(config.clone()))
+            .wrap(middleware::NormalizePath::default())
             .service(controllers::user::list_users)
     })
     .bind(("127.0.0.1", 8000))?
