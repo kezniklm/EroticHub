@@ -1,7 +1,7 @@
-use crate::business::models::video::TempFileResponse;
 use crate::business::util::file::create_dir_if_not_exist;
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::repositories::temp_file::TempFileRepo;
+use actix_files::NamedFile;
 use anyhow::Error;
 use async_trait::async_trait;
 use log::{debug, warn};
@@ -19,11 +19,13 @@ pub trait TempFileFacadeTrait {
         temp_file: NamedTempFile,
         file_name: String,
         user_id: i32,
-    ) -> anyhow::Result<TempFileResponse>;
+    ) -> anyhow::Result<i32>;
 
     fn get_temp_directory_path(&self) -> String;
+    async fn get_temp_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<NamedFile>;
     async fn create_temp_directory(&self) -> anyhow::Result<()>;
     async fn delete_all_temp_files(&self) -> anyhow::Result<()>;
+    async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> anyhow::Result<()>;
     async fn check_mime_type(
         &self,
         file: Option<String>,
@@ -68,14 +70,14 @@ impl TempFileFacadeTrait for TempFileFacade {
     ///
     /// # Returns
     ///
-    /// * `TempFileResponse` - struct with ID of a temporary file, which can be sent back to client,
+    /// * `Temp file ID` - ID of temporary file, which can be sent back to client,
     /// and later used for requesting the temporary file.
     async fn persist_temp_file(
         &self,
         temp_file: NamedTempFile,
         file_name: String,
         user_id: i32,
-    ) -> anyhow::Result<TempFileResponse> {
+    ) -> anyhow::Result<i32> {
         let uuid = Uuid::new_v4();
 
         let path_str = format!(
@@ -96,12 +98,24 @@ impl TempFileFacadeTrait for TempFileFacade {
             "Stored temp file with ID: {} and path: {}",
             &temp_file_id, &path_str
         );
-        let response = TempFileResponse { temp_file_id };
-        Ok(response)
+
+        Ok(temp_file_id)
     }
 
     fn get_temp_directory_path(&self) -> String {
         dotenvy::var(TEMP_DIRECTORY_KEY).unwrap_or(DEFAULT_TEMP_DIRECTORY.to_string())
+    }
+
+    async fn get_temp_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<NamedFile> {
+        let temp_file = self
+            .temp_file_repo
+            .get_file(file_id, user_id)
+            .await?
+            .ok_or(Error::msg("Temp file doesn't exist"))?;
+        let path = Path::new(temp_file.file_path.as_str());
+        let file = NamedFile::open_async(path).await?;
+
+        Ok(file)
     }
 
     async fn create_temp_directory(&self) -> anyhow::Result<()> {
@@ -119,6 +133,14 @@ impl TempFileFacadeTrait for TempFileFacade {
         self.temp_file_repo.delete_all_files(temp_dir_path).await?;
 
         debug!("All temp files were deleted!");
+        Ok(())
+    }
+
+    async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> anyhow::Result<()> {
+        self.temp_file_repo
+            .delete_file(temp_file_id, user_id)
+            .await?;
+
         Ok(())
     }
 
@@ -179,7 +201,7 @@ impl TempFileFacadeTrait for TempFileFacade {
         println!("{:?}", new_path);
         tokio::fs::rename(temp_file_path, &new_path).await?;
 
-        self.temp_file_repo.delete_file(file_id).await?;
+        self.temp_file_repo.delete_file(file_id, user_id).await?;
         Ok(new_path)
     }
 }

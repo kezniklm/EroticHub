@@ -13,7 +13,7 @@ pub trait TempFileRepo {
     ) -> anyhow::Result<i32>;
     async fn get_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<Option<TempFile>>;
     async fn delete_all_files(&self, temp_directory_path: &Path) -> anyhow::Result<()>;
-    async fn delete_file(&self, file_id: i32) -> anyhow::Result<()>;
+    async fn delete_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<()>;
 }
 
 pub struct PgTempFileRepo {
@@ -83,10 +83,14 @@ impl TempFileRepo for PgTempFileRepo {
         Ok(())
     }
 
-    async fn delete_file(&self, file_id: i32) -> anyhow::Result<()> {
-        sqlx::query!("DELETE FROM temp_file WHERE id=$1", file_id)
-            .execute(&self.pg_pool)
-            .await?;
+    async fn delete_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<()> {
+        sqlx::query!(
+            "DELETE FROM temp_file WHERE id=$1 AND user_id=$2",
+            file_id,
+            user_id
+        )
+        .execute(&self.pg_pool)
+        .await?;
         Ok(())
     }
 }
