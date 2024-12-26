@@ -16,6 +16,7 @@ use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
 use crate::streamer::gstreamer_controller::init_gstreamer;
+use actix_identity::IdentityMiddleware;
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
@@ -28,6 +29,7 @@ use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 
 mod api;
 mod business;
@@ -126,6 +128,10 @@ async fn main() -> anyhow::Result<()> {
     ));
 
     HttpServer::new(move || {
+        let identity_middleware = IdentityMiddleware::builder()
+            .visit_deadline(Some(Duration::from_secs(7 * 24 * 60 * 60))) // 7 days
+            .build();
+
         let session_middleware = SessionMiddleware::builder(redis_store.clone(), get_secret_key())
             .cookie_name("erotic-hub-session".to_string())
             //.cookie_secure(true) // Use secure cookies (only HTTPS)
@@ -138,6 +144,7 @@ async fn main() -> anyhow::Result<()> {
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
             .wrap(NormalizePath::trim())
+            .wrap(identity_middleware)
             .wrap(session_middleware)
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
