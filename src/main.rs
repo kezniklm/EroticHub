@@ -16,9 +16,12 @@ use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
 use crate::streamer::gstreamer_controller::init_gstreamer;
+use actix_session::{storage::RedisSessionStore, SessionMiddleware};
+use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
 use actix_web::{web, App, HttpServer};
 use config::Config;
+use deadpool_redis::Runtime;
 use env_logger::Env;
 use log::{info, warn};
 use sqlx::postgres::PgPoolOptions;
@@ -45,6 +48,27 @@ async fn setup_db_pool() -> anyhow::Result<Pool<Postgres>> {
     Ok(pool)
 }
 
+async fn setup_redis_pool() -> anyhow::Result<deadpool_redis::Pool> {
+    let redis_url = env::var("REDIS_DATABASE_URL").expect("REDIS_DATABASE_URL must be set");
+    let redis_config = deadpool_redis::Config::from_url(&redis_url);
+    let pool = redis_config.create_pool(Some(Runtime::Tokio1))?;
+
+    Ok(pool)
+}
+
+fn get_secret_key() -> Key {
+    let secret_key = match env::var("SESSION_SECRET_KEY") {
+        Ok(secret_key) => secret_key,
+        Err(_) => return Key::generate(),
+    };
+
+    if secret_key.len() < 32 {
+        panic!("SESSION_SECRET_KEY must be at least 32 characters long");
+    }
+
+    Key::from(secret_key.as_bytes())
+}
+
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
     if let Err(e) = dotenvy::dotenv() {
@@ -59,6 +83,10 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
 
     let pool = setup_db_pool().await?;
+
+    let redis_pool = setup_redis_pool().await?;
+
+    let redis_store = RedisSessionStore::new_pooled(redis_pool).await?;
 
     let stream_storage = Arc::new(StreamStorage::new());
     let user_repo = Arc::new(UserRepository::new(pool.clone()));
@@ -98,10 +126,19 @@ async fn main() -> anyhow::Result<()> {
     ));
 
     HttpServer::new(move || {
+        let session_middleware = SessionMiddleware::builder(redis_store.clone(), get_secret_key())
+            .cookie_name("erotic-hub-session".to_string())
+            //.cookie_secure(true) // Use secure cookies (only HTTPS)
+            .cookie_http_only(true) // Prevent JavaScript access
+            .cookie_same_site(SameSite::Lax) // Set SameSite policy
+            .cookie_path("/".to_string()) // Set path for the cookie
+            .build();
+
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
             .wrap(NormalizePath::trim())
+            .wrap(session_middleware)
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
             .app_data(web::Data::from(stream_facade.clone()))
