@@ -6,8 +6,8 @@
 </video>
 <div class="mt-3">
     {% if let Some(temp_file_id) = temp_file_id %}
-    <button type="button" class="btn btn-outline-primary" hx-delete="/temp/video/{{ temp_file_id }}"
-            hx-target="#video-input">
+    <button type="button" class="btn btn-outline-primary" hx-delete="/temp/{{ temp_file_id }}"
+            hx-target="#video-input" hx-vals='{"input_type": "Video"}'>
         {% call get_icon() %}
     </button>
     {% else %}

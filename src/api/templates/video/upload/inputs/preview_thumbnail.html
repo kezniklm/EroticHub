@@ -5,8 +5,8 @@
 <div class="mt-3">
 
     {% if let Some(temp_file_id) = temp_file_id %}
-    <button type="button" class="btn btn-outline-primary" hx-delete="/temp/thumbnail/{{ temp_file_id }}"
-            hx-target="#thumbnail-input">
+    <button type="button" class="btn btn-outline-primary" hx-delete="/temp/{{ temp_file_id }}"
+            hx-target="#thumbnail-input" hx-vals='{"input_type": "Thumbnail"}'>
         {% call get_icon() %}
     </button>
     {% else %}
