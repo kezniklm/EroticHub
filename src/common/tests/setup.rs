@@ -25,12 +25,25 @@ use std::sync::Arc;
 use test_context::AsyncTestContext;
 use uuid::Uuid;
 
-/// A context for managing an asynchronous test database lifecycle
+/// A context for managing an asynchronous test database lifecycle.
+/// Template data are loaded into the test database
 ///
 /// This struct is used with the `test_context` crate to manage a PostgreSQL
 /// test database during tests.
 /// To use the AsyncContext use #[test_context(AsyncContext)] along with #[tokio::test]
 pub struct AsyncContext {
+    pub pg_pool: PgPool,
+    pub test_db_name: String,
+    pub test_folders_root: String,
+}
+
+/// A context for managing an asynchronous test database lifecycle.
+/// Template data are not loaded into the test database, so it's empty.
+///
+/// This struct is used with the `test_context` crate to manage a PostgreSQL
+/// test database during tests.
+/// To use the AsyncContext use #[test_context(EmptyAsyncContext)] along with #[tokio::test]
+pub struct EmptyAsyncContext {
     pub pg_pool: PgPool,
     pub test_db_name: String,
     pub test_folders_root: String,
@@ -92,6 +105,7 @@ impl AsyncTestContext for AsyncContext {
     async fn setup() -> AsyncContext {
         let test_id = Uuid::new_v4();
         let (pg_pool, test_db_name) = setup_test_db(test_id).await;
+        load_template_data(&pg_pool).await;
         let test_folders_root = create_test_resources_dir(test_id).await;
         AsyncContext {
             pg_pool,
@@ -100,14 +114,39 @@ impl AsyncTestContext for AsyncContext {
         }
     }
 
-    /// Tears down the test database
-    ///
-    /// This method is automatically called after tests that use this context.
-    /// It drops the test database and cleans up resources.
     async fn teardown(self) {
-        delete_test_resources_dir(self.test_folders_root).await;
-        teardown_test_db(self.pg_pool, &self.test_db_name).await;
+        teardown(self.test_folders_root, self.pg_pool, &self.test_db_name).await;
     }
+}
+
+impl AsyncTestContext for EmptyAsyncContext {
+    /// Sets up the test database and returns the context
+    ///
+    /// This method is automatically called before tests that use this context.
+    /// It creates a new test database and initializes a connection pool.
+    async fn setup() -> EmptyAsyncContext {
+        let test_id = Uuid::new_v4();
+        let (pg_pool, test_db_name) = setup_test_db(test_id).await;
+        let test_folders_root = create_test_resources_dir(test_id).await;
+        EmptyAsyncContext {
+            pg_pool,
+            test_db_name,
+            test_folders_root,
+        }
+    }
+
+    async fn teardown(self) {
+        teardown(self.test_folders_root, self.pg_pool, &self.test_db_name).await;
+    }
+}
+
+/// Tears down the test database
+///
+/// This method is automatically called after tests that use this context.
+/// It drops the test database and cleans up resources.
+async fn teardown(test_folders_root: String, pg_pool: PgPool, test_db_name: &str) {
+    delete_test_resources_dir(test_folders_root).await;
+    teardown_test_db(pg_pool, test_db_name).await;
 }
 
 /// Loads environment variables from a `.env` file
@@ -217,12 +256,14 @@ async fn setup_test_db(test_id: Uuid) -> (PgPool, String) {
         .await
         .expect("Failed to run migrations");
 
+    (test_pool, test_db_name)
+}
+
+async fn load_template_data(test_pool: &PgPool) {
     sqlx::query_file!("tests/test_data/sql/test_data.sql")
-        .execute(&test_pool)
+        .execute(test_pool)
         .await
         .expect("Failed to run test migrations");
-
-    (test_pool, test_db_name)
 }
 
 /// Sets env variables for directories used for storing the files and
