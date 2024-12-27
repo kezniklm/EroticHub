@@ -1,4 +1,5 @@
 use crate::api::controllers;
+use crate::api::permissions::permissions_extractor::extract;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
 use crate::business::facades::artist::ArtistFacade;
@@ -21,6 +22,7 @@ use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
 use actix_web::{web, App, HttpServer};
+use actix_web_grants::GrantsMiddleware;
 use config::Config;
 use deadpool_redis::Runtime;
 use env_logger::Env;
@@ -144,6 +146,7 @@ async fn main() -> anyhow::Result<()> {
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(identity_middleware)
             .wrap(session_middleware)
+            .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(NormalizePath::trim())
             .wrap(Logger::default())
             .app_data(web::Data::new(config.clone()))

@@ -1,3 +1,4 @@
 pub mod controllers;
+pub mod permissions;
 pub mod routes;
-pub mod templates;
+mod templates;
