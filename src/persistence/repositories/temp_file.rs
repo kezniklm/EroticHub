@@ -14,8 +14,8 @@ pub trait TempFileRepo {
         temp_file: NamedTempFile,
     ) -> anyhow::Result<i32, DatabaseError>;
     async fn get_file(&self, file_id: i32, user_id: i32) -> Result<Option<TempFile>>;
-    async fn delete_all_files(&self, temp_directory_path: &Path) -> anyhow::Result<()>;
-    async fn delete_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<()>;
+    async fn delete_all_files(&self, temp_directory_path: &Path) -> Result<()>;
+    async fn delete_file(&self, file_id: i32, user_id: i32) -> Result<()>;
 }
 
 pub struct PgTempFileRepo {
@@ -77,27 +77,27 @@ impl TempFileRepo for PgTempFileRepo {
         Ok(result)
     }
 
-    async fn delete_all_files(&self, temp_directory_path: &Path) -> anyhow::Result<()> {
+    async fn delete_all_files(&self, temp_directory_path: &Path) -> Result<()> {
         let mut transaction = self.pg_pool.begin().await?;
 
         sqlx::query!("DELETE FROM temp_file")
             .execute(&mut *transaction)
             .await?;
-        tokio::fs::remove_dir_all(temp_directory_path).await?;
-        tokio::fs::create_dir_all(temp_directory_path).await?;
+        tokio::fs::remove_dir_all(temp_directory_path).await.db_error("Failed to delete temporary files!")?;
+        tokio::fs::create_dir_all(temp_directory_path).await.db_error("Failed to delete temporary files!")?;
 
         transaction.commit().await?;
         Ok(())
     }
 
-    async fn delete_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<()> {
+    async fn delete_file(&self, file_id: i32, user_id: i32) -> Result<()> {
         sqlx::query!(
             "DELETE FROM temp_file WHERE id=$1 AND user_id=$2",
             file_id,
             user_id
         )
         .execute(&self.pg_pool)
-        .await?;
+        .await.db_error("Failed to delete temporary file")?;
         Ok(())
     }
 }

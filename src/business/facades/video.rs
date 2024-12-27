@@ -4,7 +4,6 @@ use crate::business::models::error::MapToAppError;
 use crate::business::models::video::VideoUploadData;
 use crate::business::util::file::create_dir_if_not_exist;
 use crate::business::Result;
-use crate::persistence::entities::error::MapToDatabaseError;
 use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
 use actix_files::NamedFile;
@@ -130,8 +129,7 @@ impl VideoFacadeTrait for VideoFacade {
         let video_entity = self
             .video_repo
             .get_video_by_id(video_id)
-            .await
-            .db_error("Desired video doesn't exit")?;
+            .await?;
         Ok(video_entity)
     }
 

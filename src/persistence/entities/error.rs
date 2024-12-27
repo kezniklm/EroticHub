@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+use log::error;
 use sqlx::Error;
 
 pub struct DatabaseError {
@@ -22,11 +24,14 @@ pub trait MapToDatabaseError<T> {
     fn db_error(self, message: &str) -> Result<T, DatabaseError>;
 }
 
-impl<T, E> MapToDatabaseError<T> for Result<T, E> {
+impl<T, E: Debug> MapToDatabaseError<T> for Result<T, E> {
     fn db_error(self, message: &str) -> Result<T, DatabaseError> {
         match self {
             Ok(obj) => Ok(obj),
-            Err(_) => Err(DatabaseError::new(message.to_string())),
+            Err(err) => {
+                error!("{:#?}", err);
+                Err(DatabaseError::new(message.to_string()))
+            },
         }
     }
 }

@@ -1,5 +1,4 @@
 use crate::business::util::file::create_dir_if_not_exist;
-use crate::business::models::video::TempFileResponse;
 use crate::business::Result;
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::repositories::temp_file::TempFileRepo;
@@ -10,6 +9,7 @@ use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
+use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 
 const DEFAULT_TEMP_DIRECTORY: &str = "temp";
 const TEMP_DIRECTORY_KEY: &str = "TEMP_DIRECTORY_PATH";
@@ -23,14 +23,15 @@ pub trait TempFileFacadeTrait {
     ) -> Result<i32>;
 
     fn get_temp_directory_path(&self) -> String;
-    async fn get_temp_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<NamedFile>;
-    async fn create_temp_directory(&self) -> anyhow::Result<()>;
-    async fn delete_all_temp_files(&self) -> anyhow::Result<()>;
+    async fn get_temp_file(&self, file_id: i32, user_id: i32) -> Result<NamedFile>;
+    async fn create_temp_directory(&self) -> Result<()>;
+    async fn delete_all_temp_files(&self) -> Result<()>;
     async fn check_mime_type(&self, file: Option<String>, allowed_types: Vec<String>)
         -> Result<()>;
 
     async fn persist_permanently(&self, file_id: i32, user_id: i32, path: String)
         -> Result<String>;
+    async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> Result<()>;
 }
 
 #[derive(Clone)]
@@ -99,41 +100,33 @@ impl TempFileFacadeTrait for TempFileFacade {
         dotenvy::var(TEMP_DIRECTORY_KEY).unwrap_or(DEFAULT_TEMP_DIRECTORY.to_string())
     }
 
-    async fn get_temp_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<NamedFile> {
+    async fn get_temp_file(&self, file_id: i32, user_id: i32) -> Result<NamedFile> {
         let temp_file = self
             .temp_file_repo
             .get_file(file_id, user_id)
             .await?
-            .ok_or(Error::msg("Temp file doesn't exist"))?;
+            .ok_or(AppError::new("Temp file doesn't exist", AppErrorKind::NotFound))?;
         let path = Path::new(temp_file.file_path.as_str());
-        let file = NamedFile::open_async(path).await?;
+        let file = NamedFile::open_async(path).await.app_error_kind("Temporary file not found", AppErrorKind::NotFound)?;
 
         Ok(file)
     }
 
-    async fn create_temp_directory(&self) -> anyhow::Result<()> {
+    async fn create_temp_directory(&self) -> Result<()> {
         let temp_directory = self.get_temp_directory_path();
-        create_dir_if_not_exist(temp_directory).await?;
+        create_dir_if_not_exist(temp_directory).await.app_error("Failed to create temp file directory")?;
         Ok(())
     }
 
-    async fn delete_all_temp_files(&self) -> anyhow::Result<()> {
+    async fn delete_all_temp_files(&self) -> Result<()> {
         let temp_dir_path = self.get_temp_directory_path();
         let temp_dir_path = Path::new(temp_dir_path.as_str());
         if !temp_dir_path.exists() {
             return Ok(());
         }
-        self.temp_file_repo.delete_all_files(temp_dir_path).await?;
+        self.temp_file_repo.delete_all_files(temp_dir_path).await.app_error("Failed to create temp file directory")?;
 
         debug!("All temp files were deleted!");
-        Ok(())
-    }
-
-    async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> anyhow::Result<()> {
-        self.temp_file_repo
-            .delete_file(temp_file_id, user_id)
-            .await?;
-
         Ok(())
     }
 
@@ -141,7 +134,7 @@ impl TempFileFacadeTrait for TempFileFacade {
         &self,
         file: Option<String>,
         allowed_types: Vec<String>,
-    ) -> Result<(), AppError> {
+    ) -> Result<()> {
         if let Some(ref mime_type) = file {
             let is_allowed = allowed_types.contains(mime_type);
             if is_allowed {
@@ -203,9 +196,17 @@ impl TempFileFacadeTrait for TempFileFacade {
             .app_error("Operation with temp file failed")?;
 
         self.temp_file_repo
-            .delete_file(file_id)
+            .delete_file(file_id, user_id)
             .await
             .app_error("Failed to delete temp file")?;
         Ok(new_path)
+    }
+
+    async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> Result<()> {
+        self.temp_file_repo
+            .delete_file(temp_file_id, user_id)
+            .await?;
+
+        Ok(())
     }
 }

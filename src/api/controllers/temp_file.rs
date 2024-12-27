@@ -5,15 +5,14 @@ use crate::api::templates::video::upload::template::{
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::models::temp_file::{GetFileInputTemplate, TempFileInput};
 use crate::business::models::video::{ThumbnailUploadForm, VideoUploadForm};
+use crate::business::Result;
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
-use actix_web::http::StatusCode;
 use actix_web::web::{Data, Json, Path, Query};
-use actix_web::{Error, HttpResponse, Responder};
+use actix_web::{HttpResponse, Responder};
 use askama_actix::TemplateToResponse;
-use log::error;
 
 /// Creates new temporary video file
 ///
@@ -25,38 +24,26 @@ pub async fn post_temp_video(
     MultipartForm(form): MultipartForm<VideoUploadForm>,
     temp_file_facade: Data<TempFileFacade>,
     config: Data<Configuration>,
-) -> HttpResponse {
+) -> Result<HttpResponse> {
     let file_name = form.file.file_name.clone().unwrap_or(String::new());
     let allowed_mime_types = config.app.video.accepted_mime_type.clone();
     // TODO: permissions - check if user can upload videos
 
     let content_type = get_content_type_string(&form.file);
-    if temp_file_facade
+    temp_file_facade
         .check_mime_type(content_type, allowed_mime_types)
-        .await
-        .is_err()
-    {
-        return HttpResponse::build(StatusCode::UNSUPPORTED_MEDIA_TYPE).finish();
-    };
+    .await?;
 
-    match temp_file_facade
+    let temp_file_id =  temp_file_facade
         .persist_temp_file(form.file.file, file_name, 1)
-        .await
-    {
-        Ok(temp_file_id) => {
-            let template = VideoPreviewTemplate {
-                temp_file_id: Some(temp_file_id),
-                file_path: format!("/temp/{temp_file_id}"),
-            };
-
-            template.to_response()
-        }
-        Err(err) => {
-            log::error!("Failed to create temp file: {:#?}", err);
-            HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-                .body("Failed to create temp file")
-        }
-    }
+        .await?;
+    
+    let template = VideoPreviewTemplate {
+        temp_file_id: Some(temp_file_id),
+        file_path: format!("/temp/{temp_file_id}"),
+    };
+    
+    Ok(template.to_response())
 }
 
 /// Creates new temporary file for thumbnail
@@ -69,37 +56,27 @@ pub async fn post_temp_thumbnail(
     MultipartForm(form): MultipartForm<ThumbnailUploadForm>,
     temp_file_facade: Data<TempFileFacade>,
     config: Data<Configuration>,
-) -> impl Responder {
+) -> Result<impl Responder> {
     let file_name = form.file.file_name.clone().unwrap_or(String::new());
     let allowed_mime_types = config.app.thumbnail.accepted_mime_type.clone();
     // TODO: permissions - check if user can upload videos
 
     let content_type = get_content_type_string(&form.file);
-    if temp_file_facade
+    temp_file_facade
         .check_mime_type(content_type, allowed_mime_types)
-        .await
-        .is_err()
-    {
-        return HttpResponse::build(StatusCode::UNSUPPORTED_MEDIA_TYPE).finish();
-    };
-    match temp_file_facade
+        .await?;
+    
+    let temp_file_id= temp_file_facade
         .persist_temp_file(form.file.file, file_name, 1)
-        .await
-    {
-        Ok(temp_file_id) => {
-            let template = ThumbnailPreviewTemplate {
-                temp_file_id: Some(temp_file_id),
-                file_path: format!("/temp/{temp_file_id}"),
-            };
+        .await?;
+    
+    let template = ThumbnailPreviewTemplate {
+        temp_file_id: Some(temp_file_id),
+        file_path: format!("/temp/{temp_file_id}"),
+    };
+    
+    Ok(template.to_response())
 
-            template.to_response()
-        }
-        Err(err) => {
-            log::error!("Failed to create temp file: {:#?}", err);
-            HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
-                .body("Failed to create temp file")
-        }
-    }
 }
 
 /// Get a temporary file for a preview
@@ -111,21 +88,13 @@ pub async fn post_temp_thumbnail(
 pub async fn get_temp_file(
     temp_file: Path<i32>,
     temp_file_facade: Data<TempFileFacade>,
-) -> actix_web::Result<NamedFile> {
+) -> Result<NamedFile> {
     // TODO: CHECK PERMISSIONS
-    match temp_file_facade
+    let file = temp_file_facade
         .get_temp_file(temp_file.into_inner(), 1)
-        .await
-    {
-        Ok(file) => Ok(file),
-        Err(err) => {
-            error!("Error while saving video: {:#?}", err);
-            Err(Error::from(actix_web::error::InternalError::new(
-                "Loading of video file failed",
-                StatusCode::INTERNAL_SERVER_ERROR,
-            )))
-        }
-    }
+        .await?;
+    
+    Ok(file)
 }
 
 /// Deletes temporary file
@@ -142,21 +111,13 @@ pub async fn delete_temp_file(
     Query(temp_file_type): Query<GetFileInputTemplate>,
     temp_file_facade: Data<TempFileFacade>,
     config: Data<Configuration>,
-) -> impl Responder {
+) -> Result<impl Responder> {
     // TODO: Check permissions
-    match temp_file_facade
+    temp_file_facade
         .delete_temp_file(temp_file.into_inner(), 1)
-        .await
-    {
-        Ok(_) => Ok(get_upload_template(temp_file_type, config)),
-        Err(err) => {
-            error!("Error while removing temporary video: {:#?}", err);
-            Err(Error::from(actix_web::error::InternalError::new(
-                "Deletion of temporary video file failed",
-                StatusCode::INTERNAL_SERVER_ERROR,
-            )))
-        }
-    }
+        .await?;
+    
+    Ok(get_upload_template(temp_file_type, config))
 }
 
 /// Returns templates for file inputs. Can be used in case when user want's to re-upload the video,

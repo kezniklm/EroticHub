@@ -4,7 +4,6 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 use log::{info, warn};
 
-use crate::api::controllers;
 use crate::api::routes::temp_file::temp_file_routes;
 use crate::api::routes::stream::stream_routes;
 use crate::api::routes::user::user_routes;
@@ -117,7 +116,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(video_routes)
             .configure(user_routes)
             .configure(temp_file_routes)
-            .configure(stream_routes);
+            .configure(stream_routes)
     })
     .bind(("127.0.0.1", 8000))?
     .run()
