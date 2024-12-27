@@ -1,7 +1,10 @@
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::models;
+use crate::business::models::error::MapToAppError;
 use crate::business::models::video::VideoUploadData;
 use crate::business::util::file::create_dir_if_not_exist;
+use crate::business::Result;
+use crate::persistence::entities::error::MapToDatabaseError;
 use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
 use actix_files::NamedFile;
@@ -20,11 +23,11 @@ pub trait VideoFacadeTrait {
         &self,
         user_id: i32,
         video: VideoUploadData,
-    ) -> anyhow::Result<models::video::Video>;
+    ) -> Result<models::video::Video>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
     async fn create_dirs(&self) -> anyhow::Result<()>;
-    async fn get_video_entity(&self, video_id: i32, user_id: i32) -> anyhow::Result<Video>;
-    async fn get_playable_video(&self, video_id: i32, user_id: i32) -> anyhow::Result<NamedFile>;
+    async fn get_video_entity(&self, video_id: i32, user_id: i32) -> Result<Video>;
+    async fn get_playable_video(&self, video_id: i32, user_id: i32) -> Result<NamedFile>;
 }
 
 #[derive(Clone)]
@@ -64,7 +67,7 @@ impl VideoFacadeTrait for VideoFacade {
         &self,
         user_id: i32,
         video_model: VideoUploadData,
-    ) -> anyhow::Result<models::video::Video> {
+    ) -> Result<models::video::Video> {
         let (video_dir_path, thumbnail_dir_path) = self.get_video_thumbnail_dirs();
 
         let video_path = self
@@ -123,8 +126,12 @@ impl VideoFacadeTrait for VideoFacade {
     ///
     /// * `video_id` - ID of the video you want to get
     /// * `user_id` - ID of an user that requested the video
-    async fn get_video_entity(&self, video_id: i32, _user_id: i32) -> anyhow::Result<Video> {
-        let video_entity = self.video_repo.get_video_by_id(video_id).await?;
+    async fn get_video_entity(&self, video_id: i32, _user_id: i32) -> Result<Video> {
+        let video_entity = self
+            .video_repo
+            .get_video_by_id(video_id)
+            .await
+            .db_error("Desired video doesn't exit")?;
         Ok(video_entity)
     }
 
@@ -134,10 +141,12 @@ impl VideoFacadeTrait for VideoFacade {
     ///
     /// * `video_id` - ID of the video you want to get
     /// * `user_id` - ID of an user that requested the video
-    async fn get_playable_video(&self, video_id: i32, _user_id: i32) -> anyhow::Result<NamedFile> {
+    async fn get_playable_video(&self, video_id: i32, _user_id: i32) -> Result<NamedFile> {
         let video_entity = self.video_repo.get_video_by_id(video_id).await?;
         let path = Path::new(video_entity.file_path.as_str());
-        let file = NamedFile::open_async(path).await?;
+        let file = NamedFile::open_async(path)
+            .await
+            .app_error("Video doesn't exist")?;
 
         Ok(file)
     }
