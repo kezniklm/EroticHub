@@ -13,10 +13,7 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use actix_web::http::header::ContentType;
 use actix_web::web::{Data, Query};
-use actix_web::{get, post, web, Error, HttpResponse, Responder, Result, Scope};
-use log::error;
 use actix_web::{get, post, web, HttpResponse, Responder, Result, Scope};
-use askama::Template;
 use tempfile::NamedTempFile;
 
 pub fn register_scope() -> Scope {
