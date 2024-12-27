@@ -94,3 +94,15 @@ impl VideoRepo for PgVideoRepo {
         Ok(result)
     }
 }
+
+#[cfg(test)]
+mod test {
+    use test_context::test_context;
+    use crate::common::tests::setup::AsyncContext;
+
+    #[test_context(AsyncContext)]
+    #[tokio::test]
+    async fn test01(ctx: &mut AsyncContext) {
+        assert_eq!(1, 2);
+    }
+}

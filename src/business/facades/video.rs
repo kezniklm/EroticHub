@@ -126,10 +126,7 @@ impl VideoFacadeTrait for VideoFacade {
     /// * `video_id` - ID of the video you want to get
     /// * `user_id` - ID of an user that requested the video
     async fn get_video_entity(&self, video_id: i32, _user_id: i32) -> Result<Video> {
-        let video_entity = self
-            .video_repo
-            .get_video_by_id(video_id)
-            .await?;
+        let video_entity = self.video_repo.get_video_by_id(video_id).await?;
         Ok(video_entity)
     }
 

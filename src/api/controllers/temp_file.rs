@@ -32,17 +32,17 @@ pub async fn post_temp_video(
     let content_type = get_content_type_string(&form.file);
     temp_file_facade
         .check_mime_type(content_type, allowed_mime_types)
-    .await?;
+        .await?;
 
-    let temp_file_id =  temp_file_facade
+    let temp_file_id = temp_file_facade
         .persist_temp_file(form.file.file, file_name, 1)
         .await?;
-    
+
     let template = VideoPreviewTemplate {
         temp_file_id: Some(temp_file_id),
         file_path: format!("/temp/{temp_file_id}"),
     };
-    
+
     Ok(template.to_response())
 }
 
@@ -65,18 +65,17 @@ pub async fn post_temp_thumbnail(
     temp_file_facade
         .check_mime_type(content_type, allowed_mime_types)
         .await?;
-    
-    let temp_file_id= temp_file_facade
+
+    let temp_file_id = temp_file_facade
         .persist_temp_file(form.file.file, file_name, 1)
         .await?;
-    
+
     let template = ThumbnailPreviewTemplate {
         temp_file_id: Some(temp_file_id),
         file_path: format!("/temp/{temp_file_id}"),
     };
-    
-    Ok(template.to_response())
 
+    Ok(template.to_response())
 }
 
 /// Get a temporary file for a preview
@@ -93,7 +92,7 @@ pub async fn get_temp_file(
     let file = temp_file_facade
         .get_temp_file(temp_file.into_inner(), 1)
         .await?;
-    
+
     Ok(file)
 }
 
@@ -116,7 +115,7 @@ pub async fn delete_temp_file(
     temp_file_facade
         .delete_temp_file(temp_file.into_inner(), 1)
         .await?;
-    
+
     Ok(get_upload_template(temp_file_type, config))
 }
 

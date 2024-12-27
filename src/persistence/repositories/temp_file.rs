@@ -83,8 +83,12 @@ impl TempFileRepo for PgTempFileRepo {
         sqlx::query!("DELETE FROM temp_file")
             .execute(&mut *transaction)
             .await?;
-        tokio::fs::remove_dir_all(temp_directory_path).await.db_error("Failed to delete temporary files!")?;
-        tokio::fs::create_dir_all(temp_directory_path).await.db_error("Failed to delete temporary files!")?;
+        tokio::fs::remove_dir_all(temp_directory_path)
+            .await
+            .db_error("Failed to delete temporary files!")?;
+        tokio::fs::create_dir_all(temp_directory_path)
+            .await
+            .db_error("Failed to delete temporary files!")?;
 
         transaction.commit().await?;
         Ok(())
@@ -97,7 +101,8 @@ impl TempFileRepo for PgTempFileRepo {
             user_id
         )
         .execute(&self.pg_pool)
-        .await.db_error("Failed to delete temporary file")?;
+        .await
+        .db_error("Failed to delete temporary file")?;
         Ok(())
     }
 }

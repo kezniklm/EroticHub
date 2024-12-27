@@ -28,11 +28,10 @@ pub trait MapToAppError<T> {
     /// Ok result is not touched.
     /// All errors are mapped to `InternalServerError`
     fn app_error(self, message: &str) -> Result<T, AppError>;
-    
+
     /// If result contains Error, then it is mapped to `AppError` with given message. \
     /// Ok result is not touched.
     fn app_error_kind(self, message: &str, error: AppErrorKind) -> Result<T, AppError>;
-
 }
 
 impl<T, E> MapToAppError<T> for Result<T, E> {

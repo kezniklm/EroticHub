@@ -4,8 +4,8 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 use log::{info, warn};
 
-use crate::api::routes::temp_file::temp_file_routes;
 use crate::api::routes::stream::stream_routes;
+use crate::api::routes::temp_file::temp_file_routes;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
 use crate::business::facades::artist::ArtistFacade;
@@ -30,6 +30,7 @@ use std::sync::Arc;
 
 mod api;
 mod business;
+mod common;
 mod configuration;
 mod persistence;
 mod streamer;

@@ -1,14 +1,17 @@
-use std::fmt::Debug;
 use log::error;
 use sqlx::Error;
+use std::fmt::Debug;
 
+#[derive(Debug, PartialEq)]
 pub struct DatabaseError {
     pub error: String,
 }
 
 impl DatabaseError {
-    pub fn new(error: String) -> Self {
-        Self { error }
+    pub fn new(error: impl Into<String>) -> Self {
+        Self {
+            error: error.into(),
+        }
     }
 }
 
@@ -31,7 +34,7 @@ impl<T, E: Debug> MapToDatabaseError<T> for Result<T, E> {
             Err(err) => {
                 error!("{:#?}", err);
                 Err(DatabaseError::new(message.to_string()))
-            },
+            }
         }
     }
 }

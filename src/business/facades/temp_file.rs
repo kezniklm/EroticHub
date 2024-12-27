@@ -1,3 +1,4 @@
+use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::util::file::create_dir_if_not_exist;
 use crate::business::Result;
 use crate::persistence::entities::temp_file::TempFile;
@@ -9,7 +10,6 @@ use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 use uuid::Uuid;
-use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 
 const DEFAULT_TEMP_DIRECTORY: &str = "temp";
 const TEMP_DIRECTORY_KEY: &str = "TEMP_DIRECTORY_PATH";
@@ -105,16 +105,23 @@ impl TempFileFacadeTrait for TempFileFacade {
             .temp_file_repo
             .get_file(file_id, user_id)
             .await?
-            .ok_or(AppError::new("Temp file doesn't exist", AppErrorKind::NotFound))?;
+            .ok_or(AppError::new(
+                "Temp file doesn't exist",
+                AppErrorKind::NotFound,
+            ))?;
         let path = Path::new(temp_file.file_path.as_str());
-        let file = NamedFile::open_async(path).await.app_error_kind("Temporary file not found", AppErrorKind::NotFound)?;
+        let file = NamedFile::open_async(path)
+            .await
+            .app_error_kind("Temporary file not found", AppErrorKind::NotFound)?;
 
         Ok(file)
     }
 
     async fn create_temp_directory(&self) -> Result<()> {
         let temp_directory = self.get_temp_directory_path();
-        create_dir_if_not_exist(temp_directory).await.app_error("Failed to create temp file directory")?;
+        create_dir_if_not_exist(temp_directory)
+            .await
+            .app_error("Failed to create temp file directory")?;
         Ok(())
     }
 
@@ -124,7 +131,10 @@ impl TempFileFacadeTrait for TempFileFacade {
         if !temp_dir_path.exists() {
             return Ok(());
         }
-        self.temp_file_repo.delete_all_files(temp_dir_path).await.app_error("Failed to create temp file directory")?;
+        self.temp_file_repo
+            .delete_all_files(temp_dir_path)
+            .await
+            .app_error("Failed to create temp file directory")?;
 
         debug!("All temp files were deleted!");
         Ok(())
