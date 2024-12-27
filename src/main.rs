@@ -4,25 +4,22 @@ use actix_web::{web, App, HttpServer};
 use env_logger::Env;
 use log::{info, warn};
 
-use crate::api::controllers;
-use crate::api::routes::stream::stream_routes;
-use crate::api::routes::user::user_routes;
-use crate::api::routes::video::video_routes;
-use crate::business::facades::artist::ArtistFacade;
-use crate::business::facades::comment::CommentFacade;
-use crate::business::facades::stream::StreamFacade;
-use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
-use crate::business::facades::user::UserFacade;
-use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
-use crate::business::models::stream::StreamStorage;
-use crate::configuration::models::Configuration;
-use crate::persistence::repositories::artist::ArtistRepository;
-use crate::persistence::repositories::comment::CommentRepository;
-use crate::persistence::repositories::stream::PgStreamRepo;
-use crate::persistence::repositories::temp_file::PgTempFileRepo;
-use crate::persistence::repositories::user::PostgresUserRepo;
-use crate::persistence::repositories::video::PgVideoRepo;
-use config::Config;
+use erotic_hub::api::controllers;
+use erotic_hub::api::routes::user::user_routes;
+use erotic_hub::api::routes::video::video_routes;
+use erotic_hub::business::facades::artist::ArtistFacade;
+use erotic_hub::business::facades::comment::CommentFacade;
+use erotic_hub::business::facades::stream::StreamFacade;
+use erotic_hub::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
+use erotic_hub::business::facades::user::UserFacade;
+use erotic_hub::business::facades::video::VideoFacade;
+use erotic_hub::business::models::stream::StreamStorage;
+use erotic_hub::persistence::repositories::artist::ArtistRepository;
+use erotic_hub::persistence::repositories::comment::CommentRepository;
+use erotic_hub::persistence::repositories::stream::PgStreamRepo;
+use erotic_hub::persistence::repositories::temp_file::PgTempFileRepo;
+use erotic_hub::persistence::repositories::user::PostgresUserRepo;
+use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
@@ -61,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = setup_db_pool().await?;
 
-    let stream_storage = Arc::new(StreamStorage::new());
+    let stream_storage = Arc::new(StreamStorage::default());
     let user_repo = Arc::new(PostgresUserRepo::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
 
@@ -78,16 +75,14 @@ async fn main() -> anyhow::Result<()> {
         .delete_all_temp_files()
         .await
         .expect("Failed to delete temp file directory");
-    temp_file_facade
-        .create_temp_directory()
+    TempFileFacade::create_temp_directory()
         .await
         .expect("Failed to create temp directory");
 
     let video_repo = Arc::new(PgVideoRepo::new(pool.clone()));
     let video_facade = Arc::new(VideoFacade::new(temp_file_facade.clone(), video_repo));
 
-    video_facade
-        .create_dirs()
+    VideoFacade::create_dirs()
         .await
         .expect("Failed to create video folder");
 
@@ -117,6 +112,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(user_routes)
             .configure(stream_routes)
             .service(controllers::video::register_scope())
+            .service(controllers::stream::register_scope())
     })
     .bind(("127.0.0.1", 8000))?
     .run()

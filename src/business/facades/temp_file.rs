@@ -22,8 +22,8 @@ pub trait TempFileFacadeTrait {
         user_id: i32,
     ) -> Result<TempFileResponse, AppError>;
 
-    fn get_temp_directory_path(&self) -> String;
-    async fn create_temp_directory(&self) -> anyhow::Result<()>;
+    fn get_temp_directory_path() -> String;
+    async fn create_temp_directory() -> anyhow::Result<()>;
     async fn delete_all_temp_files(&self) -> anyhow::Result<()>;
     async fn check_mime_type(&self, file: Option<String>, allowed_types: Vec<String>)
         -> Result<()>;
@@ -74,7 +74,7 @@ impl TempFileFacadeTrait for TempFileFacade {
 
         let path_str = format!(
             "./{}/{}.{}",
-            self.get_temp_directory_path(),
+            Self::get_temp_directory_path(),
             uuid,
             self.get_file_extension(file_name)
         );
@@ -94,18 +94,18 @@ impl TempFileFacadeTrait for TempFileFacade {
         Ok(response)
     }
 
-    fn get_temp_directory_path(&self) -> String {
+    fn get_temp_directory_path() -> String {
         dotenvy::var(TEMP_DIRECTORY_KEY).unwrap_or(DEFAULT_TEMP_DIRECTORY.to_string())
     }
 
-    async fn create_temp_directory(&self) -> anyhow::Result<()> {
-        let temp_directory = self.get_temp_directory_path();
+    async fn create_temp_directory() -> anyhow::Result<()> {
+        let temp_directory = Self::get_temp_directory_path();
         create_dir_if_not_exist(temp_directory).await?;
         Ok(())
     }
 
     async fn delete_all_temp_files(&self) -> anyhow::Result<()> {
-        let temp_dir_path = self.get_temp_directory_path();
+        let temp_dir_path = Self::get_temp_directory_path();
         let temp_dir_path = Path::new(temp_dir_path.as_str());
         if !temp_dir_path.exists() {
             return Ok(());

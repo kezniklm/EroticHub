@@ -1,5 +1,6 @@
 /target
-/video_resources
+/test_data
 .env
 /temp
 /resources
+/tests_resources
