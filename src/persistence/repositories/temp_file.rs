@@ -53,8 +53,7 @@ impl TempFileRepo for PgTempFileRepo {
             temp_file_entity.file_path
         )
         .fetch_one(&mut *transaction)
-        .await
-        .db_error("Failed to create temporary file")?;
+        .await?;
 
         transaction.commit().await?;
 
