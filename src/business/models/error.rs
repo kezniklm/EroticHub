@@ -2,7 +2,7 @@ use crate::persistence::entities::error::DatabaseError;
 use std::fmt::{Display, Formatter};
 
 #[derive(Debug)]
-pub(crate) struct AppError {
+pub struct AppError {
     pub message: String,
     pub error: AppErrorKind,
 }

@@ -27,5 +27,5 @@ async fn test02(ctx: &mut AsyncContext) {
         .set_payload(body);
 
     let response = req.send_request(&app).await;
-    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::CREATED);
 }

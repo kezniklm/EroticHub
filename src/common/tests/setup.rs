@@ -1,4 +1,5 @@
 use crate::api::controllers;
+use crate::api::routes::stream::stream_routes;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
 use crate::business::facades::artist::ArtistFacade;
@@ -77,8 +78,8 @@ impl AsyncContext {
                 .app_data(web::Data::from(comment_facade.clone()))
                 .configure(video_routes)
                 .configure(user_routes)
-                .service(controllers::video::register_scope())
-                .service(controllers::stream::register_scope());
+                .configure(stream_routes)
+                .service(controllers::video::register_scope());
         }
     }
 }

@@ -1,10 +1,10 @@
-use crate::streamer::gstreamer_controller::init_gstreamer;
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use env_logger::Env;
-use log::{info, warn};
+use log::warn;
 
 use erotic_hub::api::controllers;
+use erotic_hub::api::routes::stream::stream_routes;
 use erotic_hub::api::routes::user::user_routes;
 use erotic_hub::api::routes::video::video_routes;
 use erotic_hub::business::facades::artist::ArtistFacade;
@@ -14,24 +14,18 @@ use erotic_hub::business::facades::temp_file::{TempFileFacade, TempFileFacadeTra
 use erotic_hub::business::facades::user::UserFacade;
 use erotic_hub::business::facades::video::VideoFacade;
 use erotic_hub::business::models::stream::StreamStorage;
+use erotic_hub::init_configuration;
 use erotic_hub::persistence::repositories::artist::ArtistRepository;
 use erotic_hub::persistence::repositories::comment::CommentRepository;
 use erotic_hub::persistence::repositories::stream::PgStreamRepo;
 use erotic_hub::persistence::repositories::temp_file::PgTempFileRepo;
 use erotic_hub::persistence::repositories::user::PostgresUserRepo;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
+use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
-
-mod api;
-mod business;
-mod configuration;
-mod persistence;
-mod streamer;
-
-const CONFIG_FILE_KEY: &str = "CONFIG_FILE_PATH";
 
 async fn setup_db_pool() -> anyhow::Result<Pool<Postgres>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -112,23 +106,10 @@ async fn main() -> anyhow::Result<()> {
             .configure(user_routes)
             .configure(stream_routes)
             .service(controllers::video::register_scope())
-            .service(controllers::stream::register_scope())
     })
     .bind(("127.0.0.1", 8000))?
     .run()
     .await?;
 
     Ok(())
-}
-
-fn init_configuration() -> anyhow::Result<Configuration> {
-    let config_file = dotenvy::var(CONFIG_FILE_KEY).unwrap_or(String::from("./config.yaml"));
-
-    let config = Config::builder()
-        .add_source(config::File::with_name(config_file.as_str()))
-        .build()?;
-    let config = config.try_deserialize::<Configuration>()?;
-
-    info!("Config {} was loaded!", config_file);
-    Ok(config)
 }

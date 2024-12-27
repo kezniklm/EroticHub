@@ -60,7 +60,7 @@ impl VideoFacade {
         (video, thumbnail)
     }
 
-    pub async fn create_dirs() -> Result<()> {
+    pub async fn create_dirs() -> anyhow::Result<()> {
         let (video_path, thumbnail_path) = Self::get_video_thumbnail_dirs();
         create_dir_if_not_exist(video_path).await?;
         create_dir_if_not_exist(thumbnail_path).await?;
@@ -88,7 +88,7 @@ impl VideoFacadeTrait for VideoFacade {
         &self,
         user_id: i32,
         video_model: VideoUploadData,
-    ) -> anyhow::Result<models::video::Video> {
+    ) -> Result<models::video::Video> {
         let (video_dir_path, thumbnail_dir_path) = Self::get_video_thumbnail_dirs();
 
         let video_path = self
