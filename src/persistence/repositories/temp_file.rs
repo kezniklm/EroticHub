@@ -1,4 +1,6 @@
+use crate::persistence::entities::error::{DatabaseError, MapToDatabaseError};
 use crate::persistence::entities::temp_file::TempFile;
+use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
 use std::path::Path;
@@ -10,8 +12,8 @@ pub trait TempFileRepo {
         &self,
         temp_file_entity: TempFile,
         temp_file: NamedTempFile,
-    ) -> anyhow::Result<i32>;
-    async fn get_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<Option<TempFile>>;
+    ) -> anyhow::Result<i32, DatabaseError>;
+    async fn get_file(&self, file_id: i32, user_id: i32) -> Result<Option<TempFile>>;
     async fn delete_all_files(&self, temp_directory_path: &Path) -> anyhow::Result<()>;
     async fn delete_file(&self, file_id: i32) -> anyhow::Result<()>;
 }
@@ -32,11 +34,15 @@ impl TempFileRepo for PgTempFileRepo {
         &self,
         temp_file_entity: TempFile,
         temp_file: NamedTempFile,
-    ) -> anyhow::Result<i32> {
+    ) -> Result<i32, DatabaseError> {
         let mut transaction = self.pg_pool.begin().await?;
 
-        tokio::fs::copy(temp_file.path(), &temp_file_entity.file_path).await?;
-        temp_file.close()?;
+        tokio::fs::copy(temp_file.path(), &temp_file_entity.file_path)
+            .await
+            .db_error("Failed to copy the temp file")?;
+        temp_file
+            .close()
+            .db_error("Failed to close temporary file")?;
 
         let result = sqlx::query!(
             r#"INSERT INTO 
@@ -47,14 +53,15 @@ impl TempFileRepo for PgTempFileRepo {
             temp_file_entity.file_path
         )
         .fetch_one(&mut *transaction)
-        .await?;
+        .await
+        .db_error("Failed to create temporary file")?;
 
         transaction.commit().await?;
 
         Ok(result.id)
     }
 
-    async fn get_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<Option<TempFile>> {
+    async fn get_file(&self, file_id: i32, user_id: i32) -> Result<Option<TempFile>> {
         let result = sqlx::query_as!(
             TempFile,
             r#"
