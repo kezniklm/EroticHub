@@ -21,6 +21,16 @@ impl From<Error> for DatabaseError {
     }
 }
 
+/// Conversion to be used only in the tests
+/// We don't want to expose all messages from the io Results to clients, since
+/// it can contain sensitive information
+#[cfg(test)]
+impl From<std::io::Error> for DatabaseError {
+    fn from(value: std::io::Error) -> Self {
+        DatabaseError::new(value.to_string())
+    }
+}
+
 pub trait MapToDatabaseError<T> {
     /// If result contains Error, it is mapped to `DatabaseError` with given message. \
     /// Ok result is not touched.

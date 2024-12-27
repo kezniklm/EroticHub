@@ -104,11 +104,9 @@ impl TempFileFacadeTrait for TempFileFacade {
         let temp_file = self
             .temp_file_repo
             .get_file(file_id, user_id)
-            .await?
-            .ok_or(AppError::new(
-                "Temp file doesn't exist",
-                AppErrorKind::NotFound,
-            ))?;
+            .await
+            .app_error_kind("Temp file doesn't exist", AppErrorKind::NotFound)?;
+
         let path = Path::new(temp_file.file_path.as_str());
         let file = NamedFile::open_async(path)
             .await
@@ -188,11 +186,8 @@ impl TempFileFacadeTrait for TempFileFacade {
         let temp_file = self
             .temp_file_repo
             .get_file(file_id, user_id)
-            .await?
-            .ok_or(AppError::new(
-                "Temporary file doesn't exist",
-                AppErrorKind::InternalServerError,
-            ))?;
+            .await
+            .app_error_kind("Video file doesn't exist", AppErrorKind::NotFound)?;
 
         let temp_file_path = Path::new(temp_file.file_path.as_str());
 

@@ -78,7 +78,7 @@ fn replace_db_name(db_url: &str, new_db_name: &str) -> String {
 async fn connect_to_db(db_url: &str) -> PgPool {
     PgPool::connect(db_url)
         .await
-        .expect(&format!("Failed to connect to database: {db_url}"))
+        .unwrap_or_else(|_| panic!("Failed to connect to database: {db_url}"))
 }
 
 /// Creates a new database with the given name
@@ -108,7 +108,7 @@ async fn create_database(admin_pool: &PgPool, db_name: &str) {
 /// * `db_name` - The name of the database to drop
 async fn drop_database(admin_pool: &PgPool, db_name: &str) {
     admin_pool
-        .execute(format!(r#"DROP DATABASE "{}""#, db_name).as_str())
+        .execute(format!(r#"DROP DATABASE "{}" WITH (FORCE)"#, db_name).as_str())
         .await
         .expect("Failed to drop test database");
 }

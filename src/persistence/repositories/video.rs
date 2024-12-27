@@ -201,7 +201,6 @@ mod test {
         }
     }
 
-    /// TODO: Temporary function until we have template data!
     async fn create_dummy_artist(pg_pool: &PgPool) -> Result<()> {
         sqlx::query!(r#"INSERT INTO user_table (id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id) VALUES (1, 'John', 'hash', 'email@email.cz', 'path/pic.png', null, null);"#)
             .execute(pg_pool).await?;
