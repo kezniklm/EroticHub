@@ -1,8 +1,9 @@
 use crate::business::util::file::create_dir_if_not_exist;
+use crate::business::models::video::TempFileResponse;
+use crate::business::Result;
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::repositories::temp_file::TempFileRepo;
 use actix_files::NamedFile;
-use anyhow::Error;
 use async_trait::async_trait;
 use log::{debug, warn};
 use std::path::Path;
@@ -19,25 +20,17 @@ pub trait TempFileFacadeTrait {
         temp_file: NamedTempFile,
         file_name: String,
         user_id: i32,
-    ) -> anyhow::Result<i32>;
+    ) -> Result<i32>;
 
     fn get_temp_directory_path(&self) -> String;
     async fn get_temp_file(&self, file_id: i32, user_id: i32) -> anyhow::Result<NamedFile>;
     async fn create_temp_directory(&self) -> anyhow::Result<()>;
     async fn delete_all_temp_files(&self) -> anyhow::Result<()>;
-    async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> anyhow::Result<()>;
-    async fn check_mime_type(
-        &self,
-        file: Option<String>,
-        allowed_types: Vec<String>,
-    ) -> anyhow::Result<()>;
+    async fn check_mime_type(&self, file: Option<String>, allowed_types: Vec<String>)
+        -> Result<()>;
 
-    async fn persist_permanently(
-        &self,
-        file_id: i32,
-        user_id: i32,
-        path: String,
-    ) -> anyhow::Result<String>;
+    async fn persist_permanently(&self, file_id: i32, user_id: i32, path: String)
+        -> Result<String>;
 }
 
 #[derive(Clone)]
@@ -77,7 +70,7 @@ impl TempFileFacadeTrait for TempFileFacade {
         temp_file: NamedTempFile,
         file_name: String,
         user_id: i32,
-    ) -> anyhow::Result<i32> {
+    ) -> Result<i32> {
         let uuid = Uuid::new_v4();
 
         let path_str = format!(
@@ -148,9 +141,9 @@ impl TempFileFacadeTrait for TempFileFacade {
         &self,
         file: Option<String>,
         allowed_types: Vec<String>,
-    ) -> anyhow::Result<()> {
-        if let Some(mime_type) = file {
-            let is_allowed = allowed_types.contains(&mime_type);
+    ) -> Result<(), AppError> {
+        if let Some(ref mime_type) = file {
+            let is_allowed = allowed_types.contains(mime_type);
             if is_allowed {
                 return Ok(());
             }
@@ -161,7 +154,10 @@ impl TempFileFacadeTrait for TempFileFacade {
             );
         }
 
-        Err(Error::msg("Unsupported MimeType"))
+        Err(AppError::new(
+            &format!("MimeType {:?} is not allowed", file),
+            AppErrorKind::WrongMimeType,
+        ))
     }
 
     /// Persists temporary file permanently to the given location
@@ -185,12 +181,15 @@ impl TempFileFacadeTrait for TempFileFacade {
         file_id: i32,
         user_id: i32,
         permanent_path: String,
-    ) -> anyhow::Result<String> {
+    ) -> Result<String> {
         let temp_file = self
             .temp_file_repo
             .get_file(file_id, user_id)
             .await?
-            .ok_or(Error::msg("Temporary file doesn't exist"))?;
+            .ok_or(AppError::new(
+                "Temporary file doesn't exist",
+                AppErrorKind::InternalServerError,
+            ))?;
 
         let temp_file_path = Path::new(temp_file.file_path.as_str());
 
@@ -199,9 +198,14 @@ impl TempFileFacadeTrait for TempFileFacade {
             temp_file_path.file_name().unwrap().to_str().unwrap_or("")
         );
         println!("{:?}", new_path);
-        tokio::fs::rename(temp_file_path, &new_path).await?;
+        tokio::fs::rename(temp_file_path, &new_path)
+            .await
+            .app_error("Operation with temp file failed")?;
 
-        self.temp_file_repo.delete_file(file_id, user_id).await?;
+        self.temp_file_repo
+            .delete_file(file_id)
+            .await
+            .app_error("Failed to delete temp file")?;
         Ok(new_path)
     }
 }

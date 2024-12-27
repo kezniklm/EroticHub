@@ -6,6 +6,7 @@ use log::{info, warn};
 
 use crate::api::controllers;
 use crate::api::routes::temp_file::temp_file_routes;
+use crate::api::routes::stream::stream_routes;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
 use crate::business::facades::artist::ArtistFacade;
@@ -116,7 +117,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(video_routes)
             .configure(user_routes)
             .configure(temp_file_routes)
-            .service(controllers::stream::register_scope())
+            .configure(stream_routes);
     })
     .bind(("127.0.0.1", 8000))?
     .run()

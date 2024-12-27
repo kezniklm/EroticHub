@@ -1,5 +1,7 @@
 use crate::business::facades::video::VideoFacadeTrait;
+use crate::business::models::error::MapToAppError;
 use crate::business::models::stream::{CompoundStreamInfo, LiveStreamStart};
+use crate::business::Result;
 use crate::persistence::entities::stream::{LiveStream, LiveStreamStatus};
 use crate::persistence::repositories::stream::StreamRepoTrait;
 use crate::streamer::gstreamer_controller::create_streams;
@@ -15,11 +17,7 @@ const STREAM_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
 pub trait StreamFacadeTrait {
     #[allow(dead_code)]
     async fn schedule_stream(&self, video_id: i32, user_id: i32) -> anyhow::Result<()>;
-    async fn start_stream(
-        &self,
-        live_stream: LiveStreamStart,
-        user_id: i32,
-    ) -> anyhow::Result<String>;
+    async fn start_stream(&self, live_stream: LiveStreamStart, user_id: i32) -> Result<String>;
 }
 
 pub struct StreamFacade {
@@ -41,9 +39,10 @@ impl StreamFacade {
         }
     }
 
-    fn create_stream(&self, stream_info: CompoundStreamInfo) -> anyhow::Result<String> {
+    fn create_stream(&self, stream_info: CompoundStreamInfo) -> Result<String> {
         let stream_url = self.create_stream_url(stream_info.stream_id.clone())?;
-        let handles = create_streams(self.stream_storage.clone(), Arc::new(stream_info.clone()))?;
+        let handles = create_streams(self.stream_storage.clone(), Arc::new(stream_info.clone()))
+            .app_error("Failed to create streams")?;
         let stream_repo = self.stream_repo.clone();
         actix_rt::spawn(async move {
             for handle in handles {
@@ -75,9 +74,11 @@ impl StreamFacade {
         Ok(())
     }
 
-    fn create_stream_url(&self, stream_id: String) -> anyhow::Result<String> {
-        let nginx_url = dotenvy::var(NGINX_HLS_URL_KEY)?;
-        let stream_prefix = dotenvy::var(STREAM_PREFIX_KEY)?;
+    fn create_stream_url(&self, stream_id: String) -> Result<String> {
+        let nginx_url =
+            dotenvy::var(NGINX_HLS_URL_KEY).app_error("Stream is wrongly configured")?;
+        let stream_prefix =
+            dotenvy::var(STREAM_PREFIX_KEY).app_error("Stream is wrongly configured")?;
         let url = format!("{nginx_url}{stream_prefix}-{}.m3u8", stream_id);
 
         Ok(url)
@@ -90,11 +91,7 @@ impl StreamFacadeTrait for StreamFacade {
         todo!()
     }
 
-    async fn start_stream(
-        &self,
-        live_stream: LiveStreamStart,
-        user_id: i32,
-    ) -> anyhow::Result<String> {
+    async fn start_stream(&self, live_stream: LiveStreamStart, user_id: i32) -> Result<String> {
         let video = self
             .video_facade
             .get_video_entity(live_stream.video_id, user_id)
