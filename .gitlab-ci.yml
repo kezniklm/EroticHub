@@ -5,6 +5,7 @@ variables:
   POSTGRES_HOST_AUTH_METHOD: trust
   DATABASE_URL: "postgres://user:password@postgres:5432/erotic-hub"
   TEST_DATABASE_URL: "postgres://user:password@postgres:5432/erotic-hub"
+  RUST_BACKTRACE: 1
 
 default:
   image: ricaps/gstreamer-rust:latest
