@@ -131,6 +131,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-multipart-test"
+version = "0.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d622d3b8268b9c3d6788351eae9f028c29ba1151f4943aba4e5b794f475b445d"
+dependencies = [
+ "uuid",
+]
+
+[[package]]
 name = "actix-router"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1028,6 +1037,7 @@ version = "0.1.0"
 dependencies = [
  "actix-files",
  "actix-multipart",
+ "actix-multipart-test",
  "actix-rt",
  "actix-web",
  "anyhow",

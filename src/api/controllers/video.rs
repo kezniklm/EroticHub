@@ -17,9 +17,7 @@ use actix_web::{get, post, web, HttpResponse, Responder, Result, Scope};
 use tempfile::NamedTempFile;
 
 pub fn register_scope() -> Scope {
-    let temp_scope = web::scope("/temp")
-        .service(post_temp_video)
-        .service(post_temp_thumbnail);
+    let temp_scope = web::scope("/temp").service(post_temp_thumbnail);
     web::scope("/video")
         .service(temp_scope)
         .service(save_video)
@@ -46,7 +44,6 @@ pub async fn get_video(
     Ok(video)
 }
 
-#[post("/video")]
 pub async fn post_temp_video(
     MultipartForm(form): MultipartForm<VideoUploadForm>,
     temp_file_facade: Data<TempFileFacade>,

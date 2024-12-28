@@ -24,8 +24,6 @@ pub trait VideoFacadeTrait {
         user_id: i32,
         video: VideoUploadData,
     ) -> Result<models::video::Video>;
-    fn get_video_thumbnail_dirs(&self) -> (String, String);
-    async fn create_dirs(&self) -> anyhow::Result<()>;
     async fn get_video_entity(&self, video_id: i32, user_id: i32) -> Result<Video>;
     async fn get_playable_video(&self, video_id: i32, user_id: i32) -> Result<NamedFile>;
 }
@@ -45,6 +43,29 @@ impl VideoFacade {
             temp_file_facade,
             video_repo,
         }
+    }
+
+    /// Function returns path to both video and thumbnail folder, where the files are stored.
+    ///
+    /// # Returns
+    ///
+    /// Tuple with:
+    /// - Path to video directory as String
+    /// - Path to thumbnails directory as String
+    pub fn get_video_thumbnail_dirs() -> (String, String) {
+        let video =
+            dotenvy::var(VIDEOS_DIRECTORY_KEY).unwrap_or(DEFAULT_VIDEO_DIRECTORY.to_string());
+        let thumbnail =
+            dotenvy::var(THUMBNAIL_DIRECTORY_KEY).unwrap_or(DEFAULT_THUMBNAILS_PATH.to_string());
+        (video, thumbnail)
+    }
+
+    pub async fn create_dirs() -> anyhow::Result<()> {
+        let (video_path, thumbnail_path) = Self::get_video_thumbnail_dirs();
+        create_dir_if_not_exist(video_path).await?;
+        create_dir_if_not_exist(thumbnail_path).await?;
+
+        Ok(())
     }
 }
 
@@ -68,7 +89,7 @@ impl VideoFacadeTrait for VideoFacade {
         user_id: i32,
         video_model: VideoUploadData,
     ) -> Result<models::video::Video> {
-        let (video_dir_path, thumbnail_dir_path) = self.get_video_thumbnail_dirs();
+        let (video_dir_path, thumbnail_dir_path) = Self::get_video_thumbnail_dirs();
 
         let video_path = self
             .temp_file_facade
@@ -92,29 +113,6 @@ impl VideoFacadeTrait for VideoFacade {
         let video_entity = self.video_repo.save_video(entity).await?;
 
         Ok(models::video::Video::from(&video_entity))
-    }
-
-    /// Function returns path to both video and thumbnail folder, where the files are stored.
-    ///
-    /// # Returns
-    ///
-    /// Tuple with:
-    /// - Path to video directory as String
-    /// - Path to thumbnails directory as String
-    fn get_video_thumbnail_dirs(&self) -> (String, String) {
-        let video =
-            dotenvy::var(VIDEOS_DIRECTORY_KEY).unwrap_or(DEFAULT_VIDEO_DIRECTORY.to_string());
-        let thumbnail =
-            dotenvy::var(THUMBNAIL_DIRECTORY_KEY).unwrap_or(DEFAULT_THUMBNAILS_PATH.to_string());
-        (video, thumbnail)
-    }
-
-    async fn create_dirs(&self) -> anyhow::Result<()> {
-        let (video_path, thumbnail_path) = self.get_video_thumbnail_dirs();
-        create_dir_if_not_exist(video_path).await?;
-        create_dir_if_not_exist(thumbnail_path).await?;
-
-        Ok(())
     }
 
     /// For internal usage only!

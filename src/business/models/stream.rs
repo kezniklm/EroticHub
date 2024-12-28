@@ -14,8 +14,8 @@ pub struct StreamStorage {
     streams: Streams,
 }
 
-impl StreamStorage {
-    pub fn new() -> StreamStorage {
+impl Default for StreamStorage {
+    fn default() -> Self {
         StreamStorage {
             streams: Arc::new(Mutex::new(Vec::new())),
         }
