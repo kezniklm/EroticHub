@@ -59,6 +59,22 @@ async function fetchUserCountry() {
 
         const flagElement = document.getElementById("country-flag");
 
+        const cachedCountryData = localStorage.getItem("userCountryData");
+        if (cachedCountryData) {
+            const { country, countryCode } = JSON.parse(cachedCountryData);
+
+            countryNameElement.textContent = country;
+
+            if (countryCode) {
+                flagElement.src = `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`;
+                flagElement.alt = `${country} Flag`;
+                flagElement.style.display = "inline";
+            } else {
+                flagElement.style.display = "none";
+            }
+            return;
+        }
+
         const response = await fetch('https://get.geojs.io/v1/ip/country.json');
         const data = await response.json();
 
@@ -74,6 +90,8 @@ async function fetchUserCountry() {
         } else {
             flagElement.style.display = "none";
         }
+
+        localStorage.setItem("userCountryData", JSON.stringify({ country, countryCode }));
     } catch (error) {
         console.error("Error fetching country:", error);
         document.getElementById("location-heading").textContent = `Hot Videos in your location`;
