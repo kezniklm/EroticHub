@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", function () {
     initializeAgeVerification();
+    setupAccountPopup();
 });
 
 function initializeAgeVerification() {
@@ -19,4 +20,27 @@ function initializeAgeVerification() {
     noButton.addEventListener('click', function () {
         window.location.href = 'https://www.google.com';
     });
+}
+
+function setupAccountPopup( triggerId = "account-icon", popupId = "account-popup") {
+    const triggerElement = document.getElementById(triggerId);
+    const popupElement = document.getElementById(popupId);
+
+    if (!triggerElement || !popupElement) {
+        return;
+    }
+
+    const togglePopup = (event) => {
+        event.preventDefault();
+        popupElement.classList.toggle("hidden");
+    };
+
+    const closePopupIfOutsideClick = (event) => {
+        if (!popupElement.contains(event.target) && !triggerElement.contains(event.target)) {
+            popupElement.classList.add("hidden");
+        }
+    };
+
+    triggerElement.addEventListener("click", togglePopup);
+    document.addEventListener("click", closePopupIfOutsideClick);
 }

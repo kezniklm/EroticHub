@@ -63,8 +63,31 @@
                 <div class="d-none d-lg-flex align-items-center ms-3">
                     <a href="#" class="icon-btn me-4" hx-get="/video/new" hx-push-url="true"
                         hx-target="#content-container" hx-swap="outerHTML"><i class="bi bi-camera-video-fill"></i></a>
-                    <a href="#" class="icon-btn" hx-get="/user" hx-push-url="true" hx-target="#content-container"
-                        hx-swap="outerHTML"><i class="bi bi-person-circle"></i></a>
+                    <div class="account-container">
+                        <a href="#" id="account-icon" class="icon-btn">
+                            <i class="bi bi-person-circle"></i>
+                        </a>
+                        <div id="account-popup" class="popup hidden">
+                            <div class="popup-item">
+                                <div class="popup-icon">
+                                    <i class="bi bi-person-fill-add"></i>
+                                </div>
+                                <div class="popup-label">Sign Up</div>
+                            </div>
+                            <div class="popup-item">
+                                <div class="popup-icon">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div class="popup-label">Log In</div>
+                            </div>
+                            <div class="popup-item">
+                                <div class="popup-icon">
+                                    <i class="bi bi-hand-thumbs-up-fill"></i>
+                                </div>
+                                <div class="popup-label">Liked Videos</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
