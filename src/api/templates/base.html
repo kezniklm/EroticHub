@@ -3,6 +3,7 @@
 <html lang="en">
 
 <meta charset="UTF-8">
+
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EroticHub</title>
@@ -20,86 +21,85 @@
     <script src="/static/js/base.js"></script>
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@2.0.4"
-            integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-            crossorigin="anonymous"></script>
+        integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+        crossorigin="anonymous"></script>
 </head>
 
 <body>
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-dark fixed    {% block extra_styles %} {% endblock %}
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed    {% block extra_styles %} {% endblock %}
 -top">
-    <div class="container">
-        <!-- Logo -->
-        <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container"
-           hx-swap="outerHTML">Erotic<span>Hub</span></a>
-        <!-- Toggler -->
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container"
+                hx-swap="outerHTML">Erotic<span>Hub</span></a>
+            <!-- Toggler -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <!-- Navbar Content -->
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <!-- Left Menu -->
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Porn Videos</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Categories</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">Live Cams</a></li>
-                <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" href="#">Stream</a>
-                <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" hx-get="/video/new"
-                                        hx-push-url="true" hx-target="#content-container" hx-swap="innerHTML">Upload
-                    video</a>
-                </li>
-                <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" hx-get="/user"
-                                        hx-push-url="true" hx-target="#content-container"
-                                        hx-swap="innerHTML">Account</a>
-                </li>
-            </ul>
-            <!-- Centered and Wider Search Bar -->
-            <form class="d-flex mx-auto mb-2 mb-lg-0" style="flex-grow: 1;">
-                <input class="form-control search-bar" type="search" placeholder="Search EroticHub">
-            </form>
-            <!-- Right Icons (on large screens) -->
-            <div class="d-none d-lg-flex align-items-center ms-3">
-                <a href="#" class="icon-btn me-4" hx-get="/video/new" hx-push-url="true" hx-target="#content-container"
-                   hx-swap="outerHTML"><i class="bi bi-camera-video-fill"></i></a>
-                <a href="#" class="icon-btn" hx-get="/user" hx-push-url="true" hx-target="#content-container"
-                   hx-swap="outerHTML"><i class="bi bi-person-circle"></i></a>
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Left Menu -->
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Porn Videos</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Categories</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#">Live Cams</a></li>
+                    <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" href="#">Stream</a>
+                    <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" hx-get="/video/new"
+                            hx-push-url="true" hx-target="#content-container" hx-swap="innerHTML">Upload
+                            video</a>
+                    </li>
+                    <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" hx-get="/user"
+                            hx-push-url="true" hx-target="#content-container" hx-swap="innerHTML">Account</a>
+                    </li>
+                </ul>
+                <!-- Centered and Wider Search Bar -->
+                <form class="d-flex mx-auto mb-2 mb-lg-0" style="flex-grow: 1;">
+                    <input class="form-control search-bar" type="search" placeholder="Search EroticHub">
+                </form>
+                <!-- Right Icons (on large screens) -->
+                <div class="d-none d-lg-flex align-items-center ms-3">
+                    <a href="#" class="icon-btn me-4" hx-get="/video/new" hx-push-url="true"
+                        hx-target="#content-container" hx-swap="outerHTML"><i class="bi bi-camera-video-fill"></i></a>
+                    <a href="#" class="icon-btn" hx-get="/user" hx-push-url="true" hx-target="#content-container"
+                        hx-swap="outerHTML"><i class="bi bi-person-circle"></i></a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="age-verification-popup">
+        <div class="popup-content">
+            <div class="popup-logo">
+                <a class="navbar-brand popup-brand" href="#"><span>Erotic</span>Hub</a>
+            </div>
+            <h1>This is an adult website</h1>
+            <p>
+                This website contains age-restricted materials including nudity and explicit depictions of sexual
+                activity.
+                By entering, you affirm that you are at least 18 years of age or the age of majority in the jurisdiction
+                you are accessing the website from and you consent to viewing sexually explicit content.
+            </p>
+            <div class="popup-buttons">
+                <button id="yes-button">I am 18 or older - Enter</button>
+                <button id="no-button" class="exit-button">I am under 18 - Exit</button>
+            </div>
+            <div class="popup-footer">
+                <p>
+                    Our <a href="#">parental controls page</a> explains how you can easily block access to this site.
+                </p>
+                <p>© <a class="popup-brand-footer" href="#"><span>Erotic</span>Hub</a>, 2024</p>
             </div>
         </div>
     </div>
-</nav>
-
-<div id="age-verification-popup">
-    <div class="popup-content">
-        <div class="popup-logo">
-            <a class="navbar-brand popup-brand" href="#"><span>Erotic</span>Hub</a>
-        </div>
-        <h1>This is an adult website</h1>
-        <p>
-            This website contains age-restricted materials including nudity and explicit depictions of sexual
-            activity.
-            By entering, you affirm that you are at least 18 years of age or the age of majority in the jurisdiction
-            you are accessing the website from and you consent to viewing sexually explicit content.
-        </p>
-        <div class="popup-buttons">
-            <button id="yes-button">I am 18 or older - Enter</button>
-            <button id="no-button" class="exit-button">I am under 18 - Exit</button>
-        </div>
-        <div class="popup-footer">
-            <p>
-                Our <a href="#">parental controls page</a> explains how you can easily block access to this site.
-            </p>
-            <p>© <a class="popup-brand-footer" href="#"><span>Erotic</span>Hub</a>, 2024</p>
-        </div>
+    {% endif %}
+    <div class="container centered-content" id="content-container">
+        {{ child_template|safe }}
     </div>
-</div>
-{% endif %}
-<div class="container centered-content" id="content-container">
-    {{ child_template|safe }}
-</div>
 
-{% if !htmx_request.hx_request %}
+    {% if !htmx_request.hx_request %}
 
 </body>
 
