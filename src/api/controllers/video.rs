@@ -1,4 +1,7 @@
+use crate::api::extractors::htmx_extractor::HtmxRequest;
+use crate::api::templates::template::BaseTemplate;
 use crate::api::templates::video::list::template::VideoListTemplate;
+use crate::api::templates::video::upload::template::VideoUploadTemplate;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{
@@ -11,7 +14,6 @@ use actix_multipart::form::MultipartForm;
 use actix_web::http::header::ContentType;
 use actix_web::web::{Data, Query};
 use actix_web::{get, post, web, HttpResponse, Responder, Result, Scope};
-use askama::Template;
 use tempfile::NamedTempFile;
 
 pub fn register_scope() -> Scope {
@@ -98,11 +100,10 @@ fn get_content_type_string(temp_file: &TempFile) -> Option<String> {
         .map(|content_type| content_type.to_string())
 }
 
-pub async fn list_videos() -> impl Responder {
-    let template = VideoListTemplate {};
+pub async fn list_videos(htmx_request: HtmxRequest) -> impl Responder {
+    BaseTemplate::wrap(htmx_request, VideoListTemplate {})
+}
 
-    match template.render() {
-        Ok(rendered) => HttpResponse::Ok().content_type("text/html").body(rendered),
-        Err(_) => HttpResponse::InternalServerError().finish(),
-    }
+pub async fn upload_video_template(htmx_request: HtmxRequest) -> impl Responder {
+    BaseTemplate::wrap(htmx_request, VideoUploadTemplate {})
 }

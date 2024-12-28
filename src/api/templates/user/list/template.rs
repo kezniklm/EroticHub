@@ -1,5 +1,5 @@
 use crate::business::models::user_detail::UserDetail;
-use askama::Template;
+use askama_actix::Template;
 
 #[derive(Template)]
 #[template(path = "user/list/index.html")]
