@@ -1,4 +1,6 @@
+use crate::persistence::entities::error::MapToDatabaseError;
 use crate::persistence::entities::video::{Video, VideoVisibility};
+use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
 
@@ -6,8 +8,8 @@ use sqlx::PgPool;
 pub trait VideoRepo {
     #[allow(dead_code)]
     async fn list_videos(&self) -> anyhow::Result<Vec<Video>>;
-    async fn save_video(&self, video: Video) -> anyhow::Result<Video>;
-    async fn get_video_by_id(&self, video_id: i32) -> anyhow::Result<Video>;
+    async fn save_video(&self, video: Video) -> Result<Video>;
+    async fn get_video_by_id(&self, video_id: i32) -> Result<Video>;
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +43,7 @@ impl VideoRepo for PgVideoRepo {
         Ok(result)
     }
 
-    async fn save_video(&self, video: Video) -> anyhow::Result<Video> {
+    async fn save_video(&self, video: Video) -> Result<Video> {
         let result = sqlx::query_as!(
             Video,
             r#"
@@ -69,7 +71,7 @@ impl VideoRepo for PgVideoRepo {
         Ok(result)
     }
 
-    async fn get_video_by_id(&self, video_id: i32) -> anyhow::Result<Video> {
+    async fn get_video_by_id(&self, video_id: i32) -> Result<Video> {
         let result = sqlx::query_as!(
             Video,
             r#"
@@ -86,7 +88,8 @@ impl VideoRepo for PgVideoRepo {
             video_id
         )
         .fetch_one(&self.pg_pool)
-        .await?;
+        .await
+        .db_error("Video doesn't exist")?;
 
         Ok(result)
     }

@@ -1,5 +1,3 @@
-{% extends "base.html" %}
-
 {% block extra_script %}
 <script src="/static/js/user/register.js"></script>
 {% endblock %}
@@ -8,7 +6,6 @@
 <link rel="stylesheet" type="text/css" href="/static/css/user/register.css" onerror="this.href='../../../static/base.css';">
 {% endblock %}
 
-{% block content %}
 <div class="registration-container">
     <div class="form-with-preview">
         <form id="registration-form" method="post" enctype="multipart/form-data" hx-post="/register" hx-target="#response-message" hx-swap="innerHTML">
@@ -42,4 +39,3 @@
     </div>
     <div id="response-message"></div>
 </div>
-{% endblock %}
