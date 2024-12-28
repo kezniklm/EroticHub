@@ -37,3 +37,10 @@ tempfile = "3.14.0"
 uuid = { version = "1.11.0", features = ["fast-rng", "v4"] }
 config = { version = "0.14.1", features = ["yaml"] }
 test-context = "0.3.0"
+validator = { version = "0.19", features = ["derive"] }
+regex = { version = "1", default-features = false, features = ["std"] }
+once_cell = "1.18.0"
+futures-util = "0.3.31"
+http = "0.2.12"
+futures = "0.3.31"
+bcrypt = "0.16.0"
