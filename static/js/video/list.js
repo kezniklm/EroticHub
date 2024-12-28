@@ -5,48 +5,56 @@ document.addEventListener("htmx:load", function () {
 
 function scrollTags(direction) {
     const scrollAmount = 200;
-    const tagsContainer = document.querySelector('.tags-container');
-    if (direction === 'left') {
-        tagsContainer.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-    } else if (direction === 'right') {
-        tagsContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    const tagsContainer = document.querySelector(".tags-container");
+    if (direction === "left") {
+        tagsContainer.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    } else if (direction === "right") {
+        tagsContainer.scrollBy({ left: scrollAmount, behavior: "smooth" });
     }
 }
 
 function checkScroll() {
-    const tagsContainer = document.querySelector('.tags-container');
+    const tagsContainer = document.querySelector(".tags-container");
 
     if (tagsContainer == null) {
         return;
     }
-    const rightArrowWrapper = document.querySelector('.arrow-wrapper.right');
-    const leftArrowWrapper = document.querySelector('.arrow-wrapper.left');
+    const rightArrowWrapper = document.querySelector(".arrow-wrapper.right");
+    const leftArrowWrapper = document.querySelector(".arrow-wrapper.left");
 
     const scrollLeft = tagsContainer.scrollLeft;
     const maxScrollLeft = tagsContainer.scrollWidth - tagsContainer.clientWidth;
 
     if (scrollLeft <= 0) {
-        leftArrowWrapper.classList.add('hidden');
+        leftArrowWrapper.classList.add("hidden");
     } else {
-        leftArrowWrapper.classList.remove('hidden');
+        leftArrowWrapper.classList.remove("hidden");
     }
 
     if (scrollLeft >= maxScrollLeft) {
-        rightArrowWrapper.classList.add('hidden');
+        rightArrowWrapper.classList.add("hidden");
     } else {
-        rightArrowWrapper.classList.remove('hidden');
+        rightArrowWrapper.classList.remove("hidden");
     }
 
-    tagsContainer.style.marginLeft = leftArrowWrapper.classList.contains('hidden') ? '0' : '60px';
-    tagsContainer.style.marginRight = rightArrowWrapper.classList.contains('hidden') ? '0' : '60px';
+    tagsContainer.style.marginLeft = leftArrowWrapper.classList.contains(
+        "hidden"
+    )
+        ? "0"
+        : "60px";
+    tagsContainer.style.marginRight = rightArrowWrapper.classList.contains(
+        "hidden"
+    )
+        ? "0"
+        : "60px";
 }
 
 function toggleTag(checkbox) {
-    const tag = checkbox.closest('.tag');
+    const tag = checkbox.closest(".tag");
     if (checkbox.checked) {
-        tag.classList.add('selected');
+        tag.classList.add("selected");
     } else {
-        tag.classList.remove('selected');
+        tag.classList.remove("selected");
     }
 }
 
@@ -75,7 +83,7 @@ async function fetchUserCountry() {
             return;
         }
 
-        const response = await fetch('https://get.geojs.io/v1/ip/country.json');
+        const response = await fetch("https://get.geojs.io/v1/ip/country.json");
         const data = await response.json();
 
         const country = data.name || "your location";
@@ -91,9 +99,14 @@ async function fetchUserCountry() {
             flagElement.style.display = "none";
         }
 
-        localStorage.setItem("userCountryData", JSON.stringify({ country, countryCode }));
+        localStorage.setItem(
+            "userCountryData",
+            JSON.stringify({ country, countryCode })
+        );
     } catch (error) {
         console.error("Error fetching country:", error);
-        document.getElementById("location-heading").textContent = `Hot Videos in your location`;
+        document.getElementById(
+            "location-heading"
+        ).textContent = `Hot Videos in your location`;
     }
 }
