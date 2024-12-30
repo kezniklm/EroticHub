@@ -32,6 +32,12 @@ impl StreamStorage {
         position
     }
 
+    /// Runs code on the Stream defined by stream_id
+    /// Can be used for stream control - e.g. start, stop, etc..
+    ///
+    /// # Params
+    /// `stream_id` - ID of the stream
+    /// `fnc` - function reference which takes Stream as parameter
     pub fn run_on<F: FnOnce(&Stream) -> anyhow::Result<()>>(
         &self,
         stream_id: &str,
