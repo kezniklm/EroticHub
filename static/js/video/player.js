@@ -58,6 +58,7 @@ async function setupStream(url) {
  * @returns {Promise<void>}
  */
 async function loadingPlaceholder(player) {
+    const TIMEOUT_AFTER_MS = 120000;
     const loadingHeader = document.getElementById("loading-stream-header");
     const videoElement = document.getElementById("stream-player");
 
@@ -66,6 +67,7 @@ async function loadingPlaceholder(player) {
 
     let intervalID = null;
     let dotsCount = 2;
+    let startTime = Date.now();
     const cycle = async function() {
         if (await isPlaylistAvailable(player)) {
             videoElement.style.display = "unset";
@@ -73,6 +75,9 @@ async function loadingPlaceholder(player) {
 
             player.load();
             player.play();
+            clearInterval(intervalID);
+            return;
+        } else if ((Date.now() - startTime) > TIMEOUT_AFTER_MS) {
             clearInterval(intervalID);
             return;
         }
