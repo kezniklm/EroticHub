@@ -106,3 +106,19 @@ pub struct LiveStreamSchedule {
 pub struct LiveStreamStart {
     pub video_id: i32,
 }
+
+#[derive(Serialize, Deserialize, PartialEq)]
+pub enum LiveStreamStatus {
+    Pending,
+    Running,
+    Ended,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LiveStream {
+    pub id: i32,
+    pub video_id: i32,
+    pub start_time: DateTime<Local>,
+    pub status: LiveStreamStatus,
+    pub stream_url: String,
+}

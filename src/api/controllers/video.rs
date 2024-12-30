@@ -1,4 +1,4 @@
-use crate::api::controllers::utils::route_util::build_watch_path;
+use crate::api::controllers::utils::route_util::{add_redirect_header, build_watch_path};
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::template::BaseTemplate;
 use crate::api::templates::video::edit::template::EditVideoTemplate;
@@ -12,11 +12,9 @@ use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
-use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::web::{Data, Form, Path};
 use actix_web::{HttpResponse, Responder, Result};
 use askama_actix::TemplateToResponse;
-use std::str::FromStr;
 
 /// Creates new video
 ///
@@ -197,13 +195,4 @@ pub async fn edit_video_template(
     );
 
     Ok(template.to_response())
-}
-
-fn add_redirect_header(path: &str, response: &mut HttpResponse) -> Result<()> {
-    response.head_mut().headers.append(
-        HeaderName::from_str("HX-Redirect").unwrap(),
-        HeaderValue::from_str(path)?,
-    );
-
-    Ok(())
 }

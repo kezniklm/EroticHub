@@ -1,0 +1,17 @@
+
+{% match stream.status %}
+{% when LiveStreamStatus::Pending %}
+<h2>Live stream is scheduled to {{ stream.start_time }}</h2>
+{% when LiveStreamStatus::Running %}
+<div id="loading-stream-header" style="display: none">
+    <div class="stream-loading">Stream is loading</div>
+    <span id="stream-loading-dots">&middot;</span>
+    <div>Stream will be automatically displayed once is loaded</div>
+</div>
+<video id="stream-player" class="video-js">
+</video>
+<script>setupStream("{{ stream.stream_url }}")</script>
+
+{% when LiveStreamStatus::Ended %}
+<h2>Live stream already ended</h2>
+{% endmatch %}
