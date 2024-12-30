@@ -16,7 +16,9 @@ pub fn build_get_video_path(video_id: i32) -> (String, String) {
 pub fn build_watch_path(video_id: i32) -> String {
     format!("/video/{}/watch", video_id)
 }
-pub fn build_stream_watch_path(stream_id: i32) -> String { format!("/stream/{stream_id}/watch") }
+pub fn build_stream_watch_path(stream_id: i32) -> String {
+    format!("/stream/{stream_id}/watch")
+}
 
 pub fn add_redirect_header(path: &str, response: &mut HttpResponse) -> actix_web::Result<()> {
     response.head_mut().headers.append(

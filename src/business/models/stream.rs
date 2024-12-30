@@ -1,14 +1,15 @@
+use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
+use crate::business::Result;
 use crate::streamer::types::{
-    CompoundStreamInfoTrait, PipelinesList, StreamResolution, StreamStorageTrait,
+    CompoundStreamInfoTrait, PipelinesList, Stream, StreamResolution, StreamStorageTrait, Streams,
 };
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 const RTMP_SERVER_ENV: &str = "RTMP_SERVER";
 const STREAM_PATH_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
 
-type Streams = Arc<Mutex<Vec<(Arc<dyn CompoundStreamInfoTrait>, PipelinesList)>>>;
 #[derive(Clone)]
 pub struct StreamStorage {
     streams: Streams,
@@ -22,6 +23,32 @@ impl Default for StreamStorage {
     }
 }
 
+impl StreamStorage {
+    fn get_index(streams: &MutexGuard<Vec<Stream>>, stream_id: &str) -> Option<usize> {
+        let position = streams
+            .iter()
+            .position(|(stream, _pipeline)| stream.get_stream_id() == stream_id);
+
+        position
+    }
+
+    pub fn run_on<F: FnOnce(&Stream) -> anyhow::Result<()>>(
+        &self,
+        stream_id: &str,
+        fnc: F,
+    ) -> Result<()> {
+        let streams = self.streams.lock().unwrap();
+        let position = Self::get_index(&streams, stream_id);
+
+        if let Some(position) = position {
+            if let Some(stream) = streams.get(position) {
+                return fnc(stream).app_error("Failed to run an action on stream");
+            }
+        }
+        Err(AppError::new("Stream not found", AppErrorKind::NotFound))
+    }
+}
+
 impl StreamStorageTrait for StreamStorage {
     fn push(&self, stream: Arc<dyn CompoundStreamInfoTrait>, pipeline: PipelinesList) {
         let mut streams = self.streams.lock().unwrap();
@@ -30,9 +57,7 @@ impl StreamStorageTrait for StreamStorage {
 
     fn remove(&self, stream_id: &str) {
         let mut streams = self.streams.lock().unwrap();
-        let position = streams
-            .iter()
-            .position(|(stream, _pipeline)| stream.get_stream_id() == stream_id);
+        let position = Self::get_index(&streams, stream_id);
         match position {
             None => (),
             Some(position) => {

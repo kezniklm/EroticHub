@@ -1,14 +1,16 @@
 use crate::business::facades::video::VideoFacadeTrait;
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::stream::{
-    CompoundStreamInfo, LiveStream as LiveStreamDto, LiveStreamStart,
+    CompoundStreamInfo, LiveStream as LiveStreamDto, LiveStreamStart, StreamStorage,
 };
+use crate::business::models::video::Video;
 use crate::business::Result;
 use crate::persistence::entities::error::MapToDatabaseError;
 use crate::persistence::entities::stream::{LiveStream, LiveStreamStatus};
 use crate::persistence::repositories::stream::StreamRepoTrait;
+use crate::streamer;
 use crate::streamer::gstreamer_controller::create_streams;
-use crate::streamer::types::{StreamResolution, StreamStorageTrait};
+use crate::streamer::types::StreamResolution;
 use async_trait::async_trait;
 use std::sync::Arc;
 use std::thread;
@@ -31,19 +33,20 @@ pub trait StreamFacadeTrait {
     ///
     /// # Returns
     /// `LiveStreamDto` - data transfer object of livestream
-    async fn get_stream(&self, user_id: i32, stream_id: i32) -> Result<LiveStreamDto>;
+    async fn get_stream(&self, user_id: i32, stream_id: i32) -> Result<(Video, LiveStreamDto)>;
+    async fn stop_stream(&self, user_id: i32, stream_id: i32) -> Result<()>;
 }
 
 pub struct StreamFacade {
     video_facade: Arc<dyn VideoFacadeTrait + Send + Sync>,
-    stream_storage: Arc<dyn StreamStorageTrait + Send + Sync>,
+    stream_storage: Arc<StreamStorage>,
     stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
 }
 
 impl StreamFacade {
     pub fn new(
         video_facade: Arc<dyn VideoFacadeTrait + Send + Sync>,
-        stream_storage: Arc<dyn StreamStorageTrait + Send + Sync>,
+        stream_storage: Arc<StreamStorage>,
         stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
     ) -> Self {
         Self {
@@ -57,19 +60,17 @@ impl StreamFacade {
         let stream_url = self.create_stream_url(stream_info.stream_id.clone())?;
         let stream_repo = self.stream_repo.clone();
         let info = stream_info.clone();
-        
+
         let stream_storage = self.stream_storage.clone();
 
         thread::spawn::<_, Result<()>>(move || {
-            let handles = create_streams(
-                stream_storage,
-                stream_info.clone(),
-            ).app_error("Failed to create streams")?;
-            
+            let handles = create_streams(stream_storage, stream_info.clone())
+                .app_error("Failed to create streams")?;
+
             for handle in handles {
                 handle.join().app_error("Failed to end the stream")?;
             }
-            
+
             let runtime = Runtime::new().app_error("Failed to end the stream")?;
             runtime.block_on(Self::mark_stream_as_ended(info, stream_repo))?;
             Ok(())
@@ -135,7 +136,7 @@ impl StreamFacadeTrait for StreamFacade {
         Ok(stream_id)
     }
 
-    async fn get_stream(&self, _user_id: i32, stream_id: i32) -> Result<LiveStreamDto> {
+    async fn get_stream(&self, user_id: i32, stream_id: i32) -> Result<(Video, LiveStreamDto)> {
         let stream = self
             .stream_repo
             .get_stream(stream_id)
@@ -146,9 +147,30 @@ impl StreamFacadeTrait for StreamFacade {
             ))?;
 
         let stream_id_str = stream.id.to_string();
-        Ok(LiveStreamDto::from_entity(
-            stream,
-            self.create_stream_url(stream_id_str)?,
-        ))
+        let stream_dto = LiveStreamDto::from_entity(stream, self.create_stream_url(stream_id_str)?);
+
+        let video = self
+            .video_facade
+            .get_video_model(stream_dto.video_id, user_id)
+            .await?;
+
+        Ok((video, stream_dto))
+    }
+
+    async fn stop_stream(&self, _user_id: i32, stream_id: i32) -> Result<()> {
+        self.stream_storage
+            .run_on(&stream_id.to_string(), |stream| {
+                let (_info, pipelines) = stream;
+                for pipeline in pipelines {
+                    streamer::gstreamer_controller::stop_stream(pipeline)?;
+                }
+
+                Ok(())
+            })?;
+
+        self.stream_repo
+            .change_status(stream_id, LiveStreamStatus::Ended)
+            .await?;
+        Ok(())
     }
 }

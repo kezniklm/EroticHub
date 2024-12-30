@@ -1,6 +1,8 @@
 use gstreamer::Pipeline;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
+pub type Stream = (Arc<dyn CompoundStreamInfoTrait>, PipelinesList);
+pub type Streams = Arc<Mutex<Vec<Stream>>>;
 pub type PipelinesList = Vec<Arc<Pipeline>>;
 
 pub trait StreamStorageTrait: Send + Sync {
