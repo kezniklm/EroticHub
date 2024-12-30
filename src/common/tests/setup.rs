@@ -268,8 +268,12 @@ async fn setup_test_db(test_id: Uuid) -> (PgPool, String) {
 
 async fn load_template_data(test_pool: &PgPool) {
     let test_sql = tokio::fs::read_to_string("tests/test_data/sql/test_data.sql")
-        .await.expect("Failed to read SQL file with test data");
-    test_pool.execute(test_sql.as_str()).await.expect("Failed to run test migrations");
+        .await
+        .expect("Failed to read SQL file with test data");
+    test_pool
+        .execute(test_sql.as_str())
+        .await
+        .expect("Failed to run test migrations");
 }
 
 /// Sets env variables for directories used for storing the files and
