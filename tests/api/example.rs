@@ -21,7 +21,7 @@ async fn test02(ctx: &mut AsyncContext) {
 
     let (header, body) = files::VIDEO1.get_multipart_builder("file", "video/mp4");
     let req = test::TestRequest::default()
-        .uri("/video/temp/video")
+        .uri("/temp/video")
         .method(Method::POST)
         .insert_header(header)
         .set_payload(body);

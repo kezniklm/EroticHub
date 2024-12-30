@@ -1,6 +1,8 @@
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("htmx:load", function () {
     initializeAgeVerification();
+    initTooltips();
 });
+
 
 function initializeAgeVerification() {
     const popup = document.getElementById('age-verification-popup');
@@ -18,5 +20,16 @@ function initializeAgeVerification() {
 
     noButton.addEventListener('click', function () {
         window.location.href = 'https://www.google.com';
+    });
+}
+
+function initTooltips() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    [...tooltipTriggerList].map(tooltipTriggerEl => {
+        const tooltip = new bootstrap.Tooltip(tooltipTriggerEl);
+        tooltipTriggerEl.addEventListener("click", function () {
+            tooltip.hide();
+        })
+        return tooltip; 
     });
 }

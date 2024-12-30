@@ -1,0 +1,16 @@
+.video-info-container {
+    text-align: left;
+    min-width: 100%;
+}
+
+.video-name {
+    font-size: 2rem;
+    color: var(--primary-white);
+    font-weight: bold;
+}
+
+.video-name-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

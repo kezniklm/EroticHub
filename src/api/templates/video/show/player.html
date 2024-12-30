@@ -1,0 +1,4 @@
+<video id="video-player" class="video-js" {% if let Some(path)=thumbnail_path %} poster="{{ path }}" {% endif
+       %}>
+    <source src="{{ video_path }}" type="video/mp4">
+</video>

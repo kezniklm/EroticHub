@@ -1,67 +1,58 @@
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::models;
-use crate::business::models::error::MapToAppError;
-use crate::business::models::video::VideoUploadData;
+use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
+use crate::business::models::video::{VideoEditReq, VideoUploadReq};
 use crate::business::util::file::create_dir_if_not_exist;
 use crate::business::Result;
-use crate::persistence::entities::error::MapToDatabaseError;
-use crate::persistence::entities::video::{Video, VideoVisibility};
+use crate::persistence::entities::video::{PatchVideo, Video, VideoVisibility};
 use crate::persistence::repositories::video::VideoRepo;
 use actix_files::NamedFile;
 use async_trait::async_trait;
 use std::path::Path;
 use std::sync::Arc;
 
-const DEFAULT_VIDEO_DIRECTORY: &str = "./resources/videos";
-const DEFAULT_THUMBNAILS_PATH: &str = "./resources/thumbnails";
-const VIDEOS_DIRECTORY_KEY: &str = "VIDEO_DIRECTORY_PATH";
-const THUMBNAIL_DIRECTORY_KEY: &str = "THUMBNAIL_DIRECTORY_PATH";
-
 #[async_trait]
 pub trait VideoFacadeTrait {
-    async fn save_video(
+    async fn save_video(&self, user_id: i32, video: VideoUploadReq)
+        -> Result<models::video::Video>;
+    async fn patch_video(
         &self,
         user_id: i32,
-        video: VideoUploadData,
+        video_id: i32,
+        video: VideoEditReq,
     ) -> Result<models::video::Video>;
+    async fn delete_video(&self, user_id: i32, video_id: i32) -> Result<()>;
     async fn get_video_entity(&self, video_id: i32, user_id: i32) -> Result<Video>;
+    async fn get_video_model(&self, video_id: i32, user_id: i32) -> Result<models::video::Video>;
     async fn get_playable_video(&self, video_id: i32, user_id: i32) -> Result<NamedFile>;
+    async fn get_thumbnail_file(&self, video_id: i32, user_id: i32) -> Result<NamedFile>;
+    fn get_video_thumbnail_dirs(&self) -> (String, String);
 }
 
 #[derive(Clone)]
 pub struct VideoFacade {
     temp_file_facade: Arc<TempFileFacade>,
     video_repo: Arc<dyn VideoRepo + Sync + Send>,
+    video_dir: String,
+    thumbnail_dir: String,
 }
 
 impl VideoFacade {
     pub fn new(
         temp_file_facade: Arc<TempFileFacade>,
         video_repo: Arc<dyn VideoRepo + Sync + Send>,
+        video_dir: String,
+        thumbnail_dir: String,
     ) -> Self {
         Self {
             temp_file_facade,
             video_repo,
+            video_dir,
+            thumbnail_dir,
         }
     }
 
-    /// Function returns path to both video and thumbnail folder, where the files are stored.
-    ///
-    /// # Returns
-    ///
-    /// Tuple with:
-    /// - Path to video directory as String
-    /// - Path to thumbnails directory as String
-    pub fn get_video_thumbnail_dirs() -> (String, String) {
-        let video =
-            dotenvy::var(VIDEOS_DIRECTORY_KEY).unwrap_or(DEFAULT_VIDEO_DIRECTORY.to_string());
-        let thumbnail =
-            dotenvy::var(THUMBNAIL_DIRECTORY_KEY).unwrap_or(DEFAULT_THUMBNAILS_PATH.to_string());
-        (video, thumbnail)
-    }
-
-    pub async fn create_dirs() -> anyhow::Result<()> {
-        let (video_path, thumbnail_path) = Self::get_video_thumbnail_dirs();
+    pub async fn create_dirs(video_path: String, thumbnail_path: String) -> anyhow::Result<()> {
         create_dir_if_not_exist(video_path).await?;
         create_dir_if_not_exist(thumbnail_path).await?;
 
@@ -87,17 +78,19 @@ impl VideoFacadeTrait for VideoFacade {
     async fn save_video(
         &self,
         user_id: i32,
-        video_model: VideoUploadData,
+        video_model: VideoUploadReq,
     ) -> Result<models::video::Video> {
-        let (video_dir_path, thumbnail_dir_path) = Self::get_video_thumbnail_dirs();
-
         let video_path = self
             .temp_file_facade
-            .persist_permanently(video_model.temp_video_id, user_id, video_dir_path)
+            .persist_permanently(video_model.temp_video_id, user_id, self.video_dir.clone())
             .await?;
         let thumbnail_path = self
             .temp_file_facade
-            .persist_permanently(video_model.temp_thumbnail_id, user_id, thumbnail_dir_path)
+            .persist_permanently(
+                video_model.temp_thumbnail_id,
+                user_id,
+                self.thumbnail_dir.clone(),
+            )
             .await?;
 
         let entity = Video {
@@ -115,8 +108,56 @@ impl VideoFacadeTrait for VideoFacade {
         Ok(models::video::Video::from(&video_entity))
     }
 
-    /// For internal usage only!
-    /// Returns video entity by given video_id for further processing (e.g. in stream).
+    async fn patch_video(
+        &self,
+        user_id: i32,
+        video_id: i32,
+        edited_video: VideoEditReq,
+    ) -> Result<models::video::Video> {
+        let video_path = if let Some(file_id) = edited_video.temp_video_id {
+            let path = self
+                .temp_file_facade
+                .persist_permanently(file_id, user_id, self.video_dir.clone())
+                .await?;
+            Some(path)
+        } else {
+            None
+        };
+
+        let thumbnail_path = if let Some(temp_thumbnail) = edited_video.temp_thumbnail_id {
+            let path = self
+                .temp_file_facade
+                .persist_permanently(temp_thumbnail, user_id, self.thumbnail_dir.clone())
+                .await?;
+            Some(path)
+        } else {
+            None
+        };
+        let db_entity = PatchVideo {
+            id: video_id,
+            artist_id: None,
+            visibility: VideoVisibility::from(&edited_video.video_visibility),
+            name: edited_video.name,
+            file_path: video_path,
+            thumbnail_path,
+            description: edited_video.description,
+        };
+
+        let video = self.video_repo.patch_video(db_entity).await?;
+
+        Ok(models::video::Video::from(&video))
+    }
+
+    async fn delete_video(&self, user_id: i32, video_id: i32) -> Result<()> {
+        let deleted = self.video_repo.delete_video(video_id, user_id).await?;
+        if !deleted {
+            return Err(AppError::new("Video doesn't exist", AppErrorKind::NotFound));
+        }
+
+        Ok(())
+    }
+
+    /// Returns video model by given video_id for rendering in the template.
     ///
     /// TODO: Check if user can access the video!
     ///
@@ -128,9 +169,18 @@ impl VideoFacadeTrait for VideoFacade {
         let video_entity = self
             .video_repo
             .get_video_by_id(video_id)
-            .await
-            .db_error("Desired video doesn't exit")?;
+            .await?
+            .ok_or(AppError::new("Video doesn't exist", AppErrorKind::NotFound))?;
         Ok(video_entity)
+    }
+
+    async fn get_video_model(&self, video_id: i32, _user_id: i32) -> Result<models::video::Video> {
+        let video_entity = self
+            .video_repo
+            .get_video_by_id(video_id)
+            .await?
+            .ok_or(AppError::new("Video doesn't exist", AppErrorKind::NotFound))?;
+        Ok(models::video::Video::from(&video_entity))
     }
 
     /// Serves directly video file for video player
@@ -140,12 +190,40 @@ impl VideoFacadeTrait for VideoFacade {
     /// * `video_id` - ID of the video you want to get
     /// * `user_id` - ID of an user that requested the video
     async fn get_playable_video(&self, video_id: i32, _user_id: i32) -> Result<NamedFile> {
-        let video_entity = self.video_repo.get_video_by_id(video_id).await?;
+        let video_entity = self
+            .video_repo
+            .get_video_by_id(video_id)
+            .await?
+            .ok_or(AppError::new("Video doesn't exist", AppErrorKind::NotFound))?;
         let path = Path::new(video_entity.file_path.as_str());
         let file = NamedFile::open_async(path)
             .await
             .app_error("Video doesn't exist")?;
 
         Ok(file)
+    }
+
+    /// Returns thumbnail image directly to the client
+    ///
+    /// TODO: Check if user can access the video!
+    ///
+    /// * `video_id` - ID of the video you want to get
+    /// * `user_id` - ID of an user that requested the video
+    async fn get_thumbnail_file(&self, video_id: i32, _user_id: i32) -> Result<NamedFile> {
+        let video_entity = self
+            .video_repo
+            .get_video_by_id(video_id)
+            .await?
+            .ok_or(AppError::new("Video doesn't exist", AppErrorKind::NotFound))?;
+        let path = Path::new(video_entity.thumbnail_path.as_str());
+        let file = NamedFile::open_async(path)
+            .await
+            .app_error("Thumbnail doesn't exist")?;
+
+        Ok(file)
+    }
+
+    fn get_video_thumbnail_dirs(&self) -> (String, String) {
+        (self.video_dir.clone(), self.thumbnail_dir.clone())
     }
 }

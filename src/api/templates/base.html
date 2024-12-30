@@ -16,6 +16,7 @@
     <link rel="stylesheet" type="text/css" href="/static/css/base.css" onerror="this.href='../../../static/base.css';">
     <link rel="stylesheet" type="text/css" href="/static/css/video/list.css"
           onerror="this.href='../../../static/base.css';">
+    <link rel="stylesheet" type="text/css" href="/static/css/video/show.css">
 
     <!-- Favicon -->
     <link rel="icon" href="/static/favicon.ico">
@@ -27,6 +28,10 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"
             integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
             crossorigin="anonymous"></script>
+    <!--    VideoJS player-->
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet"/>
+    <script src="https://vjs.zencdn.net/8.16.1/video.min.js" defer></script>
+    <script src="/static/js/video/player.js"></script>
 </head>
 
 <body>
@@ -62,13 +67,13 @@
             </ul>
             <!-- Centered and Wider Search Bar -->
             <form class="d-flex mx-auto mb-2 mb-lg-0" style="flex-grow: 1;">
-                <input class="form-control search-bar" type="search" placeholder="Search EroticHub">
+                <input class="form-control text-input" type="search" placeholder="Search EroticHub">
             </form>
             <!-- Right Icons (on large screens) -->
             <div class="d-none d-lg-flex align-items-center ms-3">
-                <a href="#" class="icon-btn me-4" hx-get="/video/new" hx-push-url="true" hx-target="#content-container"
+                <a class="icon-btn me-4" hx-get="/video/new" hx-push-url="true" hx-target="#content-container"
                    hx-swap="outerHTML"><i class="bi bi-camera-video-fill"></i></a>
-                <a href="#" class="icon-btn" hx-get="/user" hx-push-url="true" hx-target="#content-container"
+                <a class="icon-btn" hx-get="/user" hx-push-url="true" hx-target="#content-container"
                    hx-swap="outerHTML"><i class="bi bi-person-circle"></i></a>
             </div>
         </div>

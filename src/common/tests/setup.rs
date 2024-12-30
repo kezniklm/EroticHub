@@ -1,5 +1,5 @@
-use crate::api::controllers;
 use crate::api::routes::stream::stream_routes;
+use crate::api::routes::temp_file::temp_file_routes;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
 use crate::business::facades::artist::ArtistFacade;
@@ -51,6 +51,8 @@ pub struct EmptyAsyncContext {
 
 impl AsyncContext {
     pub fn configure_app(&self) -> impl Fn(&mut ServiceConfig) {
+        let (video_dir, thumbnail_dir, temp_file_dir) = get_resources_dirs(&self.test_folders_root);
+
         let app_config = Arc::new(init_configuration().expect("Failed to load config.yaml"));
         let stream_storage = Arc::new(StreamStorage::default());
         let user_repo = Arc::new(PostgresUserRepo::new(self.pg_pool.clone()));
@@ -63,10 +65,15 @@ impl AsyncContext {
         let comment_facade = Arc::new(CommentFacade::new(comment_repo));
 
         let temp_file_repo = Arc::new(PgTempFileRepo::new(self.pg_pool.clone()));
-        let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo));
+        let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo, temp_file_dir));
 
         let video_repo = Arc::new(PgVideoRepo::new(self.pg_pool.clone()));
-        let video_facade = Arc::new(VideoFacade::new(temp_file_facade.clone(), video_repo));
+        let video_facade = Arc::new(VideoFacade::new(
+            temp_file_facade.clone(),
+            video_repo,
+            video_dir,
+            thumbnail_dir,
+        ));
 
         let stream_repo = Arc::new(PgStreamRepo::new(self.pg_pool.clone()));
         let stream_facade = Arc::new(StreamFacade::new(
@@ -91,8 +98,8 @@ impl AsyncContext {
                 .app_data(web::Data::from(comment_facade.clone()))
                 .configure(video_routes)
                 .configure(user_routes)
-                .configure(stream_routes)
-                .service(controllers::video::register_scope());
+                .configure(temp_file_routes)
+                .configure(stream_routes);
         }
     }
 }
@@ -270,24 +277,29 @@ async fn load_template_data(test_pool: &PgPool) {
 /// creates these directories using facades
 async fn create_test_resources_dir(test_id: Uuid) -> String {
     let current_test_path = format!("./tests_resources/test-{test_id}");
-    env::set_var(
-        "VIDEO_DIRECTORY_PATH",
-        format!("{current_test_path}/videos"),
-    );
-    env::set_var(
-        "THUMBNAIL_DIRECTORY_PATH",
-        format!("{current_test_path}/thumbnails"),
-    );
-    env::set_var("TEMP_DIRECTORY_PATH", format!("{current_test_path}/temp"));
+    let (video_path, thumbnail_path, temp_file_path) = get_resources_dirs(&current_test_path);
 
-    VideoFacade::create_dirs()
+    VideoFacade::create_dirs(video_path, thumbnail_path)
         .await
         .expect("Failed to create test resource folders");
-    TempFileFacade::create_temp_directory()
+    TempFileFacade::create_temp_directory(temp_file_path)
         .await
         .expect("Failed to create temp folder");
 
     current_test_path
+}
+
+/// Returns triple with paths to resources dirs used in the tests
+///
+/// # Returns
+///
+/// `(String, String, String)` - (video dir, thumbnail dir, temp file dir)
+fn get_resources_dirs(test_folders_root: &str) -> (String, String, String) {
+    (
+        format!("{}/videos", test_folders_root),
+        format!("{}/thumbnails", test_folders_root),
+        format!("{}/temp", test_folders_root),
+    )
 }
 
 /// Deletes all files in test_resources folder
