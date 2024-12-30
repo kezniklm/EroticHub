@@ -153,8 +153,4 @@ mod test {
             status: LiveStreamStatus::Pending,
         }
     }
-
-    fn get_repo(ctx: &AsyncContext) -> PgStreamRepo {
-        PgStreamRepo::new(ctx.pg_pool.clone())
-    }
 }
