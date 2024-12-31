@@ -107,6 +107,7 @@ async fn main() -> anyhow::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            // TODO: include staticf iles into the binary using include_dir crate
             .service(actix_files::Files::new("/static", "./static"))
             .wrap(Logger::default())
             .app_data(web::Data::new(config.clone()))
