@@ -12,12 +12,25 @@ use crate::streamer;
 use crate::streamer::gstreamer_controller::create_streams;
 use crate::streamer::types::StreamResolution;
 use async_trait::async_trait;
+use lazy_static::lazy_static;
+use regex::Regex;
+use std::ops::Deref;
 use std::sync::Arc;
 use std::thread;
 use tokio::runtime::Runtime;
 
 const NGINX_HLS_URL_KEY: &str = "NGINX_HLS_URL";
 const STREAM_PREFIX_KEY: &str = "STREAM_PATH_PREFIX";
+
+lazy_static! {
+    static ref STREAM_PREFIX: String =
+        dotenvy::var(STREAM_PREFIX_KEY).expect("Stream is wrongly configured");
+    static ref PLAYLIST_REGEX: Regex =
+        Regex::new(format!(r#"/hls/{}-(\d+)_?\d*.m3u8"#, STREAM_PREFIX.as_str()).as_str()).unwrap();
+    static ref TRANSPORT_STREAM_REGEX: Regex =
+        Regex::new(format!(r#"/hls/{}-(\d+)_\d*-\d*.ts"#, STREAM_PREFIX.as_str()).as_str())
+            .unwrap();
+}
 
 #[async_trait]
 pub trait StreamFacadeTrait {
@@ -35,6 +48,12 @@ pub trait StreamFacadeTrait {
     /// `LiveStreamDto` - data transfer object of livestream
     async fn get_stream(&self, user_id: i32, stream_id: i32) -> Result<(Video, LiveStreamDto)>;
     async fn stop_stream(&self, user_id: i32, stream_id: i32) -> Result<()>;
+    /// Nginx asks for authentication when user tries to access the stream,
+    /// Check if user has permissions to view the stream (according to video settings)
+    ///
+    /// # Params
+    /// `stream_url` - e.g. /hls/stream-3.m3u8 (stream-{id}.m3u8)
+    async fn authenticate_stream(&self, user_id: i32, stream_url: &str) -> Result<()>;
 }
 
 pub struct StreamFacade {
@@ -162,7 +181,8 @@ impl StreamFacadeTrait for StreamFacade {
             .run_on(&stream_id.to_string(), |stream| {
                 let (_info, pipelines) = stream;
                 for pipeline in pipelines {
-                    streamer::gstreamer_controller::stop_stream(pipeline)?;
+                    streamer::gstreamer_controller::stop_stream(pipeline)
+                        .app_error("Failed to stop the stream")?;
                 }
 
                 Ok(())
@@ -171,6 +191,31 @@ impl StreamFacadeTrait for StreamFacade {
         self.stream_repo
             .change_status(stream_id, LiveStreamStatus::Ended)
             .await?;
+        Ok(())
+    }
+
+    async fn authenticate_stream(&self, _user_id: i32, stream_url: &str) -> Result<()> {
+        let err = AppError::new("Failed to parse stream URL", AppErrorKind::AccessDenied);
+        let regex;
+        if stream_url.ends_with(".m3u8") {
+            regex = PLAYLIST_REGEX.deref();
+        } else if stream_url.ends_with(".ts") {
+            regex = TRANSPORT_STREAM_REGEX.deref();
+        } else {
+            return Err(err);
+        }
+
+        let captures = regex.captures(stream_url).ok_or(err.clone())?;
+
+        let stream_id: i32 = captures
+            .get(1)
+            .ok_or(err.clone())?
+            .as_str()
+            .parse()
+            .map_err(|_| err)?;
+
+        let _visibility = self.stream_repo.get_visibility(stream_id).await?;
+        // TODO: Check permissions!
         Ok(())
     }
 }

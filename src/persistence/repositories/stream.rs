@@ -1,4 +1,5 @@
 use crate::persistence::entities::stream::{LiveStream, LiveStreamStatus};
+use crate::persistence::entities::video::VideoVisibility;
 use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
@@ -8,6 +9,7 @@ pub trait StreamRepoTrait {
     async fn add_stream(&self, stream: LiveStream) -> Result<i32>;
     async fn change_status(&self, stream_id: i32, status: LiveStreamStatus) -> Result<()>;
     async fn get_stream(&self, stream_id: i32) -> Result<Option<LiveStream>>;
+    async fn get_visibility(&self, stream_id: i32) -> Result<VideoVisibility>;
 }
 
 pub struct PgStreamRepo {
@@ -58,6 +60,21 @@ impl StreamRepoTrait for PgStreamRepo {
         .fetch_optional(&self.pg_pool)
         .await?;
         Ok(stream)
+    }
+
+    async fn get_visibility(&self, stream_id: i32) -> Result<VideoVisibility> {
+        let record = sqlx::query!(
+            r#"
+            SELECT visibility AS "visibility: VideoVisibility"
+            FROM live_stream JOIN video ON video.id = live_stream.video_id
+            WHERE live_stream.id = $1
+        "#,
+            stream_id
+        )
+        .fetch_one(&self.pg_pool)
+        .await?;
+
+        Ok(record.visibility)
     }
 }
 
@@ -125,6 +142,24 @@ mod test {
             );
         }
 
+        Ok(())
+    }
+
+    #[test_context(AsyncContext)]
+    #[tokio::test]
+    async fn get_visibility(ctx: &mut AsyncContext) -> Result<()> {
+        let video = create_dummy_video(&ctx).await?;
+        let stream = create_stream_entity(&video);
+        let repo = PgStreamRepo::new(ctx.pg_pool.clone());
+
+        let stream_id = repo.add_stream(stream.clone()).await?;
+
+        let visibility = repo.get_visibility(stream_id).await?;
+        assert_eq!(
+            visibility,
+            VideoVisibility::All,
+            "Returned unexpected video visibility"
+        );
         Ok(())
     }
 

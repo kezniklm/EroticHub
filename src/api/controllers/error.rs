@@ -10,6 +10,7 @@ impl ResponseError for AppError {
             AppErrorKind::WrongMimeType => StatusCode::UNSUPPORTED_MEDIA_TYPE,
             AppErrorKind::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             AppErrorKind::NotFound => StatusCode::NOT_FOUND,
+            AppErrorKind::AccessDenied => StatusCode::FORBIDDEN,
         }
     }
 

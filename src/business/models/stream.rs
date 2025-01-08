@@ -1,4 +1,4 @@
-use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
+use crate::business::models::error::{AppError, AppErrorKind};
 use crate::business::Result;
 use crate::streamer::types::{
     CompoundStreamInfoTrait, PipelinesList, Stream, StreamResolution, StreamStorageTrait, Streams,
@@ -38,17 +38,13 @@ impl StreamStorage {
     /// # Params
     /// `stream_id` - ID of the stream
     /// `fnc` - function reference which takes Stream as parameter
-    pub fn run_on<F: FnOnce(&Stream) -> anyhow::Result<()>>(
-        &self,
-        stream_id: &str,
-        fnc: F,
-    ) -> Result<()> {
+    pub fn run_on<F: FnOnce(&Stream) -> Result<()>>(&self, stream_id: &str, fnc: F) -> Result<()> {
         let streams = self.streams.lock().unwrap();
         let position = Self::get_index(&streams, stream_id);
 
         if let Some(position) = position {
             if let Some(stream) = streams.get(position) {
-                return fnc(stream).app_error("Failed to run an action on stream");
+                return fnc(stream);
             }
         }
         Err(AppError::new("Stream not found", AppErrorKind::NotFound))

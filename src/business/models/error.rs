@@ -1,7 +1,7 @@
 use crate::persistence::entities::error::DatabaseError;
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AppError {
     pub message: String,
     pub error: AppErrorKind,
@@ -16,11 +16,12 @@ impl AppError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AppErrorKind {
     WrongMimeType,
     InternalServerError,
     NotFound,
+    AccessDenied,
 }
 
 pub trait MapToAppError<T> {
@@ -59,6 +60,9 @@ impl Display for AppError {
             }
             AppErrorKind::NotFound => {
                 write!(f, "Resource not found: {}", self.message)
+            }
+            AppErrorKind::AccessDenied => {
+                write!(f, "Access to the resources denied: {}", self.message)
             }
         }
     }

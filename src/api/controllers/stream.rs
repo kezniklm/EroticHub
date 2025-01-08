@@ -3,9 +3,10 @@ use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::stream::watch::template::WatchStreamTemplate;
 use crate::api::templates::template::BaseTemplate;
 use crate::business::facades::stream::{StreamFacade, StreamFacadeTrait};
+use crate::business::models::error::{AppError, AppErrorKind};
 use crate::business::models::stream::LiveStreamStart;
 use actix_web::web::{Data, Form, Path};
-use actix_web::{HttpResponse, Responder, Result};
+use actix_web::{HttpRequest, HttpResponse, Responder, Result};
 use askama_actix::TemplateToResponse;
 
 /// Starts the live stream
@@ -62,4 +63,28 @@ pub async fn stop_stream(
 
     add_redirect_header("/", &mut response)?;
     Ok(response)
+}
+
+/// Checks if user can access the stream
+///
+/// `GET /stream/authenticate`
+///
+/// # Returns
+/// HTTP 200 if yes, HTTP 403 if access was denied
+pub async fn authenticate_stream_request(
+    request: HttpRequest,
+    stream_facade: Data<StreamFacade>,
+) -> Result<impl Responder> {
+    let headers = request.headers();
+    let stream_url = headers.get("X-Original-URI").ok_or(AppError::new(
+        "Access to the stream denied!",
+        AppErrorKind::AccessDenied,
+    ))?;
+
+    let stream_url = stream_url
+        .to_str()
+        .map_err(|_| AppError::new("Access to the stream denied!", AppErrorKind::AccessDenied))?;
+    stream_facade.authenticate_stream(1, stream_url).await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
