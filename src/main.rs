@@ -128,7 +128,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(stream_routes)
             .configure(membership_routes)
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind(("0.0.0.0", 8000))?
     .run()
     .await?;
 

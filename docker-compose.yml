@@ -20,6 +20,8 @@ services: # List of services to run
     build: docker/nginx-rtmp/.
     restart: always
     tty: true
+    environment:
+      - NGINX_HLS_PUBLIC_URL=http://localhost:8081/hls/ # Public URL to NGINX HLS folder, must correspond WITH Erotic-Hub NGINX_HLS_URL
     ports:
       - "1935:1935"
       - "8081:80"
