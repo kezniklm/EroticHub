@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 pub struct UserDetail {
     pub id: i32,
     pub username: String,
-    pub password_hash: Option<String>,
     pub email: String,
     pub profile_picture_path: Option<String>,
     pub artist_id: Option<i32>,

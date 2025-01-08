@@ -8,7 +8,6 @@ impl From<User> for UserDetail {
         UserDetail {
             id: user.id,
             username: user.username,
-            password_hash: user.password_hash,
             email: user.email,
             profile_picture_path: user.profile_picture_path,
             artist_id: user.artist_id,
@@ -22,7 +21,7 @@ impl From<UserDetail> for User {
         User {
             id: user_detail.id,
             username: user_detail.username,
-            password_hash: user_detail.password_hash,
+            password_hash: None,
             email: user_detail.email,
             profile_picture_path: user_detail.profile_picture_path,
             artist_id: user_detail.artist_id,
