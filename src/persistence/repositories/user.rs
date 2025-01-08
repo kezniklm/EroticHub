@@ -8,8 +8,6 @@ pub trait UserRepositoryTrait: Debug {
     async fn create_user(&self, user: User) -> anyhow::Result<User>;
     async fn get_user_by_id(&self, user_id: i32) -> anyhow::Result<Option<User>>;
     async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>>;
-    async fn get_user_by_id_full(&self, user_id: i32) -> anyhow::Result<Option<User>>;
-    async fn get_user_by_username_full(&self, username: &str) -> anyhow::Result<Option<User>>;
     async fn update_user(&self, user: User) -> anyhow::Result<Option<User>>;
     async fn delete_user(&self, user_id: i32) -> anyhow::Result<bool>;
     async fn list_users(&self) -> anyhow::Result<Vec<User>>;
@@ -53,38 +51,6 @@ impl UserRepositoryTrait for UserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, NULL as password_hash, email, profile_picture_path, artist_id, paying_member_id
-            FROM user_table
-            WHERE id = $1
-            "#,
-            user_id
-        )
-            .fetch_optional(&self.pool)
-            .await?;
-
-        Ok(user)
-    }
-
-    async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>> {
-        let user = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, NULL as password_hash, email, profile_picture_path, artist_id, paying_member_id
-            FROM user_table
-            WHERE username = $1
-            "#,
-            username
-        )
-            .fetch_optional(&self.pool)
-            .await?;
-
-        Ok(user)
-    }
-
-    async fn get_user_by_id_full(&self, user_id: i32) -> anyhow::Result<Option<User>> {
-        let user = sqlx::query_as!(
-            User,
-            r#"
             SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
             FROM user_table
             WHERE id = $1
@@ -97,7 +63,7 @@ impl UserRepositoryTrait for UserRepository {
         Ok(user)
     }
 
-    async fn get_user_by_username_full(&self, username: &str) -> anyhow::Result<Option<User>> {
+    async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
