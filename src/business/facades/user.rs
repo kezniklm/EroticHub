@@ -1,7 +1,4 @@
 use crate::api::permissions::roles::UserRole;
-use crate::business::mappers::generic::ToMappedList;
-use crate::business::models::user_detail::UserDetail;
-use crate::business::models::user_list::UserList;
 use crate::business::models::user_register::UserRegister;
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
@@ -15,7 +12,6 @@ use std::sync::Arc;
 
 #[async_trait]
 pub trait UserFacadeTrait {
-    async fn list_users(&self) -> anyhow::Result<Vec<UserDetail>>;
     async fn register(&self, user_register_model: UserRegister) -> anyhow::Result<()>;
     async fn get_permissions(&self, user_id: i32) -> anyhow::Result<HashSet<String>>;
 }
@@ -33,18 +29,6 @@ impl UserFacade {
 
 #[async_trait]
 impl UserFacadeTrait for UserFacade {
-    async fn list_users(&self) -> anyhow::Result<Vec<UserDetail>> {
-        let users = self.user_repository.list_users().await?;
-
-        let users2 = users.clone(); //TODO REMOVE - used only as an example
-
-        let user_details = users.to_mapped_list(UserDetail::from);
-
-        let _user_lists_example = users2.to_mapped_list(UserList::from); //TODO REMOVE - used only as an example
-
-        Ok(user_details)
-    }
-
     async fn register(&self, user_register_model: UserRegister) -> anyhow::Result<()> {
         user_register_model
             .validate_model(&UserValidationContext {

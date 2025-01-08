@@ -42,17 +42,3 @@ pub async fn logout(user: Identity) -> impl Responder {
     user.logout();
     HttpResponse::NoContent()
 }
-
-pub async fn list_users(
-    user_facade: web::Data<UserFacade>,
-    htmx_request: HtmxRequest,
-) -> impl Responder {
-    let users = match user_facade.list_users().await {
-        Ok(users) => users,
-        Err(_) => return HttpResponse::InternalServerError().finish(),
-    };
-
-    let template = UserListTemplate { users };
-
-    BaseTemplate::wrap(htmx_request, template).to_response()
-}
