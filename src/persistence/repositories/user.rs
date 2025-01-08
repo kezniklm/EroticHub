@@ -10,7 +10,6 @@ pub trait UserRepositoryTrait: Debug {
     async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>>;
     async fn update_user(&self, user: User) -> anyhow::Result<Option<User>>;
     async fn delete_user(&self, user_id: i32) -> anyhow::Result<bool>;
-    async fn list_users(&self) -> anyhow::Result<Vec<User>>;
 }
 
 #[derive(Debug, Clone)]
@@ -121,20 +120,6 @@ impl UserRepositoryTrait for UserRepository {
         .rows_affected();
 
         Ok(rows_affected > 0)
-    }
-
-    async fn list_users(&self) -> anyhow::Result<Vec<User>> {
-        let users = sqlx::query_as!(
-            User,
-            r#"
-            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
-            FROM user_table
-            "#
-        )
-            .fetch_all(&self.pool)
-            .await?;
-
-        Ok(users)
     }
 }
 
@@ -267,94 +252,6 @@ mod tests {
 
         let fetched_user = user_repo.get_user_by_id(created_user.id).await?;
         assert!(fetched_user.is_none());
-
-        Ok(())
-    }
-
-    #[test_context(AsyncContext)]
-    #[tokio::test]
-    async fn test_list_users(context: &AsyncContext) -> anyhow::Result<()> {
-        let user_repo = UserRepository::new(context.pg_pool.clone());
-
-        let user1 = User {
-            id: 0, // id will be auto-generated
-            username: "list_user_1".to_string(),
-            password_hash: Some("hashed_password".to_string()),
-            email: "list_user_1@example.com".to_string(),
-            profile_picture_path: Some("path/to/pic.jpg".to_string()),
-            artist_id: None,
-            paying_member_id: None,
-        };
-        let user2 = User {
-            id: 0, // id will be auto-generated
-            username: "list_user_2".to_string(),
-            password_hash: Some("hashed_password".to_string()),
-            email: "list_user_2@example.com".to_string(),
-            profile_picture_path: Some("path/to/pic.jpg".to_string()),
-            artist_id: None,
-            paying_member_id: None,
-        };
-        user_repo.create_user(user1).await?;
-        user_repo.create_user(user2).await?;
-
-        let users = user_repo.list_users().await?;
-        assert!(users.len() >= 2);
-
-        Ok(())
-    }
-
-    #[test_context(AsyncContext)]
-    #[tokio::test]
-    async fn test_get_user_by_id_full(context: &AsyncContext) -> anyhow::Result<()> {
-        let user_repo = UserRepository::new(context.pg_pool.clone());
-
-        let new_user = User {
-            id: 0, // id will be auto-generated
-            username: "get_user_by_id_full_test".to_string(),
-            password_hash: Some("hashed_password".to_string()),
-            email: "get_user_by_id_full_test@example.com".to_string(),
-            profile_picture_path: Some("path/to/pic.jpg".to_string()),
-            artist_id: None,
-            paying_member_id: None,
-        };
-
-        let created_user = user_repo.create_user(new_user).await?;
-
-        let fetched_user = user_repo.get_user_by_id_full(created_user.id).await?;
-        assert!(fetched_user.is_some());
-        assert_eq!(
-            fetched_user.unwrap().password_hash,
-            Some("hashed_password".to_string())
-        );
-
-        Ok(())
-    }
-
-    #[test_context(AsyncContext)]
-    #[tokio::test]
-    async fn test_get_user_by_username_full(context: &AsyncContext) -> anyhow::Result<()> {
-        let user_repo = UserRepository::new(context.pg_pool.clone());
-
-        let new_user = User {
-            id: 0, // id will be auto-generated
-            username: "get_user_by_username_full_test".to_string(),
-            password_hash: Some("hashed_password".to_string()),
-            email: "get_user_by_username_full_test@example.com".to_string(),
-            profile_picture_path: Some("path/to/pic.jpg".to_string()),
-            artist_id: None,
-            paying_member_id: None,
-        };
-
-        let created_user = user_repo.create_user(new_user).await?;
-
-        let fetched_user = user_repo
-            .get_user_by_username_full(&created_user.username)
-            .await?;
-        assert!(fetched_user.is_some());
-        assert_eq!(
-            fetched_user.unwrap().password_hash,
-            Some("hashed_password".to_string())
-        );
 
         Ok(())
     }
