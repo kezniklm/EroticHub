@@ -1,19 +1,41 @@
 use crate::api::permissions::roles::UserRole;
-use crate::business::models::user_register::UserRegister;
+use crate::business::models::error::AppErrorKind::BadRequestError;
+use crate::business::models::error::{AppError, MapToAppError};
+use crate::business::models::user::{UserDetail, UserLogin, UserRegister, UserRegisterMultipart};
+use crate::business::util::file::get_file_extension;
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
+use crate::business::Result;
 use crate::persistence::entities::user::User;
 use crate::persistence::repositories::user::UserRepositoryTrait;
+use actix_multipart::form::tempfile::TempFile;
 use async_trait::async_trait;
-use bcrypt::{hash, DEFAULT_COST};
+use bcrypt::{hash, verify, DEFAULT_COST};
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::sync::Arc;
+use validator::ValidationError;
+
+const PROFILE_PICTURE_FOLDER_PATH: &str = "./static/images/users/";
+const VALIDATION_ERROR_TEXT: &str = "Validation failed";
 
 #[async_trait]
 pub trait UserFacadeTrait {
-    async fn register(&self, user_register_model: UserRegister) -> anyhow::Result<()>;
-    async fn get_permissions(&self, user_id: i32) -> anyhow::Result<HashSet<String>>;
+    async fn register(&self, register_model: UserRegisterMultipart) -> Result<UserDetail>;
+    async fn login(&self, login_model: UserLogin) -> Result<UserDetail>;
+    async fn persist_profile_picture(
+        &self,
+        profile_picture: TempFile,
+        profile_picture_path: String,
+    ) -> Result<Option<String>, AppError>;
+    async fn validate_password(
+        &self,
+        password_hash: &Option<String>,
+        password: &str,
+    ) -> Result<bool>;
+    async fn validate_username_exists(&self, username: String) -> Result<(), ValidationError>;
+    async fn validate_email_exists(&self, email: String) -> Result<(), ValidationError>;
+    async fn get_permissions(&self, user_id: i32) -> Result<HashSet<String>>;
 }
 
 #[derive(Debug, Clone)]
@@ -29,25 +51,135 @@ impl UserFacade {
 
 #[async_trait]
 impl UserFacadeTrait for UserFacade {
-    async fn register(&self, user_register_model: UserRegister) -> anyhow::Result<()> {
+    async fn register(&self, register_form: UserRegisterMultipart) -> Result<UserDetail> {
+        let user_register_model = UserRegister::from(&register_form);
+
         user_register_model
             .validate_model(&UserValidationContext {
                 user_repository: Arc::clone(&self.user_repository),
             })
-            .await?;
+            .await
+            .app_error(VALIDATION_ERROR_TEXT)?;
 
-        let password_hash = hash(user_register_model.password.as_str(), DEFAULT_COST)?;
+        let password_hash = hash(user_register_model.password.as_str(), DEFAULT_COST)
+            .app_error(VALIDATION_ERROR_TEXT)?;
 
         let mut new_user = User::from(user_register_model);
 
         new_user.password_hash = Some(password_hash);
 
-        self.user_repository.create_user(new_user).await?;
+        new_user.profile_picture_path = match register_form.profile_picture {
+            Some(profile_picture) => {
+                let profile_picture_file_name = match &profile_picture.file_name {
+                    Some(file_name) => file_name.clone(),
+                    _ => "".to_string(),
+                };
 
-        Ok(())
+                let profile_picture_path = format!(
+                    "{}{}.{}",
+                    PROFILE_PICTURE_FOLDER_PATH,
+                    new_user.username,
+                    get_file_extension(profile_picture_file_name).await
+                );
+                self.persist_profile_picture(profile_picture, profile_picture_path)
+                    .await?
+            }
+            None => None,
+        };
+
+        let created_user_entity = self
+            .user_repository
+            .create_user(new_user)
+            .await
+            .app_error("There was an error creating user")?;
+
+        let created_user_model = UserDetail::from(created_user_entity);
+
+        Ok(created_user_model)
     }
 
-    async fn get_permissions(&self, user_id: i32) -> anyhow::Result<HashSet<String>> {
+    async fn login(&self, login_model: UserLogin) -> Result<UserDetail> {
+        let user = self
+            .user_repository
+            .get_user_by_username(&login_model.username)
+            .await?;
+
+        let user = match user {
+            Some(user) => user,
+            None => return Err(AppError::new(VALIDATION_ERROR_TEXT, BadRequestError)),
+        };
+
+        if !self
+            .validate_password(&user.password_hash, &login_model.password)
+            .await?
+        {
+            return Err(AppError::new(
+                "Invalid username or password",
+                BadRequestError,
+            ));
+        }
+
+        Ok(UserDetail::from(user))
+    }
+
+    async fn persist_profile_picture(
+        &self,
+        profile_picture: TempFile,
+        profile_picture_path: String,
+    ) -> Result<Option<String>, AppError> {
+        profile_picture
+            .file
+            .persist(profile_picture_path.clone())
+            .app_error("Failed to save the profile picture")?;
+        Ok(Some(profile_picture_path))
+    }
+
+    async fn validate_password(
+        &self,
+        password_hash: &Option<String>,
+        password: &str,
+    ) -> Result<bool> {
+        let password_hash = match password_hash {
+            Some(hash) => hash,
+            None => {
+                return Err(AppError::new(VALIDATION_ERROR_TEXT, BadRequestError));
+            }
+        };
+
+        Ok(verify(password, password_hash).app_error(VALIDATION_ERROR_TEXT)?)
+    }
+
+    async fn validate_username_exists(&self, username: String) -> Result<(), ValidationError> {
+        let user = self
+            .user_repository
+            .get_user_by_username(&username)
+            .await
+            .map_err(|_| ValidationError::new("An error occurred while validating the username"))?;
+
+        match user {
+            Some(_) => Err(ValidationError::new(
+                "Username already exists. Please, choose another one",
+            )),
+            None => Ok(()),
+        }
+    }
+
+    async fn validate_email_exists(&self, email: String) -> Result<(), ValidationError> {
+        let user = self
+            .user_repository
+            .get_user_by_email(&email)
+            .await
+            .map_err(|_| ValidationError::new("An error occurred while validating the email"))?;
+
+        match user {
+            Some(_) => Err(ValidationError::new(
+                "Email already exists. Please, choose another one",
+            )),
+            None => Ok(()),
+        }
+    }
+
+    async fn get_permissions(&self, user_id: i32) -> Result<HashSet<String>> {
         let user = match self.user_repository.get_user_by_id(user_id).await? {
             Some(user) => user,
             None => return Ok(HashSet::new()),
