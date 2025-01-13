@@ -1,4 +1,5 @@
 use crate::persistence::entities::user::User;
+use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
 use std::fmt::Debug;
@@ -8,6 +9,7 @@ pub trait UserRepositoryTrait: Debug {
     async fn create_user(&self, user: User) -> Result<User>;
     async fn get_user_by_id(&self, user_id: i32) -> Result<Option<User>>;
     async fn get_user_by_username(&self, username: &str) -> Result<Option<User>>;
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>>;
     async fn update_user(&self, user: User) -> Result<Option<User>>;
     async fn delete_user(&self, user_id: i32) -> Result<bool>;
 }
@@ -78,7 +80,23 @@ impl UserRepositoryTrait for UserRepository {
         Ok(user)
     }
 
-    async fn update_user(&self, user: User) -> anyhow::Result<Option<User>> {
+    async fn get_user_by_email(&self, email: &str) -> Result<Option<User>> {
+        let user = sqlx::query_as!(
+            User,
+            r#"
+            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
+            FROM user_table
+            WHERE email = $1
+            "#,
+            email
+        )
+            .fetch_optional(&self.pool)
+            .await?;
+
+        Ok(user)
+    }
+
+    async fn update_user(&self, user: User) -> Result<Option<User>> {
         let updated_user = sqlx::query_as!(
             User,
             r#"
@@ -199,6 +217,30 @@ mod tests {
         let fetched_user = user_repo
             .get_user_by_username(&created_user.username)
             .await?;
+        assert!(fetched_user.is_some());
+        assert_eq!(fetched_user.unwrap().username, created_user.username);
+
+        Ok(())
+    }
+
+    #[test_context(AsyncContext)]
+    #[tokio::test]
+    async fn test_get_user_by_email(context: &AsyncContext) -> Result<()> {
+        let user_repo = UserRepository::new(context.pg_pool.clone());
+
+        let new_user = User {
+            id: 0, // id will be auto-generated
+            username: "get_user_by_username_test".to_string(),
+            password_hash: Some("hashed_password".to_string()),
+            email: "get_user_by_username_test@example.com".to_string(),
+            profile_picture_path: Some("path/to/pic.jpg".to_string()),
+            artist_id: None,
+            paying_member_id: None,
+        };
+
+        let created_user = user_repo.create_user(new_user).await?;
+
+        let fetched_user = user_repo.get_user_by_email(&created_user.email).await?;
         assert!(fetched_user.is_some());
         assert_eq!(fetched_user.unwrap().username, created_user.username);
 
