@@ -31,24 +31,24 @@ impl From<UserDetail> for User {
 impl From<UserRegister> for User {
     fn from(user_register: UserRegister) -> Self {
         User {
-            id: user_register.id,
+            id: -1,
             username: user_register.username,
             password_hash: None,
             email: user_register.email,
-            profile_picture_path: user_register.profile_picture_path,
+            profile_picture_path: None,
             artist_id: None,
             paying_member_id: None,
         }
     }
 }
 
-impl From<User> for UserList {
-    fn from(user: User) -> Self {
-        UserList {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            profile_picture_path: user.profile_picture_path,
+impl From<&UserRegisterMultipart> for UserRegister {
+    fn from(user_register: &UserRegisterMultipart) -> Self {
+        UserRegister {
+            username: user_register.username.to_string(),
+            password: user_register.password.to_string(),
+            password2: user_register.password2.to_string(),
+            email: user_register.email.to_string(),
         }
     }
 }
