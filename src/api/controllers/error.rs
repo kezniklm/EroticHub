@@ -9,6 +9,8 @@ impl ResponseError for AppError {
         match self.error {
             AppErrorKind::WrongMimeType => StatusCode::UNSUPPORTED_MEDIA_TYPE,
             AppErrorKind::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
+            AppErrorKind::BadRequestError => StatusCode::BAD_REQUEST,
+            AppErrorKind::Unauthorized => StatusCode::UNAUTHORIZED,
         }
     }
 
