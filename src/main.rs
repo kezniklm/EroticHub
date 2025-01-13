@@ -19,6 +19,7 @@ use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
 use crate::streamer::gstreamer_controller::init_gstreamer;
 use actix_identity::IdentityMiddleware;
+use actix_session::config::PersistentSession;
 use actix_session::{storage::RedisSessionStore, SessionMiddleware};
 use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
@@ -67,7 +68,7 @@ fn get_secret_key() -> Key {
         Err(_) => return Key::generate(),
     };
 
-    if secret_key.len() < 32 {
+    if secret_key.len() < 64 {
         panic!("SESSION_SECRET_KEY must be at least 32 characters long");
     }
 
@@ -130,24 +131,32 @@ async fn main() -> anyhow::Result<()> {
         stream_repo.clone(),
     ));
 
+    let secret_key = get_secret_key();
+
     HttpServer::new(move || {
+        let cookie_expiration = Duration::from_secs(7 * 24 * 60 * 60); // 7 days
+
         let identity_middleware = IdentityMiddleware::builder()
-            .visit_deadline(Some(Duration::from_secs(7 * 24 * 60 * 60))) // 7 days
+            .visit_deadline(Some(cookie_expiration))
             .build();
 
-        let session_middleware = SessionMiddleware::builder(redis_store.clone(), get_secret_key())
-            .cookie_name("erotic-hub-session".to_string())
-            //.cookie_secure(true) // Use secure cookies (only HTTPS)
-            .cookie_http_only(true) // Prevent JavaScript access
-            .cookie_same_site(SameSite::Lax) // Set SameSite policy
-            .cookie_path("/".to_string()) // Set path for the cookie
-            .build();
+        let session_middleware =
+            SessionMiddleware::builder(redis_store.clone(), secret_key.clone())
+                .cookie_name("erotic-hub".to_string())
+                .cookie_secure(false) // Use secure cookies (only HTTPS)
+                .cookie_http_only(true) // Prevent JavaScript access
+                .cookie_same_site(SameSite::Lax) // Set SameSite policy
+                .cookie_path("/".to_string()) // Set path for the cookie
+                .session_lifecycle(
+                    PersistentSession::default().session_ttl(cookie_expiration.try_into().unwrap()),
+                )
+                .build();
 
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
+            
             .wrap(identity_middleware)
             .wrap(session_middleware)
-            .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(NormalizePath::trim())
             .wrap(Logger::default())
             .app_data(web::Data::new(config.clone()))
