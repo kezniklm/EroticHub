@@ -78,7 +78,7 @@ fn replace_db_name(db_url: &str, new_db_name: &str) -> String {
 async fn connect_to_db(db_url: &str) -> PgPool {
     PgPool::connect(db_url)
         .await
-        .expect(&format!("Failed to connect to database: {db_url}"))
+        .unwrap_or_else(|_| panic!("Failed to connect to database: {db_url}"))
 }
 
 /// Creates a new database with the given name
