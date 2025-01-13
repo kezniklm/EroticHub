@@ -1,6 +1,4 @@
-use crate::business::models::user_detail::UserDetail;
-use crate::business::models::user_list::UserList;
-use crate::business::models::user_register::UserRegister;
+use crate::business::models::user::{UserDetail, UserRegister, UserRegisterMultipart};
 use crate::persistence::entities::user::User;
 
 impl From<User> for UserDetail {
