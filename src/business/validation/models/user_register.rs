@@ -1,4 +1,4 @@
-use crate::business::models::user_register::UserRegister;
+use crate::business::models::user::UserRegister;
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::utils::extract_first_error;
 use crate::business::validation::validatable::Validatable;
