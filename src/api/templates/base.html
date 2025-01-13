@@ -15,6 +15,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Base Styles -->
     <link rel="stylesheet" type="text/css" href="/static/css/base.css" onerror="this.href='../../../static/base.css';">
+    <!-- Auth Styles -->
+    <link rel="stylesheet" type="text/css" href="/static/css/user/auth.css">
     <!-- Favicon -->
     <link rel="icon" href="/static/favicon.ico">
     <!-- Base javascript -->
@@ -23,6 +25,8 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"
         integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
         crossorigin="anonymous"></script>
+    <!-- HTMX - Response Targets extension -->
+    <script src="https://unpkg.com/htmx-ext-response-targets@2.0.0/response-targets.js"></script>
 </head>
 
 <body>
@@ -63,29 +67,60 @@
                 <div class="d-none d-lg-flex align-items-center ms-3">
                     <a href="#" class="icon-btn me-4" hx-get="/video/new" hx-push-url="true"
                         hx-target="#content-container" hx-swap="outerHTML"><i class="bi bi-camera-video-fill"></i></a>
-                    <div class="account-container">
-                        <a href="#" id="account-icon" class="icon-btn">
+                    <div id="account-container" class="account-container">
+                        <a href="#" id="account-icon" class="account-btn">
+                            {% match user_session_data %}
+                            {% when Some(user_session_data) %}
+                            {% match user_session_data.profile_picture_path %}
+                            {% when Some(profile_picture_path) %}
+                            <img src="/{{ profile_picture_path }}" alt="User Profile Photo" class="user-photo"
+                                onerror="this.src='/static/images/anonymous_profile_picture.jpg';" />
+                            {% when None %}
                             <i class="bi bi-person-circle"></i>
+                            {% endmatch %}
+                            {% when None %}
+                            <i class="bi bi-person-circle"></i>
+                            {% endmatch %}
                         </a>
                         <div id="account-popup" class="popup hidden">
-                            <div class="popup-item">
-                                <div class="popup-icon">
-                                    <i class="bi bi-person-fill-add"></i>
-                                </div>
-                                <div class="popup-label">Sign Up</div>
-                            </div>
-                            <div class="popup-item">
-                                <div class="popup-icon">
-                                    <i class="bi bi-person-circle"></i>
-                                </div>
-                                <div class="popup-label">Log In</div>
-                            </div>
-                            <div class="popup-item">
+                            {% match user_session_data %}
+                            {% when Some(user_session_data) %}
+                            <a href="#" class="popup-item" hx-get="/user/liked-videos" hx-target="#content-container"
+                                hx-swap="innerHTML" hx-trigger="click" hx-push-url="true">
                                 <div class="popup-icon">
                                     <i class="bi bi-hand-thumbs-up-fill"></i>
                                 </div>
-                                <div class="popup-label">Liked Videos</div>
-                            </div>
+                                <span class="popup-label">Liked Videos</span>
+                            </a>
+                            <a href="#" class="popup-item" hx-get="/user/account" hx-target="#content-container"
+                                hx-swap="outerHTML" hx-trigger="click" hx-push-url="true">
+                                <div class="popup-icon">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <span class="popup-label">My Account</span>
+                            </a>
+                            <a href="/user/logout" class="popup-item">
+                                <div class="popup-icon">
+                                    <i class="bi bi-box-arrow-left"></i>
+                                </div>
+                                <span class="popup-label">Logout</span>
+                            </a>
+                            {% when None %}
+                            <a href="#" class="popup-item" hx-get="/user/register" hx-target="#auth-popup"
+                                hx-swap="innerHTML" hx-trigger="click">
+                                <div class="popup-icon">
+                                    <i class="bi bi-person-fill-add"></i>
+                                </div>
+                                <span class="popup-label">Sign Up</span>
+                            </a>
+                            <a href="#" class="popup-item" hx-get="/user/login" hx-target="#auth-popup"
+                                hx-swap="innerHTML" hx-trigger="click">
+                                <div class="popup-icon">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <span class="popup-label">Log In</span>
+                            </a>
+                            {% endmatch %}
                         </div>
                     </div>
                 </div>
@@ -117,6 +152,11 @@
             </div>
         </div>
     </div>
+
+    <div id="auth-popup" class="hidden">
+        <!-- Content dynamically loaded via HTMX -->
+    </div>
+
     {% endif %}
     <div class="container centered-content" id="content-container">
         {{ child_template|safe }}
