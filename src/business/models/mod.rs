@@ -1,6 +1,9 @@
 pub mod artist_detail;
 pub mod comment;
 pub mod error;
+pub mod membership_details;
+pub mod paying_member;
+pub mod payment_method;
 pub mod stream;
 pub mod temp_file;
 pub mod user_detail;

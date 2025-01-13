@@ -1,6 +1,7 @@
 pub mod artist;
 pub mod comment;
 pub mod error;
+pub mod membership;
 pub mod stream;
 pub mod temp_file;
 pub mod user;

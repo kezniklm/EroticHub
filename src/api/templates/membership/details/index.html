@@ -1,0 +1,37 @@
+<h2>Membership details</h2>
+
+<div class="membership-container">
+  <div class="membership-status">
+    {% match membership_details.paying_member %}
+      {% when Some with (paying_member) %}
+        <p>
+          {% if paying_member.is_valid %}
+            Your membership is active until {{ paying_member.valid_until.as_ref().unwrap() }}
+          {% else %}
+            {% if let Some with (valid_until) = paying_member.valid_until %}
+              Your membership has expired on {{ valid_until }}
+            {% else %}
+              You do not have an active membership
+            {% endif %}
+          {% endif %}
+        </p>
+        <a href="{{ membership_url }}" class="btn btn-primary">
+          {% if paying_member.is_valid %}
+            Extend membership
+          {% else %}
+            {% if paying_member.valid_until.is_some() %}Renew{% else %}Get{% endif %} membership
+          {% endif %}
+        </a>
+      {% when None %}
+        <p>You do not have an active membership</p>
+        <a href="{{ membership_url }}" class="btn btn-primary">Get membership</a>
+    {% endmatch %}
+  </div>
+
+  {% if let Some with (payment_method) = membership_details.payment_method %}
+    <div class="payment-info">
+      <p>Your current card number: {{ payment_method.card_number_classified }}</p>
+      <a href="/membership/{{ user_id }}/payment-method" class="btn btn-primary">Change payment method</a>
+    </div>
+  {% endif %}
+</div>

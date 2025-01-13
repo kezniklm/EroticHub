@@ -1,0 +1,29 @@
+.membership-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.membership-status {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border-radius: 6px;
+}
+
+.membership-status p {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.payment-info {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border-top: 1px solid #ffffff;
+}
+
+.payment-info p {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
