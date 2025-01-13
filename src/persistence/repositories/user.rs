@@ -5,11 +5,11 @@ use std::fmt::Debug;
 
 #[async_trait]
 pub trait UserRepositoryTrait: Debug {
-    async fn create_user(&self, user: User) -> anyhow::Result<User>;
-    async fn get_user_by_id(&self, user_id: i32) -> anyhow::Result<Option<User>>;
-    async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>>;
-    async fn update_user(&self, user: User) -> anyhow::Result<Option<User>>;
-    async fn delete_user(&self, user_id: i32) -> anyhow::Result<bool>;
+    async fn create_user(&self, user: User) -> Result<User>;
+    async fn get_user_by_id(&self, user_id: i32) -> Result<Option<User>>;
+    async fn get_user_by_username(&self, username: &str) -> Result<Option<User>>;
+    async fn update_user(&self, user: User) -> Result<Option<User>>;
+    async fn delete_user(&self, user_id: i32) -> Result<bool>;
 }
 
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ impl UserRepository {
 
 #[async_trait]
 impl UserRepositoryTrait for UserRepository {
-    async fn create_user(&self, user: User) -> anyhow::Result<User> {
+    async fn create_user(&self, user: User) -> Result<User> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -46,7 +46,7 @@ impl UserRepositoryTrait for UserRepository {
         Ok(user)
     }
 
-    async fn get_user_by_id(&self, user_id: i32) -> anyhow::Result<Option<User>> {
+    async fn get_user_by_id(&self, user_id: i32) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -62,7 +62,7 @@ impl UserRepositoryTrait for UserRepository {
         Ok(user)
     }
 
-    async fn get_user_by_username(&self, username: &str) -> anyhow::Result<Option<User>> {
+    async fn get_user_by_username(&self, username: &str) -> Result<Option<User>> {
         let user = sqlx::query_as!(
             User,
             r#"
@@ -107,7 +107,7 @@ impl UserRepositoryTrait for UserRepository {
         Ok(updated_user)
     }
 
-    async fn delete_user(&self, user_id: i32) -> anyhow::Result<bool> {
+    async fn delete_user(&self, user_id: i32) -> Result<bool> {
         let rows_affected = sqlx::query!(
             r#"
             DELETE FROM user_table
@@ -128,11 +128,12 @@ mod tests {
     use crate::common::tests::setup::AsyncContext;
     use crate::persistence::entities::user::User;
     use crate::persistence::repositories::user::{UserRepository, UserRepositoryTrait};
+    use crate::persistence::Result;
     use test_context::test_context;
 
     #[test_context(AsyncContext)]
     #[tokio::test]
-    async fn test_create_user(context: &AsyncContext) -> anyhow::Result<()> {
+    async fn test_create_user(context: &AsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -156,7 +157,7 @@ mod tests {
 
     #[test_context(AsyncContext)]
     #[tokio::test]
-    async fn test_get_user_by_id(context: &AsyncContext) -> anyhow::Result<()> {
+    async fn test_get_user_by_id(context: &AsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -180,7 +181,7 @@ mod tests {
 
     #[test_context(AsyncContext)]
     #[tokio::test]
-    async fn test_get_user_by_username(context: &AsyncContext) -> anyhow::Result<()> {
+    async fn test_get_user_by_username(context: &AsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -206,7 +207,7 @@ mod tests {
 
     #[test_context(AsyncContext)]
     #[tokio::test]
-    async fn test_update_user(context: &AsyncContext) -> anyhow::Result<()> {
+    async fn test_update_user(context: &AsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -233,7 +234,7 @@ mod tests {
 
     #[test_context(AsyncContext)]
     #[tokio::test]
-    async fn test_delete_user(context: &AsyncContext) -> anyhow::Result<()> {
+    async fn test_delete_user(context: &AsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
