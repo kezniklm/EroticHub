@@ -2,40 +2,103 @@
 <script src="/static/js/user/register.js"></script>
 {% endblock %}
 
-{% block extra_styles %}
-<link rel="stylesheet" type="text/css" href="/static/css/user/register.css" onerror="this.href='../../../static/base.css';">
-{% endblock %}
-
-<div class="registration-container">
-    <div class="form-with-preview">
-        <form id="registration-form" method="post" enctype="multipart/form-data" hx-post="/register" hx-target="#response-message" hx-swap="innerHTML">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required placeholder="Enter your username">
+<div class="auth-popup-content">
+    <!-- Left side -->
+    <div class="auth-popup-content-left">
+        <img src="https://placehold.co/600x800?text=Banner" alt="Banner">
+        <div class="stats">
+            <div class="stat">
+                <span class="number">140M</span>
+                <span class="important">Engaged</span>
+                <span class="additional">daily</span>
+                <span class="additional">users</span>
             </div>
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required placeholder="Enter your email">
+            <div class="stat">
+                <span class="number">600k</span>
+                <span class="important">Active</span>
+                <span class="additional">content</span>
+                <span class="additional">creators</span>
             </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required placeholder="Enter your password">
+            <div class="stat">
+                <span class="number">1M</span>
+                <span class="important">Hours</span>
+                <span class="additional">of free</span>
+                <span class="additional">content</span>
             </div>
-            <div class="form-group">
-                <label for="password2">Confirm Password:</label>
-                <input type="password" id="password2" name="password2" required placeholder="Re-enter your password">
-            </div>
-            <div class="form-group">
-                <label for="profile_picture">Upload Profile Picture:</label>
-                <input type="file" id="profile_picture" name="profile_picture" accept="image/*">
-            </div>
-            <div class="form-group">
-                <button type="submit" class="btn">Register</button>
-            </div>
-        </form>
-        <div class="image-preview-container">
-            <img id="image-preview" src="/static/images/anonymous_profile_picture.jpg" alt="Profile Picture Preview">
         </div>
     </div>
-    <div id="response-message"></div>
+
+    <!-- Right side -->
+    <div class="auth-popup-content-right">
+        <h1 class="auth-popup-logo">Erotic<span>Hub</span></h1>
+        <p>Sign Up for Free</p>
+        <span class="subtitle">and enhance your experience</span>
+        <div class="features">
+            <ul>
+                <li>
+                    <img src="https://ei.phncdn.com/www-static/images/signup_playlists.svg?cache=2024121901"
+                        alt="Playlists" class="feature-icon">
+                    <p>Create your own playlists.</p>
+                </li>
+                <li>
+                    <img src="https://ei.phncdn.com/www-static/images/signup_community.svg?cache=2024121901"
+                        alt="Community" class="feature-icon">
+                    <p>Engage with the community.</p>
+                </li>
+                <li>
+                    <img src="https://ei.phncdn.com/www-static/images/signup_tailored.svg?cache=2024121901"
+                        alt="Tailored" class="feature-icon">
+                    <p>Tailored video suggestions.</p>
+                </li>
+            </ul>
+        </div>
+
+        <form id="registration-form" hx-post="/user/register" hx-target="#account-container" hx-swap="outerHTML"
+            hx-encoding="multipart/form-data" data-validate="true">
+            <div class="form-group">
+                <input type="text" placeholder="Username" id="register-username" name="username" required
+                    autocomplete="username" hx-get="/user/validate/username" hx-trigger="blur"
+                    hx-target="#username-error" hx-swap="outerHTML" hx-vals='{"target_element": "username-error"}' />
+                <p class="error-message hidden" id="username-error"></p>
+            </div>
+            <div class="form-group">
+                <input type="email" placeholder="Email" id="register-email" name="email" required autocomplete="email"
+                    hx-get="/user/validate/email" hx-trigger="blur" hx-target="#email-error" hx-swap="outerHTML"
+                    hx-vals='{"target_element": "email-error"}' />
+                <p class="error-message hidden" id="email-error"></p>
+            </div>
+            <div class="form-group">
+                <input type="password" placeholder="Password" id="register-password" name="password" required
+                    autocomplete="new-password" />
+                <p class="error-message hidden" id="password-error"></p>
+            </div>
+            <div class="form-group">
+                <input type="password" placeholder="Re-enter your password" id="register-password2" name="password2"
+                    required autocomplete="new-password" />
+                <p class="error-message hidden" id="password2-error"></p>
+            </div>
+            <div class="user_profile_picture_preview">
+                <label for="register-profile_picture">
+                    <img id="imagePreview" src="/static/images/anonymous_profile_picture.jpg" alt="Preview" />
+                </label>
+                <input id="register-profile_picture" name="profile_picture" type="file" accept="image/*"
+                    onchange="previewImage()" />
+                <p>Choose a profile picture <span class='highlight'>up to 10MB</span></p>
+            </div>
+            <div class="error-group">
+                <p class="error-message hidden" id="profile-picture-error"></p>
+            </div>
+            <button type="submit">Sign Up</button>
+            <div class="error-group">
+                <p class="error-message hidden" id="server-error"></p>
+            </div>
+        </form>
+        <p class="have-account">
+            Already have an account? <a href="#" hx-get="/user/login" hx-target="#auth-popup" hx-swap="innerHTML">Log in
+                here</a>
+        </p>
+        <p class="terms">
+            By signing up, you agree to our <a href="#">Terms and Conditions</a>.
+        </p>
+    </div>
 </div>
