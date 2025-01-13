@@ -11,6 +11,7 @@ use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
+use actix_session::Session;
 use actix_web::http::header::ContentType;
 use actix_web::web::{Data, Query};
 use actix_web::{get, post, web, HttpResponse, Responder, Result, Scope};
@@ -100,10 +101,10 @@ fn get_content_type_string(temp_file: &TempFile) -> Option<String> {
         .map(|content_type| content_type.to_string())
 }
 
-pub async fn list_videos(htmx_request: HtmxRequest) -> impl Responder {
-    BaseTemplate::wrap(htmx_request, VideoListTemplate {})
+pub async fn list_videos(htmx_request: HtmxRequest, session: Session) -> impl Responder {
+    BaseTemplate::wrap(htmx_request, session, VideoListTemplate {})
 }
 
-pub async fn upload_video_template(htmx_request: HtmxRequest) -> impl Responder {
-    BaseTemplate::wrap(htmx_request, VideoUploadTemplate {})
+pub async fn upload_video_template(htmx_request: HtmxRequest, session: Session) -> impl Responder {
+    BaseTemplate::wrap(htmx_request, session, VideoUploadTemplate {})
 }
