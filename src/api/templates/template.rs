@@ -2,7 +2,6 @@ use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::business::models::user::UserSessionData;
 use actix_session::Session;
 use askama::Template;
-use log::info;
 
 #[derive(Template)]
 #[template(path = "base.html")]
