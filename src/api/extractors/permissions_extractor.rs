@@ -7,7 +7,10 @@ use actix_web::{Error, FromRequest};
 use std::collections::HashSet;
 
 pub async fn extract(req: &ServiceRequest) -> Result<HashSet<UserRole>, Error> {
-    let identity = Identity::from_request(req.request(), &mut Payload::None).await?;
+    let identity = match Identity::from_request(req.request(), &mut Payload::None).await {
+        Ok(identity) => identity,
+        Err(_) => return Ok(HashSet::new()),
+    };
 
     let user_facade = match req.app_data::<Data<UserFacade>>() {
         Some(facade) => facade,
