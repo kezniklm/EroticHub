@@ -1,5 +1,5 @@
 use crate::persistence::entities::error::DatabaseError;
-use actix_identity::error::LoginError;
+use actix_identity::error::{GetIdentityError, LoginError};
 use actix_session::SessionInsertError;
 use std::fmt::{Display, Formatter};
 use validator::ValidationError;
@@ -76,5 +76,11 @@ impl From<ValidationError> for AppError {
 impl From<SessionInsertError> for AppError {
     fn from(value: SessionInsertError) -> Self {
         Self::new(&value.to_string(), AppErrorKind::InternalServerError)
+    }
+}
+
+impl From<GetIdentityError> for AppError {
+    fn from(value: GetIdentityError) -> Self {
+        Self::new(&value.to_string(), AppErrorKind::Unauthorized)
     }
 }
