@@ -1,0 +1,6 @@
+{% match error_message %}
+    {% when Some(message) %}
+        <p class="error-message exists" id="{{ target_element }}">{{ message }}</p>
+    {% when None %}
+        <p class="error-message hidden" id="{{ target_element }}"></p>
+{% endmatch %}
