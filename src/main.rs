@@ -1,5 +1,4 @@
 use crate::api::controllers;
-use crate::api::permissions::permissions_extractor::extract;
 use crate::api::routes::stream::stream_routes;
 use crate::api::routes::user::user_routes;
 use crate::api::routes::video::video_routes;
@@ -25,6 +24,7 @@ use actix_web::cookie::{Key, SameSite};
 use actix_web::middleware::{Logger, NormalizePath};
 use actix_web::{web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
+use api::extractors::permissions_extractor::extract;
 use config::Config;
 use deadpool_redis::Runtime;
 use env_logger::Env;
@@ -154,7 +154,7 @@ async fn main() -> anyhow::Result<()> {
 
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
-            
+            .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(identity_middleware)
             .wrap(session_middleware)
             .wrap(NormalizePath::trim())

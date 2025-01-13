@@ -2,6 +2,7 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
 use actix_multipart::form::MultipartForm;
 use serde::{Deserialize, Serialize};
+use std::fmt::Display;
 use validator::Validate;
 
 #[derive(Clone, Debug)]
@@ -57,4 +58,17 @@ pub struct UsernameQuery {
 pub struct EmailQuery {
     pub email: String,
     pub target_element: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum UserRole {
+    PayingMember,
+    Registered,
+    Artist,
+}
+
+impl Display for UserRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", format!("{:?}", self).to_uppercase())
+    }
 }

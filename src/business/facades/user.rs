@@ -1,7 +1,8 @@
-use crate::api::permissions::roles::UserRole;
 use crate::business::models::error::AppErrorKind::BadRequestError;
 use crate::business::models::error::{AppError, MapToAppError};
-use crate::business::models::user::{UserDetail, UserLogin, UserRegister, UserRegisterMultipart};
+use crate::business::models::user::{
+    UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole,
+};
 use crate::business::util::file::get_file_extension;
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
@@ -35,7 +36,7 @@ pub trait UserFacadeTrait {
     ) -> Result<bool>;
     async fn validate_username_exists(&self, username: String) -> Result<(), ValidationError>;
     async fn validate_email_exists(&self, email: String) -> Result<(), ValidationError>;
-    async fn get_permissions(&self, user_id: i32) -> Result<HashSet<String>>;
+    async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>>;
 }
 
 #[derive(Debug, Clone)]
@@ -179,15 +180,13 @@ impl UserFacadeTrait for UserFacade {
         }
     }
 
-    async fn get_permissions(&self, user_id: i32) -> Result<HashSet<String>> {
+    async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>> {
         let user = match self.user_repository.get_user_by_id(user_id).await? {
             Some(user) => user,
             None => return Ok(HashSet::new()),
         };
 
-        let mut user_permissions = HashSet::new();
-
-        user_permissions.insert(UserRole::Registered);
+        let mut user_permissions = HashSet::from([UserRole::Registered]);
 
         if user.paying_member_id.is_some() {
             user_permissions.insert(UserRole::PayingMember);
@@ -197,9 +196,6 @@ impl UserFacadeTrait for UserFacade {
             user_permissions.insert(UserRole::Artist);
         }
 
-        Ok(user_permissions
-            .iter()
-            .map(|role| role.to_string())
-            .collect::<HashSet<String>>())
+        Ok(user_permissions)
     }
 }

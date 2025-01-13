@@ -7,6 +7,7 @@ use crate::api::templates::user::login::template::UserLoginTemplate;
 use crate::api::templates::user::register::template::UserRegisterTemplate;
 use crate::api::templates::user::validation::template::ValidationTemplate;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
+use crate::business::models::user::UserRole::{self, Registered};
 use crate::business::models::user::{
     EmailQuery, UserLogin, UserRegisterMultipart, UserSessionData, UsernameQuery,
 };
@@ -15,6 +16,7 @@ use actix_identity::Identity;
 use actix_multipart::form::MultipartForm;
 use actix_session::Session;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
+use actix_web_grants::protect;
 use askama_actix::TemplateToResponse;
 
 pub async fn register_form(
@@ -118,6 +120,7 @@ pub async fn detail(
     .to_response())
 }
 
+#[protect(any("Registered"), ty = "UserRole")]
 pub async fn liked_videos(
     htmx_request: HtmxRequest,
     session: Session,
