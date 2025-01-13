@@ -1,5 +1,6 @@
 use sqlx::Error;
 
+#[derive(Debug)]
 pub struct DatabaseError {
     pub error: String,
 }
