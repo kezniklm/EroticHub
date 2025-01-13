@@ -1,0 +1,28 @@
+<h2>Upload new video</h2>
+<form action="" hx-post="/video">
+    <div class="mb-3">
+        <label for="nameInput" class="form-label">Video name</label>
+        <input type="text" id="nameInput" name="name" class="form-control text-input" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="descriptionInput">Video description</label>
+        <textarea class="form-control text-input" id="descriptionInput" name="description"></textarea>
+    </div>
+    <div class="mb-3">
+        <label for="visibilityInput" class="form-label">Video visibility</label>
+        <select class="form-select" id="visibilityInput" name="video_visibility" aria-label="Video visibility">
+            <option value="ALL" selected>All users</option>
+            <option value="REGISTERED">Registered users</option>
+            <option value="PAYING">Paying members</option>
+        </select>
+    </div>
+    <div class="mb-3" id="video-input">
+        {{ video_input|safe }}
+    </div>
+    <div class="mb-3" id="thumbnail-input">
+        {{ thumbnail_input|safe }}
+    </div>
+    <div class="buttons-container">
+        <button type="submit" id="save-video-btn" class="btn btn-outline-primary">Save</button>
+    </div>
+</form>

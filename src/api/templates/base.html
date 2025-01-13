@@ -17,6 +17,8 @@
     <link rel="stylesheet" type="text/css" href="/static/css/base.css" onerror="this.href='../../../static/base.css';">
     <!-- Auth Styles -->
     <link rel="stylesheet" type="text/css" href="/static/css/user/auth.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/video/show.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/membership/index.css">
     <!-- Favicon -->
     <link rel="icon" href="/static/favicon.ico">
     <!-- Base javascript -->
@@ -27,6 +29,10 @@
         crossorigin="anonymous"></script>
     <!-- HTMX - Response Targets extension -->
     <script src="https://unpkg.com/htmx-ext-response-targets@2.0.0/response-targets.js"></script>
+    <!--    VideoJS player-->
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet"/>
+    <script src="https://vjs.zencdn.net/8.16.1/video.min.js" defer></script>
+    <script src="/static/js/video/player.js"></script>
 </head>
 
 <body>
@@ -61,7 +67,7 @@
                 </ul>
                 <!-- Centered and Wider Search Bar -->
                 <form class="d-flex mx-auto mb-2 mb-lg-0" style="flex-grow: 1;">
-                    <input class="form-control search-bar" type="search" placeholder="Search EroticHub">
+                    <input class="form-control text-input" type="search" placeholder="Search EroticHub">
                 </form>
                 <!-- Right Icons (on large screens) -->
                 <div class="d-none d-lg-flex align-items-center ms-3">

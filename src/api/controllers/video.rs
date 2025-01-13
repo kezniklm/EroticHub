@@ -1,110 +1,209 @@
+use crate::api::controllers::utils::route_util::build_watch_path;
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::template::BaseTemplate;
+use crate::api::templates::video::edit::template::EditVideoTemplate;
 use crate::api::templates::video::list::template::VideoListTemplate;
-use crate::api::templates::video::upload::template::VideoUploadTemplate;
-use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
-use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
-use crate::business::models::video::{
-    PlayableVideoReq, ThumbnailUploadForm, VideoUploadData, VideoUploadForm,
+use crate::api::templates::video::show::template::{PlayerTemplate, ShowVideoTemplate};
+use crate::api::templates::video::upload::template::{
+    ThumbnailPreviewTemplate, ThumbnailUploadInputTemplate, VideoPreviewTemplate,
+    VideoUploadInputTemplate, VideoUploadTemplate,
 };
+use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
+use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
-use actix_multipart::form::tempfile::TempFile;
-use actix_multipart::form::MultipartForm;
-use actix_session::Session;
-use actix_web::http::header::ContentType;
-use actix_web::web::{Data, Query};
-use actix_web::{get, post, web, HttpResponse, Responder, Result, Scope};
-use tempfile::NamedTempFile;
+use actix_web::http::header::{HeaderName, HeaderValue};
+use actix_web::web::{Data, Form, Path};
+use actix_web::{HttpResponse, Responder, Result};
+use askama_actix::TemplateToResponse;
+use std::str::FromStr;
 
-pub fn register_scope() -> Scope {
-    let temp_scope = web::scope("/temp")
-        .service(post_temp_video)
-        .service(post_temp_thumbnail);
-    web::scope("/video")
-        .service(temp_scope)
-        .service(save_video)
-        .service(get_video)
-}
-
-#[post("/")]
-pub async fn save_video(
-    web::Form(form): web::Form<VideoUploadData>,
+/// Creates new video
+///
+/// `POST /video`
+///
+/// # Form params
+/// `VideoUploadReq` - data of uploaded video
+///
+/// # Returns
+/// Redirects user to the newly created video
+pub async fn create_video(
+    Form(form): Form<VideoUploadReq>,
     video_facade: Data<VideoFacade>,
 ) -> Result<impl Responder> {
     let video = video_facade.save_video(1, form).await?;
+    let video_id = video.id;
 
-    Ok(HttpResponse::Created().json(video))
+    let mut response = HttpResponse::Created().finish();
+
+    add_redirect_header(build_watch_path(video_id).as_str(), &mut response)?;
+
+    Ok(response)
 }
 
-#[get("")]
+/// Patches (updates) video
+///
+/// `PATCH /video/{id}`
+///
+/// # Form params
+/// `VideoEditReq` - data of uploaded video
+///
+/// # Returns
+/// Redirects user to the patched video
+pub async fn patch_video(
+    path: Path<GetVideoByIdReq>,
+    Form(form): Form<VideoEditReq>,
+    video_facade: Data<VideoFacade>,
+) -> Result<impl Responder> {
+    let video = video_facade.patch_video(1, path.id, form).await?;
+
+    let template = ShowVideoTemplate {
+        video,
+        player_template: PlayerTemplate::from_saved(path.id),
+    };
+    let mut response = template.to_response();
+
+    add_redirect_header(build_watch_path(path.id).as_str(), &mut response)?;
+
+    Ok(response)
+}
+
+/// Deletes video
+///
+/// `DELETE /video/{id}`
+///
+/// # Returns
+/// Redirects user to the main page
+pub async fn delete_video(
+    path: Path<GetVideoByIdReq>,
+    video_facade: Data<VideoFacade>,
+) -> Result<impl Responder> {
+    video_facade.delete_video(1, path.id).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+
+    add_redirect_header("/", &mut response)?;
+    Ok(response)
+}
+
+/// Returns video file
+///
+/// `GET /video/{id}`
+///
+/// # Returns
+/// File with the video
 pub async fn get_video(
-    Query(request): Query<PlayableVideoReq>,
+    request: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
 ) -> Result<NamedFile> {
-    let video = video_facade.get_playable_video(request.id, 1).await?;
-
-    Ok(video)
+    let file = video_facade.get_playable_video(request.id, 1).await?;
+    Ok(file)
 }
 
-#[post("/video")]
-pub async fn post_temp_video(
-    MultipartForm(form): MultipartForm<VideoUploadForm>,
-    temp_file_facade: Data<TempFileFacade>,
+/// Returns thumbnail file
+///
+/// `GET /thumbnail/{id}`
+///
+/// # Returns
+/// File with the thumbnail
+pub async fn get_thumbnail(
+    request: Path<GetVideoByIdReq>,
+    video_facade: Data<VideoFacade>,
+) -> Result<NamedFile> {
+    let file = video_facade.get_thumbnail_file(request.id, 1).await?;
+    Ok(file)
+}
+
+/// Returns template which displays the video
+/// TODO: Display some placeholder when user doesn't have permissions to see the video!
+///
+/// `GET /{id}/watch`
+///
+/// # Returns
+/// `ShowVideoTemplate` - template with video view
+pub async fn watch_video(
+    req: Path<GetVideoByIdReq>,
+    video_facade: Data<VideoFacade>,
+    htmx_request: HtmxRequest,
+) -> Result<impl Responder> {
+    let video = video_facade.get_video_model(req.id, 1).await?;
+    let video_id = video.id;
+    let template = ShowVideoTemplate {
+        video,
+        player_template: PlayerTemplate::from_saved(video_id),
+    };
+
+    Ok(BaseTemplate::wrap(htmx_request, template))
+}
+
+/// Returns template which displays all videos
+///
+/// `GET /`
+///
+/// # Returns
+/// `VideoListTemplate` - template with list of all videos
+pub async fn list_videos(htmx_request: HtmxRequest) -> impl Responder {
+    BaseTemplate::wrap(htmx_request, VideoListTemplate {})
+}
+
+/// Returns template with create new video form
+///
+/// `GET /video/new`
+///
+/// # Returns
+/// `VideoUploadTemplate`
+pub async fn upload_video_template(
+    htmx_request: HtmxRequest,
     config: Data<Configuration>,
+) -> impl Responder {
+    let video_input = VideoUploadInputTemplate::new(config.clone().into_inner());
+    let thumbnail_input = ThumbnailUploadInputTemplate::new(config.into_inner());
+    BaseTemplate::wrap(
+        htmx_request,
+        VideoUploadTemplate {
+            video_input,
+            thumbnail_input,
+        },
+    )
+}
+
+/// Returns template with edit video form
+///
+/// `GET /video/{id}/edit`
+///
+/// # Returns
+/// `EditVideoTemplate`
+pub async fn edit_video_template(
+    params: Path<GetVideoByIdReq>,
+    htmx_request: HtmxRequest,
+    video_facade: Data<VideoFacade>,
 ) -> Result<impl Responder> {
-    let file_name = form.file.file_name.clone().unwrap_or(String::new());
-    let allowed_mime_types = config.app.video.accepted_mime_type.clone();
-    // TODO: permissions - check if user can upload videos
+    let video = video_facade.get_video_model(params.id, 1).await?;
+    let video_input = VideoPreviewTemplate {
+        temp_file_id: None,
+        player_template: PlayerTemplate::from_saved(video.id),
+    };
+    let thumbnail_input = ThumbnailPreviewTemplate {
+        temp_file_id: None,
+        file_path: format!("/thumbnail/{}", video.id),
+    };
+    let template = BaseTemplate::wrap(
+        htmx_request,
+        EditVideoTemplate {
+            video: video.into(),
+            video_input,
+            thumbnail_input,
+        },
+    );
 
-    let content_type = get_content_type_string(&form.file);
-    temp_file_facade
-        .check_mime_type(content_type, allowed_mime_types)
-        .await?;
-    upload_temp_file(temp_file_facade, form.file.file, file_name).await
+    Ok(template.to_response())
 }
 
-#[post("/thumbnail")]
-pub async fn post_temp_thumbnail(
-    MultipartForm(form): MultipartForm<ThumbnailUploadForm>,
-    temp_file_facade: Data<TempFileFacade>,
-    config: Data<Configuration>,
-) -> Result<impl Responder> {
-    let file_name = form.file.file_name.clone().unwrap_or(String::new());
-    let allowed_mime_types = config.app.thumbnail.accepted_mime_type.clone();
-    // TODO: permissions - check if user can upload videos
+fn add_redirect_header(path: &str, response: &mut HttpResponse) -> Result<()> {
+    response.head_mut().headers.append(
+        HeaderName::from_str("HX-Redirect").unwrap(),
+        HeaderValue::from_str(path)?,
+    );
 
-    let content_type = get_content_type_string(&form.file);
-    temp_file_facade
-        .check_mime_type(content_type, allowed_mime_types)
-        .await?;
-    Ok(upload_temp_file(temp_file_facade, form.file.file, file_name).await)
-}
-
-async fn upload_temp_file(
-    temp_file_facade: Data<TempFileFacade>,
-    file: NamedTempFile,
-    file_name: String,
-) -> Result<impl Responder> {
-    let temp_file_res = temp_file_facade
-        .persist_temp_file(file, file_name, 1)
-        .await?;
-    Ok(HttpResponse::Created()
-        .content_type(ContentType::json())
-        .json(temp_file_res))
-}
-
-fn get_content_type_string(temp_file: &TempFile) -> Option<String> {
-    temp_file
-        .content_type
-        .clone()
-        .map(|content_type| content_type.to_string())
-}
-
-pub async fn list_videos(htmx_request: HtmxRequest, session: Session) -> impl Responder {
-    BaseTemplate::wrap(htmx_request, session, VideoListTemplate {})
-}
-
-pub async fn upload_video_template(htmx_request: HtmxRequest, session: Session) -> impl Responder {
-    BaseTemplate::wrap(htmx_request, session, VideoUploadTemplate {})
+    Ok(())
 }

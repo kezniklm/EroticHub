@@ -1,10 +1,32 @@
+use crate::api::routes::stream::stream_routes;
+use crate::api::routes::temp_file::temp_file_routes;
+use crate::api::routes::user::user_routes;
+use crate::api::routes::video::video_routes;
+use crate::business::facades::artist::ArtistFacade;
+use crate::business::facades::comment::CommentFacade;
+use crate::business::facades::stream::StreamFacade;
+use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
+use crate::business::facades::user::UserFacade;
+use crate::business::facades::video::VideoFacade;
+use crate::business::models::stream::StreamStorage;
+use crate::init_configuration;
+use crate::persistence::repositories::artist::ArtistRepository;
+use crate::persistence::repositories::comment::CommentRepository;
+use crate::persistence::repositories::stream::PgStreamRepo;
+use crate::persistence::repositories::temp_file::PgTempFileRepo;
+use crate::persistence::repositories::user::PostgresUserRepo;
+use crate::persistence::repositories::video::PgVideoRepo;
+use actix_web::web;
+use actix_web::web::ServiceConfig;
 use log::warn;
 use sqlx::{Executor, PgPool};
 use std::env;
+use std::sync::Arc;
 use test_context::AsyncTestContext;
 use uuid::Uuid;
 
-/// A context for managing an asynchronous test database lifecycle
+/// A context for managing an asynchronous test database lifecycle.
+/// Template data are loaded into the test database
 ///
 /// This struct is used with the `test_context` crate to manage a PostgreSQL
 /// test database during tests.
@@ -12,6 +34,74 @@ use uuid::Uuid;
 pub struct AsyncContext {
     pub pg_pool: PgPool,
     pub test_db_name: String,
+    pub test_folders_root: String,
+}
+
+/// A context for managing an asynchronous test database lifecycle.
+/// Template data are not loaded into the test database, so it's empty.
+///
+/// This struct is used with the `test_context` crate to manage a PostgreSQL
+/// test database during tests.
+/// To use the AsyncContext use #[test_context(EmptyAsyncContext)] along with #[tokio::test]
+pub struct EmptyAsyncContext {
+    pub pg_pool: PgPool,
+    pub test_db_name: String,
+    pub test_folders_root: String,
+}
+
+impl AsyncContext {
+    pub fn configure_app(&self) -> impl Fn(&mut ServiceConfig) {
+        let (video_dir, thumbnail_dir, temp_file_dir) = get_resources_dirs(&self.test_folders_root);
+
+        let app_config = Arc::new(init_configuration().expect("Failed to load config.yaml"));
+        let stream_storage = Arc::new(StreamStorage::default());
+        let user_repo = Arc::new(PostgresUserRepo::new(self.pg_pool.clone()));
+        let user_facade = Arc::new(UserFacade::new(user_repo));
+
+        let artist_repo = Arc::new(ArtistRepository::new(self.pg_pool.clone()));
+        let artist_facade = Arc::new(ArtistFacade::new(artist_repo));
+
+        let comment_repo = Arc::new(CommentRepository::new(self.pg_pool.clone()));
+        let comment_facade = Arc::new(CommentFacade::new(comment_repo));
+
+        let temp_file_repo = Arc::new(PgTempFileRepo::new(self.pg_pool.clone()));
+        let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo, temp_file_dir));
+
+        let video_repo = Arc::new(PgVideoRepo::new(self.pg_pool.clone()));
+        let video_facade = Arc::new(VideoFacade::new(
+            temp_file_facade.clone(),
+            video_repo,
+            video_dir,
+            thumbnail_dir,
+        ));
+
+        let stream_repo = Arc::new(PgStreamRepo::new(self.pg_pool.clone()));
+        let stream_facade = Arc::new(StreamFacade::new(
+            video_facade.clone(),
+            stream_storage.clone(),
+            stream_repo.clone(),
+        ));
+
+        move |config: &mut ServiceConfig| {
+            config
+                .service(actix_files::Files::new("/static", "./static"))
+                .app_data(web::Data::from(app_config.clone()))
+                .app_data(web::Data::from(stream_storage.clone()))
+                .app_data(web::Data::from(stream_facade.clone()))
+                .app_data(web::Data::from(stream_storage.clone()))
+                .app_data(web::Data::from(user_facade.clone()))
+                .app_data(web::Data::from(temp_file_facade.clone()))
+                .app_data(web::Data::from(user_facade.clone()))
+                .app_data(web::Data::from(temp_file_facade.clone()))
+                .app_data(web::Data::from(video_facade.clone()))
+                .app_data(web::Data::from(artist_facade.clone()))
+                .app_data(web::Data::from(comment_facade.clone()))
+                .configure(video_routes)
+                .configure(user_routes)
+                .configure(temp_file_routes)
+                .configure(stream_routes);
+        }
+    }
 }
 
 impl AsyncTestContext for AsyncContext {
@@ -20,20 +110,50 @@ impl AsyncTestContext for AsyncContext {
     /// This method is automatically called before tests that use this context.
     /// It creates a new test database and initializes a connection pool.
     async fn setup() -> AsyncContext {
-        let (pg_pool, test_db_name) = setup_test_db().await;
+        let test_id = Uuid::new_v4();
+        let (pg_pool, test_db_name) = setup_test_db(test_id).await;
+        load_template_data(&pg_pool).await;
+        let test_folders_root = create_test_resources_dir(test_id).await;
         AsyncContext {
             pg_pool,
             test_db_name,
+            test_folders_root,
         }
     }
 
-    /// Tears down the test database
-    ///
-    /// This method is automatically called after tests that use this context.
-    /// It drops the test database and cleans up resources.
     async fn teardown(self) {
-        teardown_test_db(self.pg_pool, &self.test_db_name).await;
+        teardown(self.test_folders_root, self.pg_pool, &self.test_db_name).await;
     }
+}
+
+impl AsyncTestContext for EmptyAsyncContext {
+    /// Sets up the test database and returns the context
+    ///
+    /// This method is automatically called before tests that use this context.
+    /// It creates a new test database and initializes a connection pool.
+    async fn setup() -> EmptyAsyncContext {
+        let test_id = Uuid::new_v4();
+        let (pg_pool, test_db_name) = setup_test_db(test_id).await;
+        let test_folders_root = create_test_resources_dir(test_id).await;
+        EmptyAsyncContext {
+            pg_pool,
+            test_db_name,
+            test_folders_root,
+        }
+    }
+
+    async fn teardown(self) {
+        teardown(self.test_folders_root, self.pg_pool, &self.test_db_name).await;
+    }
+}
+
+/// Tears down the test database
+///
+/// This method is automatically called after tests that use this context.
+/// It drops the test database and cleans up resources.
+async fn teardown(test_folders_root: String, pg_pool: PgPool, test_db_name: &str) {
+    delete_test_resources_dir(test_folders_root).await;
+    teardown_test_db(pg_pool, test_db_name).await;
 }
 
 /// Loads environment variables from a `.env` file
@@ -108,7 +228,7 @@ async fn create_database(admin_pool: &PgPool, db_name: &str) {
 /// * `db_name` - The name of the database to drop
 async fn drop_database(admin_pool: &PgPool, db_name: &str) {
     admin_pool
-        .execute(format!(r#"DROP DATABASE "{}""#, db_name).as_str())
+        .execute(format!(r#"DROP DATABASE "{}" WITH (FORCE)"#, db_name).as_str())
         .await
         .expect("Failed to drop test database");
 }
@@ -123,14 +243,14 @@ async fn drop_database(admin_pool: &PgPool, db_name: &str) {
 /// A tuple containing:
 /// * `PgPool` - The connection pool for the test database
 /// * `String` - The name of the test database
-async fn setup_test_db() -> (PgPool, String) {
+async fn setup_test_db(test_id: Uuid) -> (PgPool, String) {
     load_env();
 
     let test_template_url =
         env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set for tests");
     let admin_db_url = replace_db_name(&test_template_url, "postgres");
 
-    let test_db_name = format!("test_db_{}", Uuid::new_v4());
+    let test_db_name = format!("test_db_{}", test_id);
     let test_db_url = replace_db_name(&test_template_url, &test_db_name);
 
     let admin_pool = connect_to_db(&admin_db_url).await;
@@ -144,6 +264,50 @@ async fn setup_test_db() -> (PgPool, String) {
         .expect("Failed to run migrations");
 
     (test_pool, test_db_name)
+}
+
+async fn load_template_data(test_pool: &PgPool) {
+    let test_sql = tokio::fs::read_to_string("tests/test_data/sql/test_data.sql")
+        .await
+        .expect("Failed to read SQL file with test data");
+    test_pool
+        .execute(test_sql.as_str())
+        .await
+        .expect("Failed to run test migrations");
+}
+
+/// Sets env variables for directories used for storing the files and
+/// creates these directories using facades
+async fn create_test_resources_dir(test_id: Uuid) -> String {
+    let current_test_path = format!("./tests_resources/test-{test_id}");
+    let (video_path, thumbnail_path, temp_file_path) = get_resources_dirs(&current_test_path);
+
+    VideoFacade::create_dirs(video_path, thumbnail_path)
+        .await
+        .expect("Failed to create test resource folders");
+    TempFileFacade::create_temp_directory(temp_file_path)
+        .await
+        .expect("Failed to create temp folder");
+
+    current_test_path
+}
+
+/// Returns triple with paths to resources dirs used in the tests
+///
+/// # Returns
+///
+/// `(String, String, String)` - (video dir, thumbnail dir, temp file dir)
+fn get_resources_dirs(test_folders_root: &str) -> (String, String, String) {
+    (
+        format!("{}/videos", test_folders_root),
+        format!("{}/thumbnails", test_folders_root),
+        format!("{}/temp", test_folders_root),
+    )
+}
+
+/// Deletes all files in test_resources folder
+async fn delete_test_resources_dir(test_folders_root: String) {
+    std::fs::remove_dir_all(test_folders_root).expect("Failed to remove test resources directory");
 }
 
 /// Tears down the test database

@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub struct TempFile {
     pub id: i32,

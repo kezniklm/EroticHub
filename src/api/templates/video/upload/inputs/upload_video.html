@@ -1,0 +1,3 @@
+<label for="videoFile" class="form-label">Video</label>
+<input class="form-control" type="file" name="file" id="videoFile" hx-post="/temp/video"
+       hx-encoding='multipart/form-data' hx-target="#video-input" accept="{{ accepted_mimetype }}" required>
