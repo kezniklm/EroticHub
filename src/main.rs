@@ -16,6 +16,7 @@ use erotic_hub::business::facades::video::VideoFacade;
 use erotic_hub::business::models::stream::StreamStorage;
 use erotic_hub::persistence::repositories::artist::ArtistRepository;
 use erotic_hub::persistence::repositories::comment::CommentRepository;
+use erotic_hub::persistence::repositories::deal::PostgresDealRepo;
 use erotic_hub::persistence::repositories::paying_member::PostgresPayingMemberRepo;
 use erotic_hub::persistence::repositories::payment_method::PostgresPaymentMethodRepo;
 use erotic_hub::persistence::repositories::stream::PgStreamRepo;
@@ -100,9 +101,11 @@ async fn main() -> anyhow::Result<()> {
 
     let paying_member_repo = Arc::new(PostgresPayingMemberRepo::new(pool.clone()));
     let payment_method_repo = Arc::new(PostgresPaymentMethodRepo::new(pool.clone()));
+    let deal_repo = Arc::new(PostgresDealRepo::new(pool.clone()));
     let membership_facade = Arc::new(MembershipFacade::new(
         paying_member_repo,
         payment_method_repo,
+        deal_repo,
     ));
 
     HttpServer::new(move || {

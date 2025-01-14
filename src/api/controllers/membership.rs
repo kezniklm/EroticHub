@@ -78,9 +78,15 @@ pub async fn get_deal_form(
         Err(_) => return HttpResponse::InternalServerError().finish(),
     };
 
+    let deals = match membership_facade.get_deals().await {
+        Ok(deals) => deals,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+
     let template = DealTemplate {
         user_id: *user_id,
         membership_details,
+        deals,
     };
 
     BaseTemplate::wrap(htmx_request, template).to_response()

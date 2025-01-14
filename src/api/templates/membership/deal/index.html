@@ -15,36 +15,23 @@
 
 <div class="container mt-4">
   <div class="row">
-    <div class="col-lg">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">One Month</h5>
-          <p class="card-text">Price per month: $10</p>
-          <p class="card-text">Total price: $10</p>
-          <a href="/membership/{{ user_id }}/deal/1" class="btn btn-primary">Select</a>
+    {% for deal in deals %}
+      <div class="col-lg">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">{{ deal.label }}</h5>
+            <p class="card-text">Price per month: ${{ deal.price_per_month }}</p>
+            <p class="card-text">Total price: 
+              {% if deal.total_price_without_discount > deal.total_price %}
+                <del class="text-muted">${{ deal.total_price_without_discount }}</del> 
+              {% endif %}
+              ${{ deal.total_price }}
+            </p>
+            <a href="/membership/{{ user_id }}/deal/{{ deal.id }}" class="btn btn-primary">Select</a>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="col-lg">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">Three Months</h5>
-          <p class="card-text">Price per month: $9</p>
-          <p class="card-text">Total price: <del class="text-muted">$30</del> $27</p>
-          <a href="/membership/{{ user_id }}/deal/2" class="btn btn-primary">Select</a>
-        </div>
-      </div>
-    </div>
-    <div class="col-lg">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title">One Year</h5>
-          <p class="card-text">Price per month: $8</p>
-          <p class="card-text">Total price: <del class="text-muted">$120</del> $96</p>
-          <a href="/membership/{{ user_id }}/deal/3" class="btn btn-primary">Select</a>
-        </div>
-      </div>
-    </div>
+    {% endfor %}
   </div>
 </div>
 

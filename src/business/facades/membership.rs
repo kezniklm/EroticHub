@@ -1,6 +1,9 @@
+use crate::business::mappers::generic::ToMappedList;
+use crate::business::models::deal::DealModel;
 use crate::business::models::membership_details::MembershipDetails;
 use crate::business::models::paying_member::PayingMemberModel;
 use crate::business::models::payment_method::PaymentMethodModel;
+use crate::persistence::repositories::deal::DealRepo;
 use crate::persistence::repositories::paying_member::PayingMemberRepo;
 use crate::persistence::repositories::payment_method::{NewPaymentMethod, PaymentMethodRepo};
 use async_trait::async_trait;
@@ -27,22 +30,26 @@ pub trait MembershipFacadeTrait {
         user_id: i32,
         input: PaymentMethodInput,
     ) -> anyhow::Result<i32>;
+    async fn get_deals(&self) -> anyhow::Result<Vec<DealModel>>;
 }
 
 #[derive(Debug, Clone)]
 pub struct MembershipFacade {
     paying_member_repository: Arc<dyn PayingMemberRepo + Send + Sync>,
     payment_method_repository: Arc<dyn PaymentMethodRepo + Send + Sync>,
+    deal_repository: Arc<dyn DealRepo + Send + Sync>,
 }
 
 impl MembershipFacade {
     pub fn new(
         paying_member_repository: Arc<dyn PayingMemberRepo + Send + Sync>,
         payment_method_repository: Arc<dyn PaymentMethodRepo + Send + Sync>,
+        deal_repository: Arc<dyn DealRepo + Send + Sync>,
     ) -> Self {
         Self {
             paying_member_repository,
             payment_method_repository,
+            deal_repository,
         }
     }
 }
@@ -137,5 +144,12 @@ impl MembershipFacadeTrait for MembershipFacade {
             .await?;
 
         Ok(payment_method_id)
+    }
+
+    async fn get_deals(&self) -> anyhow::Result<Vec<DealModel>> {
+        // TODO: refactor to a transaction
+        let deals = self.deal_repository.get_deals().await?;
+        let deal_models = deals.to_mapped_list(DealModel::from);
+        Ok(deal_models)
     }
 }
