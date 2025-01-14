@@ -17,6 +17,7 @@ use actix_web::web::{Data, Form, Path};
 use actix_web::{HttpResponse, Responder, Result};
 use askama_actix::TemplateToResponse;
 use std::str::FromStr;
+use actix_session::Session;
 
 /// Creates new video
 ///
@@ -125,6 +126,7 @@ pub async fn watch_video(
     req: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
     htmx_request: HtmxRequest,
+    session: Session,
 ) -> Result<impl Responder> {
     let video = video_facade.get_video_model(req.id, 1).await?;
     let video_id = video.id;
@@ -133,7 +135,7 @@ pub async fn watch_video(
         player_template: PlayerTemplate::from_saved(video_id),
     };
 
-    Ok(BaseTemplate::wrap(htmx_request, template))
+    Ok(BaseTemplate::wrap(htmx_request, session,template))
 }
 
 /// Returns template which displays all videos
@@ -142,8 +144,8 @@ pub async fn watch_video(
 ///
 /// # Returns
 /// `VideoListTemplate` - template with list of all videos
-pub async fn list_videos(htmx_request: HtmxRequest) -> impl Responder {
-    BaseTemplate::wrap(htmx_request, VideoListTemplate {})
+pub async fn list_videos(htmx_request: HtmxRequest,  session: Session,) -> impl Responder {
+    BaseTemplate::wrap(htmx_request, session, VideoListTemplate {})
 }
 
 /// Returns template with create new video form
@@ -154,12 +156,14 @@ pub async fn list_videos(htmx_request: HtmxRequest) -> impl Responder {
 /// `VideoUploadTemplate`
 pub async fn upload_video_template(
     htmx_request: HtmxRequest,
+    session: Session,
     config: Data<Configuration>,
 ) -> impl Responder {
     let video_input = VideoUploadInputTemplate::new(config.clone().into_inner());
     let thumbnail_input = ThumbnailUploadInputTemplate::new(config.into_inner());
     BaseTemplate::wrap(
         htmx_request,
+        session,
         VideoUploadTemplate {
             video_input,
             thumbnail_input,
@@ -176,6 +180,7 @@ pub async fn upload_video_template(
 pub async fn edit_video_template(
     params: Path<GetVideoByIdReq>,
     htmx_request: HtmxRequest,
+    session: Session,
     video_facade: Data<VideoFacade>,
 ) -> Result<impl Responder> {
     let video = video_facade.get_video_model(params.id, 1).await?;
@@ -189,6 +194,7 @@ pub async fn edit_video_template(
     };
     let template = BaseTemplate::wrap(
         htmx_request,
+        session,
         EditVideoTemplate {
             video: video.into(),
             video_input,

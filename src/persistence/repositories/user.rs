@@ -143,15 +143,15 @@ impl UserRepositoryTrait for UserRepository {
 
 #[cfg(test)]
 mod tests {
-    use crate::common::tests::setup::AsyncContext;
+    use crate::common::tests::setup::EmptyAsyncContext;
     use crate::persistence::entities::user::User;
     use crate::persistence::repositories::user::{UserRepository, UserRepositoryTrait};
     use crate::persistence::Result;
     use test_context::test_context;
 
-    #[test_context(AsyncContext)]
+    #[test_context(EmptyAsyncContext)]
     #[tokio::test]
-    async fn test_create_user(context: &AsyncContext) -> Result<()> {
+    async fn test_create_user(context: &EmptyAsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -173,9 +173,9 @@ mod tests {
         Ok(())
     }
 
-    #[test_context(AsyncContext)]
+    #[test_context(EmptyAsyncContext)]
     #[tokio::test]
-    async fn test_get_user_by_id(context: &AsyncContext) -> Result<()> {
+    async fn test_get_user_by_id(context: &EmptyAsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -197,9 +197,9 @@ mod tests {
         Ok(())
     }
 
-    #[test_context(AsyncContext)]
+    #[test_context(EmptyAsyncContext)]
     #[tokio::test]
-    async fn test_get_user_by_username(context: &AsyncContext) -> Result<()> {
+    async fn test_get_user_by_username(context: &EmptyAsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
@@ -223,16 +223,16 @@ mod tests {
         Ok(())
     }
 
-    #[test_context(AsyncContext)]
+    #[test_context(EmptyAsyncContext)]
     #[tokio::test]
-    async fn test_get_user_by_email(context: &AsyncContext) -> Result<()> {
+    async fn test_get_user_by_email(context: &EmptyAsyncContext) -> Result<()> {
         let user_repo = UserRepository::new(context.pg_pool.clone());
 
         let new_user = User {
             id: 0, // id will be auto-generated
-            username: "get_user_by_username_test".to_string(),
+            username: "get_user_by_email_test".to_string(),
             password_hash: Some("hashed_password".to_string()),
-            email: "get_user_by_username_test@example.com".to_string(),
+            email: "get_user_by_email_test@example.com".to_string(),
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
@@ -247,9 +247,9 @@ mod tests {
         Ok(())
     }
 
-    // #[test_context(AsyncContext)]
+    // #[test_context(EmptyAsyncContext)]
     // #[tokio::test]
-    // async fn test_update_user(context: &AsyncContext) -> Result<()> {
+    // async fn test_update_user(context: &EmptyAsyncContext) -> Result<()> {
     //     let user_repo = UserRepository::new(context.pg_pool.clone());
     //
     //     let new_user = User {
@@ -274,9 +274,9 @@ mod tests {
     //     Ok(())
     // }
 
-    // #[test_context(AsyncContext)]
+    // #[test_context(EmptyAsyncContext)]
     // #[tokio::test]
-    // async fn test_delete_user(context: &AsyncContext) -> Result<()> {
+    // async fn test_delete_user(context: &EmptyAsyncContext) -> Result<()> {
     //     let user_repo = UserRepository::new(context.pg_pool.clone());
     //
     //     let new_user = User {
