@@ -14,6 +14,7 @@ use crate::persistence::repositories::artist::ArtistRepository;
 use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
+use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
 use actix_web::web;
 use actix_web::web::ServiceConfig;
@@ -23,7 +24,6 @@ use std::env;
 use std::sync::Arc;
 use test_context::AsyncTestContext;
 use uuid::Uuid;
-use crate::persistence::repositories::user::UserRepository;
 
 /// A context for managing an asynchronous test database lifecycle.
 /// Template data are loaded into the test database

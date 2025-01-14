@@ -12,12 +12,12 @@ use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
+use actix_session::Session;
 use actix_web::http::header::{HeaderName, HeaderValue};
 use actix_web::web::{Data, Form, Path};
 use actix_web::{HttpResponse, Responder, Result};
 use askama_actix::TemplateToResponse;
 use std::str::FromStr;
-use actix_session::Session;
 
 /// Creates new video
 ///
@@ -135,7 +135,7 @@ pub async fn watch_video(
         player_template: PlayerTemplate::from_saved(video_id),
     };
 
-    Ok(BaseTemplate::wrap(htmx_request, session,template))
+    Ok(BaseTemplate::wrap(htmx_request, session, template))
 }
 
 /// Returns template which displays all videos
@@ -144,7 +144,7 @@ pub async fn watch_video(
 ///
 /// # Returns
 /// `VideoListTemplate` - template with list of all videos
-pub async fn list_videos(htmx_request: HtmxRequest,  session: Session,) -> impl Responder {
+pub async fn list_videos(htmx_request: HtmxRequest, session: Session) -> impl Responder {
     BaseTemplate::wrap(htmx_request, session, VideoListTemplate {})
 }
 

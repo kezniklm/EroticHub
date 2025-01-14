@@ -9,7 +9,7 @@ use test_context::test_context;
 // async fn test01(ctx: &mut AsyncContext) {
 //     let app = test::init_service(App::new().configure(ctx.configure_app())).await;
 //     let req = test::TestRequest::default().uri("/user/login"); TODO FIX - identity problem
-// 
+//
 //     let response = req.send_request(&app).await;
 //     assert_eq!(response.status(), StatusCode::OK);
 // }

@@ -1,4 +1,3 @@
-use actix_session::Session;
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::membership::details::template::MembershipDetailsTemplate;
 use crate::api::templates::membership::payment_method::template::PaymentMethodTemplate;
@@ -6,6 +5,7 @@ use crate::api::templates::template::BaseTemplate;
 use crate::business::facades::membership::{
     MembershipFacade, MembershipFacadeTrait, PaymentMethodInput,
 };
+use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder};
 use askama_actix::TemplateToResponse;
 
