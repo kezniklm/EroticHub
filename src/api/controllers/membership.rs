@@ -1,6 +1,7 @@
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::membership::deal::template::DealTemplate;
 use crate::api::templates::membership::details::template::MembershipDetailsTemplate;
+use crate::api::templates::membership::payment::template::PaymentTemplate;
 use crate::api::templates::membership::payment_method::template::PaymentMethodTemplate;
 use crate::api::templates::template::BaseTemplate;
 use crate::business::facades::membership::{
@@ -12,6 +13,7 @@ use config::Map;
 
 // TODO: only allow for logged in user with the same user_id
 // TODO: allow changing prices for admins
+// TODO: proper error handling
 
 pub async fn get_membership_details(
     membership_facade: web::Data<MembershipFacade>,
@@ -100,6 +102,55 @@ pub async fn get_payment_form(
     let user_id = params.0;
     let deal_id = params.1;
 
-    // TODO:
-    return HttpResponse::Ok().finish();
+    let membership_details = match membership_facade.get_membership_details(user_id).await {
+        Ok(membership_details) => membership_details,
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+
+    let deal = match membership_facade.get_deal(deal_id).await {
+        Ok(option_deal) => match option_deal {
+            Some(deal) => deal,
+            None => return HttpResponse::NotFound().finish(),
+        },
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+
+    let template = PaymentTemplate {
+        user_id,
+        membership_details,
+        deal,
+    };
+
+    BaseTemplate::wrap(htmx_request, template).to_response()
+}
+
+pub async fn pay(
+    membership_facade: web::Data<MembershipFacade>,
+    params: web::Path<(i32, i32)>,
+) -> impl Responder {
+    let user_id = params.0;
+    let deal_id = params.1;
+
+    match membership_facade.has_payment_method(user_id).await {
+        Ok(true) => {}
+        Ok(false) => {
+            return HttpResponse::SeeOther()
+                .insert_header((
+                    "Location",
+                    format!(
+                        "/membership/{}/payment-method?back_to=/membership/{}/deal/{}",
+                        user_id, user_id, deal_id
+                    ),
+                ))
+                .finish()
+        }
+        Err(_) => return HttpResponse::InternalServerError().finish(),
+    };
+
+    match membership_facade.pay(user_id, deal_id).await {
+        Ok(_) => HttpResponse::SeeOther()
+            .insert_header(("Location", format!("/membership/{}", user_id)))
+            .finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
 }

@@ -7,6 +7,7 @@ use crate::persistence::entities::deal::{Deal, DealExtended};
 #[async_trait]
 pub trait DealRepo: Debug {
     async fn get_deals(&self) -> anyhow::Result<Vec<DealExtended>>;
+    async fn get_deal(&self, deal_id: i32) -> anyhow::Result<Option<DealExtended>>;
 }
 
 #[derive(Debug, Clone)]
@@ -46,5 +47,11 @@ impl DealRepo for PostgresDealRepo {
             .collect();
 
         Ok(deals_extended)
+    }
+
+    async fn get_deal(&self, deal_id: i32) -> anyhow::Result<Option<DealExtended>> {
+        // not done using a query to get DealExtended instead of Deal
+        let deals = self.get_deals().await?;
+        Ok(deals.into_iter().find(|deal| deal.id == deal_id))
     }
 }

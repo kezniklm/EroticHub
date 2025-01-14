@@ -31,6 +31,8 @@ pub trait MembershipFacadeTrait {
         input: PaymentMethodInput,
     ) -> anyhow::Result<i32>;
     async fn get_deals(&self) -> anyhow::Result<Vec<DealModel>>;
+    async fn get_deal(&self, deal_id: i32) -> anyhow::Result<Option<DealModel>>;
+    async fn pay(&self, user_id: i32, deal_id: i32) -> anyhow::Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -151,5 +153,25 @@ impl MembershipFacadeTrait for MembershipFacade {
         let deals = self.deal_repository.get_deals().await?;
         let deal_models = deals.to_mapped_list(DealModel::from);
         Ok(deal_models)
+    }
+
+    async fn get_deal(&self, deal_id: i32) -> anyhow::Result<Option<DealModel>> {
+        let deal = self.deal_repository.get_deal(deal_id).await?;
+        Ok(deal.map(DealModel::from))
+    }
+
+    async fn pay(&self, user_id: i32, deal_id: i32) -> anyhow::Result<()> {
+        // TODO: refactor to a transaction
+
+        let deal = match self.deal_repository.get_deal(deal_id).await? {
+            Some(deal) => deal,
+            None => return Err(anyhow::anyhow!("Deal not found")),
+        };
+
+        self.paying_member_repository
+            .extend_validity(user_id, deal.number_of_months)
+            .await?;
+
+        Ok(())
     }
 }
