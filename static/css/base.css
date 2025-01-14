@@ -5,11 +5,17 @@
   --primary-orange: #ff9900;
   --primary-orange-hover: #cc7a00;
   --primary-orange-active: #b36b00;
+  --secondary-gray: #666;
 
   /* Bootstrap color customizations */
   --bs-border-color: var(--primary-gray-lighter);
   --bs-body-bg: var(--primary-gray);
   --bs-body-color: var(--primary-white);
+  --bs-secondary-color: var(--secondary-gray);
+}
+
+.row {
+  --bs-gutter-y: var(--bs-gutter-x);
 }
 
 .btn-primary {

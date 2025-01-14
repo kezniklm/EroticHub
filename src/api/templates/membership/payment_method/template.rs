@@ -5,4 +5,5 @@ use askama_actix::Template;
 pub struct PaymentMethodTemplate {
     pub user_id: i32,
     pub has_payment_method: bool,
+    pub back_to: String,
 }

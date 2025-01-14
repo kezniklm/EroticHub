@@ -1,0 +1,60 @@
+<h2>
+  {% match membership_details.paying_member %}
+    {% when Some with (paying_member) %}
+        {% if paying_member.is_valid %}
+          Extend membership
+        {% else if paying_member.valid_until.is_some() %}
+          Renew membership
+        {% else %}
+          Get membership
+        {% endif %}
+    {% when None %}
+      Get membership
+  {% endmatch %}
+</h2>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">One Month</h5>
+          <p class="card-text">Price per month: $10</p>
+          <p class="card-text">Total price: $10</p>
+          <a href="/membership/{{ user_id }}/deal/1" class="btn btn-primary">Select</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Three Months</h5>
+          <p class="card-text">Price per month: $9</p>
+          <p class="card-text">Total price: <del class="text-muted">$30</del> $27</p>
+          <a href="/membership/{{ user_id }}/deal/2" class="btn btn-primary">Select</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">One Year</h5>
+          <p class="card-text">Price per month: $8</p>
+          <p class="card-text">Total price: <del class="text-muted">$120</del> $96</p>
+          <a href="/membership/{{ user_id }}/deal/3" class="btn btn-primary">Select</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="payment-info">
+  {% match membership_details.payment_method %}
+  {% when Some with (payment_method) %}
+      <p>Your current card number: {{ payment_method.card_number_classified }}</p>
+      <a href="/membership/{{ user_id }}/payment-method?back_to=/membership/{{ user_id }}/deal" class="btn btn-primary">Change payment method</a>
+  {% when None %}
+      <p>You have no payment method set up</p>
+      <a href="/membership/{{ user_id }}/payment-method?back_to=/membership/{{ user_id }}/deal" class="btn btn-primary">Add payment method</a>
+  {% endmatch %}
+</div>

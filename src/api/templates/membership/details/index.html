@@ -15,7 +15,7 @@
             {% endif %}
           {% endif %}
         </p>
-        <a href="{{ membership_url }}" class="btn btn-primary">
+        <a href="/membership/{{ user_id }}/deal" class="btn btn-primary">
           {% if paying_member.is_valid %}
             Extend membership
           {% else %}
@@ -24,14 +24,18 @@
         </a>
       {% when None %}
         <p>You do not have an active membership</p>
-        <a href="{{ membership_url }}" class="btn btn-primary">Get membership</a>
+        <a href="/membership/{{ user_id }}/deal" class="btn btn-primary">Get membership</a>
     {% endmatch %}
   </div>
 
-  {% if let Some with (payment_method) = membership_details.payment_method %}
-    <div class="payment-info">
-      <p>Your current card number: {{ payment_method.card_number_classified }}</p>
-      <a href="/membership/{{ user_id }}/payment-method" class="btn btn-primary">Change payment method</a>
-    </div>
-  {% endif %}
+  <div class="payment-info">
+    {% match membership_details.payment_method %}
+    {% when Some with (payment_method) %}
+        <p>Your current card number: {{ payment_method.card_number_classified }}</p>
+        <a href="/membership/{{ user_id }}/payment-method?back_to=/membership/{{ user_id }}" class="btn btn-primary">Change payment method</a>
+    {% when None %}
+        <p>You have no payment method set up</p>
+        <a href="/membership/{{ user_id }}/payment-method?back_to=/membership/{{ user_id }}" class="btn btn-primary">Add payment method</a>
+    {% endmatch %}
+  </div>
 </div>

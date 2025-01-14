@@ -6,6 +6,8 @@
 {% endmatch %}
 
 <form action="/membership/{{ user_id }}/payment-method" method="post" class="needs-validation" novalidate>
+  <input type="hidden" name="back_to" value="{{ back_to }}">
+
   <div class="mb-3">
     <label for="card_number" class="form-label">Card number</label>
     <input type="text" 

@@ -14,11 +14,13 @@ pub struct PaymentMethodInput {
     pub card_number: String,
     pub card_expiration_date: String,
     pub card_cvc: String,
+    pub back_to: String,
 }
 
 #[async_trait]
 pub trait MembershipFacadeTrait {
     async fn has_payment_method(&self, user_id: i32) -> anyhow::Result<bool>;
+    async fn get_payment_method(&self, user_id: i32) -> anyhow::Result<Option<PaymentMethodModel>>;
     async fn get_membership_details(&self, user_id: i32) -> anyhow::Result<MembershipDetails>;
     async fn change_payment_method(
         &self,
@@ -61,6 +63,23 @@ impl MembershipFacadeTrait for MembershipFacade {
                     .await
             }
             None => Ok(false),
+        };
+    }
+
+    async fn get_payment_method(&self, user_id: i32) -> anyhow::Result<Option<PaymentMethodModel>> {
+        // TODO: refactor to a transaction
+        let paying_member = self
+            .paying_member_repository
+            .get_paying_member(user_id)
+            .await?;
+
+        return match paying_member {
+            Some(paying_member) => self
+                .payment_method_repository
+                .get_payment_method(paying_member.id)
+                .await
+                .map(|option_pm| option_pm.map(PaymentMethodModel::from)),
+            None => Ok(None),
         };
     }
 
