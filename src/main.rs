@@ -162,6 +162,10 @@ async fn main() -> anyhow::Result<()> {
 
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
+            .service(actix_files::Files::new(
+                "/user-images",
+                "./resources/images/users",
+            ))
             .wrap(GrantsMiddleware::with_extractor(extract))
             .wrap(identity_middleware)
             .wrap(session_middleware)

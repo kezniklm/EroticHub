@@ -97,14 +97,22 @@ impl UserFacadeTrait for UserFacade {
 
                 let unique_file_name = uuid::Uuid::new_v4().to_string();
 
-                let profile_picture_path = format!(
+                let profile_picture_save_path = format!(
                     "{}{}.{}",
                     PROFILE_PICTURE_FOLDER_PATH,
                     unique_file_name,
-                    get_file_extension(profile_picture_file_name).await
+                    get_file_extension(profile_picture_file_name.clone()).await
                 );
-                self.persist_profile_picture(profile_picture, profile_picture_path)
-                    .await?
+                self.persist_profile_picture(profile_picture, profile_picture_save_path)
+                    .await?;
+
+                format!(
+                    "{}{}.{}",
+                    "user-images/",
+                    unique_file_name,
+                    get_file_extension(profile_picture_file_name).await
+                )
+                .into()
             }
             None => None,
         };
