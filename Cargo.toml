@@ -45,6 +45,7 @@ futures-util = "0.3.31"
 http = "0.2.12"
 futures = "0.3.31"
 bcrypt = "0.16.0"
+image = "0.24"
 
 [dev-dependencies]
 actix-multipart-test = "0.0.3"

@@ -14,11 +14,23 @@ use async_trait::async_trait;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use std::collections::HashSet;
 use std::fmt::Debug;
+use std::io::Read;
 use std::sync::Arc;
+use tempfile::NamedTempFile;
 use validator::ValidationError;
 
 const PROFILE_PICTURE_FOLDER_PATH: &str = "resources/images/users/";
 const VALIDATION_ERROR_TEXT: &str = "Validation failed";
+
+const ALLOWED_IMAGE_MIME_TYPES: &[&str] = &[
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/bmp",
+    "image/tiff",
+    "image/webp",
+    "image/svg+xml",
+];
 
 #[async_trait]
 pub trait UserFacadeTrait {
@@ -36,6 +48,10 @@ pub trait UserFacadeTrait {
     ) -> Result<bool>;
     async fn validate_username_exists(&self, username: String) -> Result<(), ValidationError>;
     async fn validate_email_exists(&self, email: String) -> Result<(), ValidationError>;
+    async fn validate_picture_mime_type(
+        &self,
+        profile_picture: &mut NamedTempFile,
+    ) -> Result<(), AppError>;
     async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>>;
 }
 
@@ -70,7 +86,10 @@ impl UserFacadeTrait for UserFacade {
         new_user.password_hash = Some(password_hash);
 
         new_user.profile_picture_path = match register_form.profile_picture {
-            Some(profile_picture) => {
+            Some(mut profile_picture) => {
+                self.validate_picture_mime_type(&mut profile_picture.file)
+                    .await?;
+
                 let profile_picture_file_name = match &profile_picture.file_name {
                     Some(file_name) => file_name.clone(),
                     _ => "".to_string(),
@@ -180,6 +199,31 @@ impl UserFacadeTrait for UserFacade {
             )),
             None => Ok(()),
         }
+    }
+
+    async fn validate_picture_mime_type(
+        &self,
+        profile_picture: &mut NamedTempFile,
+    ) -> Result<(), AppError> {
+        let mut profile_picture_content: Vec<u8> = Vec::new();
+        profile_picture
+            .read_to_end(&mut profile_picture_content)
+            .app_error("Profile picture content was not able to be read")?;
+
+        let image_format = image::guess_format(profile_picture_content.as_slice())
+            .app_error("Profile picture format was not able to be read")?;
+
+        if !ALLOWED_IMAGE_MIME_TYPES
+            .iter()
+            .any(|&allowed_mime| allowed_mime == image_format.to_mime_type())
+        {
+            return Err(AppError::new(
+                "Profile picture format not supported",
+                BadRequestError,
+            ));
+        }
+
+        Ok(())
     }
 
     async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>> {
