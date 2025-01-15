@@ -9,7 +9,6 @@ use crate::business::validation::validatable::Validatable;
 use crate::business::Result;
 use crate::persistence::entities::user::User;
 use crate::persistence::repositories::user::UserRepositoryTrait;
-use actix_multipart::form::tempfile::TempFile;
 use async_trait::async_trait;
 use bcrypt::{hash, verify, DEFAULT_COST};
 use std::collections::HashSet;
@@ -38,7 +37,7 @@ pub trait UserFacadeTrait {
     async fn login(&self, login_model: UserLogin) -> Result<UserDetail>;
     async fn persist_profile_picture(
         &self,
-        profile_picture: TempFile,
+        profile_picture: NamedTempFile,
         profile_picture_path: String,
     ) -> Result<Option<String>, AppError>;
     async fn validate_password(
@@ -103,7 +102,7 @@ impl UserFacadeTrait for UserFacade {
                     unique_file_name,
                     get_file_extension(profile_picture_file_name.clone()).await
                 );
-                self.persist_profile_picture(profile_picture, profile_picture_save_path)
+                self.persist_profile_picture(profile_picture.file, profile_picture_save_path)
                     .await?;
 
                 format!(
@@ -154,13 +153,12 @@ impl UserFacadeTrait for UserFacade {
 
     async fn persist_profile_picture(
         &self,
-        profile_picture: TempFile,
+        profile_picture: NamedTempFile,
         profile_picture_path: String,
     ) -> Result<Option<String>, AppError> {
-        profile_picture
-            .file
-            .persist(profile_picture_path.clone())
-            .app_error("Failed to save the profile picture")?;
+        tokio::fs::copy(profile_picture.path(), &profile_picture_path)
+            .await
+            .app_error("Failed to save profile picture")?;
         Ok(Some(profile_picture_path))
     }
 
