@@ -17,7 +17,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 use validator::ValidationError;
 
-const PROFILE_PICTURE_FOLDER_PATH: &str = "./static/images/users/";
+const PROFILE_PICTURE_FOLDER_PATH: &str = "resources/images/users/";
 const VALIDATION_ERROR_TEXT: &str = "Validation failed";
 
 #[async_trait]
@@ -76,10 +76,12 @@ impl UserFacadeTrait for UserFacade {
                     _ => "".to_string(),
                 };
 
+                let unique_file_name = uuid::Uuid::new_v4().to_string();
+
                 let profile_picture_path = format!(
                     "{}{}.{}",
                     PROFILE_PICTURE_FOLDER_PATH,
-                    new_user.username,
+                    unique_file_name,
                     get_file_extension(profile_picture_file_name).await
                 );
                 self.persist_profile_picture(profile_picture, profile_picture_path)
