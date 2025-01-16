@@ -1,6 +1,14 @@
-use actix_web::middleware::Logger;
+use actix_identity::IdentityMiddleware;
+use actix_session::config::PersistentSession;
+use actix_session::storage::RedisSessionStore;
+use actix_session::SessionMiddleware;
+use actix_web::cookie::{Key, SameSite};
+use actix_web::middleware::{Logger, NormalizePath};
 use actix_web::{web, App, HttpServer};
+use actix_web_grants::GrantsMiddleware;
+use deadpool_redis::Runtime;
 use env_logger::Env;
+use erotic_hub::api::extractors::permissions_extractor::extract;
 use erotic_hub::api::routes::membership::membership_routes;
 use erotic_hub::api::routes::stream::stream_routes;
 use erotic_hub::api::routes::temp_file::temp_file_routes;
@@ -11,7 +19,7 @@ use erotic_hub::business::facades::comment::CommentFacade;
 use erotic_hub::business::facades::membership::MembershipFacade;
 use erotic_hub::business::facades::stream::StreamFacade;
 use erotic_hub::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
-use erotic_hub::business::facades::user::UserFacade;
+use erotic_hub::business::facades::user::{UserFacade, UserFacadeTrait};
 use erotic_hub::business::facades::video::VideoFacade;
 use erotic_hub::business::models::stream::StreamStorage;
 use erotic_hub::persistence::repositories::artist::ArtistRepository;
@@ -20,15 +28,19 @@ use erotic_hub::persistence::repositories::paying_member::PostgresPayingMemberRe
 use erotic_hub::persistence::repositories::payment_method::PostgresPaymentMethodRepo;
 use erotic_hub::persistence::repositories::stream::PgStreamRepo;
 use erotic_hub::persistence::repositories::temp_file::PgTempFileRepo;
-use erotic_hub::persistence::repositories::user::PostgresUserRepo;
+use erotic_hub::persistence::repositories::user::UserRepository;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
-use erotic_hub::{get_temp_directory_path, get_video_thumbnail_dirs, init_configuration};
+use erotic_hub::{
+    get_profile_picture_folder_path, get_temp_directory_path, get_video_thumbnail_dirs,
+    init_configuration,
+};
 use log::warn;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 
 async fn setup_db_pool() -> anyhow::Result<Pool<Postgres>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
@@ -38,6 +50,27 @@ async fn setup_db_pool() -> anyhow::Result<Pool<Postgres>> {
         .await?;
 
     Ok(pool)
+}
+
+async fn setup_redis_pool() -> anyhow::Result<deadpool_redis::Pool> {
+    let redis_url = env::var("REDIS_DATABASE_URL").expect("REDIS_DATABASE_URL must be set");
+    let redis_config = deadpool_redis::Config::from_url(&redis_url);
+    let pool = redis_config.create_pool(Some(Runtime::Tokio1))?;
+
+    Ok(pool)
+}
+
+fn get_secret_key() -> Key {
+    let secret_key = match env::var("SESSION_SECRET_KEY") {
+        Ok(secret_key) => secret_key,
+        Err(_) => return Key::generate(),
+    };
+
+    if secret_key.len() < 64 {
+        panic!("SESSION_SECRET_KEY must be at least 32 characters long");
+    }
+
+    Key::from(secret_key.as_bytes())
 }
 
 #[actix_web::main]
@@ -55,9 +88,18 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = setup_db_pool().await?;
 
+    let redis_pool = setup_redis_pool().await?;
+
+    let redis_store = RedisSessionStore::new_pooled(redis_pool).await?;
+
     let stream_storage = Arc::new(StreamStorage::default());
-    let user_repo = Arc::new(PostgresUserRepo::new(pool.clone()));
+    let user_repo = Arc::new(UserRepository::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
+
+    let profile_picture_folders_path = get_profile_picture_folder_path();
+    UserFacade::create_profile_picture_folders(profile_picture_folders_path)
+        .await
+        .expect("Failed to create profile picture folders");
 
     let artist_repo = Arc::new(ArtistRepository::new(pool.clone()));
     let artist_facade = Arc::new(ArtistFacade::new(artist_repo));
@@ -105,9 +147,37 @@ async fn main() -> anyhow::Result<()> {
         payment_method_repo,
     ));
 
+    let secret_key = get_secret_key();
+
     HttpServer::new(move || {
+        let cookie_expiration = Duration::from_secs(7 * 24 * 60 * 60); // 7 days
+
+        let identity_middleware = IdentityMiddleware::builder()
+            .visit_deadline(Some(cookie_expiration))
+            .build();
+
+        let session_middleware =
+            SessionMiddleware::builder(redis_store.clone(), secret_key.clone())
+                .cookie_name("erotic-hub".to_string())
+                .cookie_secure(false) // Use secure cookies (only HTTPS)
+                .cookie_http_only(true) // Prevent JavaScript access
+                .cookie_same_site(SameSite::Lax) // Set SameSite policy
+                .cookie_path("/".to_string()) // Set path for the cookie
+                .session_lifecycle(
+                    PersistentSession::default().session_ttl(cookie_expiration.try_into().unwrap()),
+                )
+                .build();
+
         App::new()
             .service(actix_files::Files::new("/static", "./static"))
+            .service(actix_files::Files::new(
+                "/user-images",
+                "./resources/images/users",
+            ))
+            .wrap(GrantsMiddleware::with_extractor(extract))
+            .wrap(identity_middleware)
+            .wrap(session_middleware)
+            .wrap(NormalizePath::trim())
             .wrap(Logger::default())
             .app_data(web::Data::new(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))

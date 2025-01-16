@@ -1,0 +1,58 @@
+<div id="account-container" class="account-container">
+    <a href="#" id="account-icon" class="account-btn">
+        {% if let Some(profile_picture_path) = profile_picture_path %}
+        <img src="/{{profile_picture_path}}" alt="User Profile Photo" class="user-photo"
+            onerror="this.src='/static/images/anonymous_profile_picture.jpg';" />
+        {% else %}
+        <i class="bi bi-person-circle"></i>
+        {% endif %}
+    </a>
+    <div id="account-popup" class="popup hidden">
+        {% match profile_picture_path %}
+            {% when Some(profile_picture_path) %}
+                <a href="#" class="popup-item"
+                   hx-get="/user/liked-videos"
+                   hx-target="#content-container"
+                   hx-swap="innerHTML"
+                   hx-trigger="click"
+                   hx-push-url="true" >
+                    <div class="popup-icon">
+                        <i class="bi bi-hand-thumbs-up-fill"></i>
+                    </div>
+                    <span class="popup-label">Liked Videos</span>
+                </a>
+                <a href="#" class="popup-item"
+                   hx-get="/user/account"
+                   hx-target="#content-container"
+                   hx-swap="outerHTML"
+                   hx-trigger="click"
+                   hx-push-url="true" >
+                    <div class="popup-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <span class="popup-label">My Account</span>
+                </a>
+                <a href="/user/logout" class="popup-item">
+                    <div class="popup-icon">
+                        <i class="bi bi-box-arrow-left"></i>
+                    </div>
+                    <span class="popup-label">Logout</span>
+                </a>
+        {% when None %}
+            <a href="#" class="popup-item" hx-get="/user/register" hx-target="#auth-popup"
+               hx-swap="innerHTML" hx-trigger="click">
+                <div class="popup-icon">
+                    <i class="bi bi-person-fill-add"></i>
+                </div>
+                <span class="popup-label">Sign Up</span>
+            </a>
+            <a href="#" class="popup-item" hx-get="/user/login" hx-target="#auth-popup"
+               hx-swap="innerHTML" hx-trigger="click">
+                <div class="popup-icon">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <span class="popup-label">Log In</span>
+            </a>
+        {% endmatch %}
+    </div>
+</div>

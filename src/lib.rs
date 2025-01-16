@@ -13,8 +13,10 @@ const CONFIG_FILE_KEY: &str = "CONFIG_FILE_PATH";
 
 const DEFAULT_VIDEO_DIRECTORY: &str = "./resources/videos";
 const DEFAULT_THUMBNAILS_PATH: &str = "./resources/thumbnails";
+const DEFAULT_PROFILE_PICTURE_DIRECTORY: &str = "./resources/images/users";
 const VIDEOS_DIRECTORY_KEY: &str = "VIDEO_DIRECTORY_PATH";
 const THUMBNAIL_DIRECTORY_KEY: &str = "THUMBNAIL_DIRECTORY_PATH";
+const PROFILE_PICTURE_DIRECTORY_KEY: &str = "PROFILE_PICTURE_DIRECTORY_PATH";
 
 const DEFAULT_TEMP_DIRECTORY: &str = "temp";
 const TEMP_DIRECTORY_KEY: &str = "TEMP_DIRECTORY_PATH";
@@ -47,4 +49,9 @@ pub fn get_video_thumbnail_dirs() -> (String, String) {
 
 pub fn get_temp_directory_path() -> String {
     dotenvy::var(TEMP_DIRECTORY_KEY).unwrap_or(DEFAULT_TEMP_DIRECTORY.to_string())
+}
+
+pub fn get_profile_picture_folder_path() -> String {
+    dotenvy::var(PROFILE_PICTURE_DIRECTORY_KEY)
+        .unwrap_or(DEFAULT_PROFILE_PICTURE_DIRECTORY.to_string())
 }

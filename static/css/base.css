@@ -45,8 +45,8 @@ body {
 }
 
 .navbar {
-  background-color: #181818;
-  padding: 0.5rem 1rem;
+    background-color: #181818;
+    padding: 0.5rem 1rem;
 }
 
 .navbar-brand span {
@@ -101,8 +101,31 @@ input[class="form-control"]::file-selector-button {
 }
 
 .icon-btn:hover {
-  color: var(--primary-orange);
-  cursor: pointer;
+    color: #ff9900;
+}
+
+.account-btn {
+    color: #fff;
+    font-size: 1.25rem;
+    margin: 0 0.5rem;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.account-btn:hover {
+    color: #ff9900;
+}
+
+.user-photo {
+    width: 2rem;
+    height: 2rem;
+    object-fit: cover;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.account-btn:hover .user-photo {
+    filter: brightness(1.5);
 }
 
 .centered-content {
@@ -287,7 +310,174 @@ body.no-scroll {
 }
 
 .popup-brand-footer span {
+    color: #fff;
+}
+.account-container {
+    position: relative;
+    display: inline-block;
+}
+
+#account-icon {
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#account-popup {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background-color: #181818;
+    border-radius: 0 0 5px 5px;
+    padding: 15px;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    z-index: 1000;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.popup-item {
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+}
+
+.popup-icon {
+    background-color: #333;
+    color: white;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.popup-label {
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.popup-icon:hover {
+    background-color: #444;
+    color: #ff9900;
+}
+
+#auth-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.popup-brand-footer span {
   color: #fff;
+}
+.account-container {
+  position: relative;
+  display: inline-block;
+}
+
+#account-icon {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+#account-popup {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background-color: #181818;
+  border-radius: 0 0 5px 5px;
+  padding: 15px;
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  z-index: 1000;
+  white-space: nowrap;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.hidden {
+  display: none !important;
+}
+
+.popup-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.popup-icon {
+  background-color: #333;
+  color: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.popup-label {
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.popup-icon:hover {
+  background-color: #444;
+  color: #ff9900;
+}
+
+#auth-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.navbar-nav .nav-item {
+  white-space: nowrap;
+}
+
+.icon-btn:hover {
+  color: var(--primary-orange);
+  cursor: pointer;
 }
 
 .action-icon {

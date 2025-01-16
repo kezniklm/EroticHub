@@ -5,6 +5,7 @@ use crate::api::templates::template::BaseTemplate;
 use crate::business::facades::membership::{
     MembershipFacade, MembershipFacadeTrait, PaymentMethodInput,
 };
+use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder};
 use askama_actix::TemplateToResponse;
 
@@ -13,6 +14,7 @@ use askama_actix::TemplateToResponse;
 pub async fn get_membership_details(
     membership_facade: web::Data<MembershipFacade>,
     htmx_request: HtmxRequest,
+    session: Session,
     user_id: web::Path<i32>,
 ) -> impl Responder {
     let membership_details = match membership_facade.get_membership_details(*user_id).await {
@@ -29,12 +31,13 @@ pub async fn get_membership_details(
         membership_details,
     };
 
-    BaseTemplate::wrap(htmx_request, template).to_response()
+    BaseTemplate::wrap(htmx_request, session, template).to_response()
 }
 
 pub async fn get_payment_method_form(
     membership_facade: web::Data<MembershipFacade>,
     htmx_request: HtmxRequest,
+    session: Session,
     user_id: web::Path<i32>,
 ) -> impl Responder {
     let has_payment_method = match membership_facade.has_payment_method(*user_id).await {
@@ -47,7 +50,7 @@ pub async fn get_payment_method_form(
         has_payment_method,
     };
 
-    BaseTemplate::wrap(htmx_request, template).to_response()
+    BaseTemplate::wrap(htmx_request, session, template).to_response()
 }
 
 pub async fn change_payment_method(

@@ -1,5 +1,8 @@
 use crate::persistence::entities::error::DatabaseError;
+use actix_identity::error::{GetIdentityError, LoginError};
+use actix_session::SessionInsertError;
 use std::fmt::{Display, Formatter};
+use validator::ValidationError;
 
 #[derive(Debug)]
 pub struct AppError {
@@ -20,6 +23,8 @@ impl AppError {
 pub enum AppErrorKind {
     WrongMimeType,
     InternalServerError,
+    BadRequestError,
+    Unauthorized,
     NotFound,
 }
 
@@ -54,6 +59,8 @@ impl Display for AppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self.error {
             AppErrorKind::WrongMimeType => write!(f, "Unsupported MimeType: {}", self.message),
+            AppErrorKind::BadRequestError => write!(f, "Bad request: {}", self.message),
+            AppErrorKind::Unauthorized => write!(f, "Unauthorized: {}", self.message),
             AppErrorKind::InternalServerError => {
                 write!(f, "Internal server error: {}", self.message)
             }
@@ -67,5 +74,29 @@ impl Display for AppError {
 impl From<DatabaseError> for AppError {
     fn from(value: DatabaseError) -> Self {
         Self::new(&value.error, AppErrorKind::InternalServerError)
+    }
+}
+
+impl From<LoginError> for AppError {
+    fn from(_: LoginError) -> Self {
+        AppError::new("Login failed.", AppErrorKind::Unauthorized)
+    }
+}
+
+impl From<ValidationError> for AppError {
+    fn from(_: ValidationError) -> Self {
+        AppError::new("Validation failed", AppErrorKind::BadRequestError)
+    }
+}
+
+impl From<SessionInsertError> for AppError {
+    fn from(value: SessionInsertError) -> Self {
+        Self::new(&value.to_string(), AppErrorKind::InternalServerError)
+    }
+}
+
+impl From<GetIdentityError> for AppError {
+    fn from(value: GetIdentityError) -> Self {
+        Self::new(&value.to_string(), AppErrorKind::Unauthorized)
     }
 }

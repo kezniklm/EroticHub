@@ -1,31 +1,34 @@
-# Use postgres/example user/password credentials
 version: "3.1"
 
-services: # List of services to run
-  db: # Name of the service (can be anything)
-    image: postgres # Specify image to build container from, in this case latest postgres (https://hub.docker.com/_/postgres)
-    restart: always # If container stops, always restart it
-    environment:
-      POSTGRES_PASSWORD: example # Set password for postgres (default) user
-    ports:
-      - "5432:5432" # Maps the port host:container
+services:
+    # List of services to run
+    db:
+        # PostgreSQL database service
+        image: postgres # Specify image to build container from, in this case latest postgres (https://hub.docker.com/_/postgres)
+        restart: always # If container stops, always restart it
+        environment:
+            POSTGRES_PASSWORD: example # Set password for postgres (default) user
+        ports:
+            - "5432:5432" # Maps the port host:container
 
-  adminer:
-    image: adminer # Use latest adminer image (https://hub.docker.com/_/adminer/)
-    restart: always
-    ports:
-      - "8080:8080"
-  nginx:
-    container_name: nginx-rtmp
-    build: docker/nginx-rtmp/.
-    restart: always
-    tty: true
-    ports:
-      - "1935:1935"
-      - "8081:80"
-  redis:
-    # Redis database service
-    image: redis # Use the official Redis image (https://hub.docker.com/_/redis)
-    restart: always # If container stops, always restart it
-    ports:
-      - "6379:6379" # Maps the port host:container
+    adminer:
+        # Adminer web UI service
+        image: adminer # Use latest adminer image (https://hub.docker.com/_/adminer/)
+        restart: always
+        ports:
+            - "8080:8080" # Maps the port host:container
+
+    redis:
+        # Redis database service
+        image: redis # Use the official Redis image (https://hub.docker.com/_/redis)
+        restart: always # If container stops, always restart it
+        ports:
+            - "6379:6379" # Maps the port host:container
+    nginx:
+      container_name: nginx-rtmp
+      build: docker/nginx-rtmp/.
+      restart: always
+      tty: true
+      ports:
+        - "1935:1935"
+        - "8081:80"

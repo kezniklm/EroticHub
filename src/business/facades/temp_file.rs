@@ -1,5 +1,5 @@
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
-use crate::business::util::file::create_dir_if_not_exist;
+use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::Result;
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::repositories::temp_file::TempFileRepo;
@@ -45,14 +45,6 @@ impl TempFileFacade {
             temp_file_dir,
         }
     }
-
-    fn get_file_extension(&self, file_name: String) -> String {
-        if let Some(file_name) = file_name.split_once(".") {
-            let (_name, extension) = file_name;
-            return extension.to_string();
-        }
-        String::new()
-    }
 }
 
 #[async_trait]
@@ -80,7 +72,7 @@ impl TempFileFacadeTrait for TempFileFacade {
             "./{}/{}.{}",
             self.temp_file_dir,
             uuid,
-            self.get_file_extension(file_name)
+            get_file_extension(file_name).await
         );
         let entity = TempFile {
             id: -1,
