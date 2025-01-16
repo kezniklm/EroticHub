@@ -3,7 +3,7 @@ use crate::business::models::error::{AppError, MapToAppError};
 use crate::business::models::user::{
     UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole,
 };
-use crate::business::util::file::get_file_extension;
+use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
 use crate::business::Result;
@@ -52,6 +52,9 @@ pub trait UserFacadeTrait {
         profile_picture: &mut NamedTempFile,
     ) -> Result<(), AppError>;
     async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>>;
+    async fn create_profile_picture_folders(
+        profile_picture_folder_path: String,
+    ) -> anyhow::Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -249,5 +252,11 @@ impl UserFacadeTrait for UserFacade {
         }
 
         Ok(user_permissions)
+    }
+
+    async fn create_profile_picture_folders(
+        profile_picture_folder_path: String,
+    ) -> anyhow::Result<()> {
+        Ok(create_dir_if_not_exist(profile_picture_folder_path).await?)
     }
 }

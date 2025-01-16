@@ -19,7 +19,7 @@ use erotic_hub::business::facades::comment::CommentFacade;
 use erotic_hub::business::facades::membership::MembershipFacade;
 use erotic_hub::business::facades::stream::StreamFacade;
 use erotic_hub::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
-use erotic_hub::business::facades::user::UserFacade;
+use erotic_hub::business::facades::user::{UserFacade, UserFacadeTrait};
 use erotic_hub::business::facades::video::VideoFacade;
 use erotic_hub::business::models::stream::StreamStorage;
 use erotic_hub::persistence::repositories::artist::ArtistRepository;
@@ -31,7 +31,10 @@ use erotic_hub::persistence::repositories::temp_file::PgTempFileRepo;
 use erotic_hub::persistence::repositories::user::UserRepository;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
-use erotic_hub::{get_temp_directory_path, get_video_thumbnail_dirs, init_configuration};
+use erotic_hub::{
+    get_profile_picture_folder_path, get_temp_directory_path, get_video_thumbnail_dirs,
+    init_configuration,
+};
 use log::warn;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
@@ -92,6 +95,11 @@ async fn main() -> anyhow::Result<()> {
     let stream_storage = Arc::new(StreamStorage::default());
     let user_repo = Arc::new(UserRepository::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
+
+    let profile_picture_folders_path = get_profile_picture_folder_path();
+    UserFacade::create_profile_picture_folders(profile_picture_folders_path)
+        .await
+        .expect("Failed to create profile picture folders");
 
     let artist_repo = Arc::new(ArtistRepository::new(pool.clone()));
     let artist_facade = Arc::new(ArtistFacade::new(artist_repo));
