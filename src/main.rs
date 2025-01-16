@@ -169,6 +169,7 @@ async fn main() -> anyhow::Result<()> {
                 .build();
 
         App::new()
+            // TODO: include staticf iles into the binary using include_dir crate
             .service(actix_files::Files::new("/static", "./static"))
             .service(actix_files::Files::new(
                 "/user-images",
@@ -197,7 +198,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(stream_routes)
             .configure(membership_routes)
     })
-    .bind(("127.0.0.1", 8000))?
+    .bind(("0.0.0.0", 8000))?
     .run()
     .await?;
 

@@ -36,7 +36,10 @@ pub fn create_streams(
             resolution.as_str()
         );
         handles.push(thread::spawn(move || {
-            pipeline_listen(pipeline, stream_id.as_str(), stream_storage);
+            match pipeline_listen(pipeline, stream_id.as_str(), stream_storage) {
+                Ok(_) => {}
+                Err(err) => error!("Error occurred during live stream, {:?}", err),
+            }
         }));
     }
 
@@ -54,17 +57,18 @@ fn pipeline_listen(
     pipeline: Arc<Pipeline>,
     stream_id: &str,
     stream_storage: Arc<dyn StreamStorageTrait>,
-) {
+) -> Result<()> {
     if pipeline.bus().is_none() {
-        error!("Error while initializing bus for stream: {}", stream_id);
-        return;
+        return Err(anyhow::Error::msg(
+            "Error while initializing bus for stream: {}",
+        ));
     }
 
     for msg in pipeline.bus().unwrap().iter_timed(ClockTime::NONE) {
         match msg.view() {
             MessageView::Eos(_) => {
                 info!("Stream with ID: {} ended", stream_id);
-                stop_stream(&pipeline);
+                stop_stream(&pipeline)?;
                 stream_storage.remove(stream_id);
                 debug!("Stream storage size: {}", stream_storage.size());
                 break;
@@ -74,7 +78,7 @@ fn pipeline_listen(
                     "Error occurred during stream with ID: {}, {}",
                     stream_id, err
                 );
-                stop_stream(&pipeline);
+                stop_stream(&pipeline)?;
                 stream_storage.remove(stream_id);
                 debug!("Stream storage size: {}", stream_storage.size());
                 break;
@@ -82,6 +86,8 @@ fn pipeline_listen(
             _ => (),
         }
     }
+
+    Ok(())
 }
 
 pub fn create_stream_pipeline(
@@ -94,15 +100,10 @@ pub fn create_stream_pipeline(
     Ok(pipeline)
 }
 
-fn stop_stream(pipeline: &Pipeline) {
-    match pipeline.set_state(State::Null) {
-        Ok(_) => {
-            debug!("Stream successfully ended");
-        }
-        Err(err) => {
-            error!("Failed to end stream: {}", err);
-        }
-    }
+pub fn stop_stream(pipeline: &Pipeline) -> Result<()> {
+    pipeline.set_state(State::Null)?;
+
+    Ok(())
 }
 
 fn build_element(name: &str, props: Option<&[(&str, &str)]>) -> Result<Element> {

@@ -12,6 +12,7 @@ impl ResponseError for AppError {
             AppErrorKind::BadRequestError => StatusCode::BAD_REQUEST,
             AppErrorKind::Unauthorized => StatusCode::UNAUTHORIZED,
             AppErrorKind::NotFound => StatusCode::NOT_FOUND,
+            AppErrorKind::AccessDenied => StatusCode::FORBIDDEN,
         }
     }
 

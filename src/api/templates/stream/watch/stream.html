@@ -1,0 +1,39 @@
+{% match stream.status %}
+{% when LiveStreamStatus::Pending %}
+<h2>Live stream is scheduled to {{ stream.start_time }}</h2>
+{% call get_controls() %}
+{% when LiveStreamStatus::Running %}
+<div id="loading-stream-header" style="display: none">
+    <div class="stream-loading">Stream is loading</div>
+    <span id="stream-loading-dots">&middot;</span>
+    <div>Stream will be automatically displayed once is loaded</div>
+</div>
+<video id="stream-player" class="video-js">
+</video>
+{% call get_controls() %}
+<script>setupStream("{{ stream.stream_url }}")</script>
+<hr>
+
+
+{% when LiveStreamStatus::Ended %}
+<h2>Live stream already ended</h2>
+{% endmatch %}
+
+{% macro get_controls() %}
+<div class="video-info-container">
+    <div class="video-name-container mt-2">
+        <div class="video-name">Live: {{ video.name }}</div>
+        <div>
+            <a class="icon-btn" data-bs-toggle="tooltip" data-bs-title="Stop live stream" hx-delete="/stream/{{ stream.id }}/stop">
+                <i class="bi bi-sign-stop"></i>
+            </a>
+        </div>
+    </div>
+    <hr class="name-divider">
+    <div class="video-description mt-3">{% if let Some (description) = video.description %}
+        {{ description }}
+        {% endif %}
+    </div>
+</div>
+
+{% endmacro %}
