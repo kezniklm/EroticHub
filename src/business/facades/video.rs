@@ -3,6 +3,7 @@ use crate::business::models;
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::video::{VideoEditReq, VideoUploadReq};
 use crate::business::util::file::create_dir_if_not_exist;
+use crate::business::validation::validatable::{EmptyContext, Validatable};
 use crate::business::Result;
 use crate::persistence::entities::video::{PatchVideo, Video, VideoVisibility};
 use crate::persistence::repositories::unit_of_work::UnitOfWork;
@@ -71,8 +72,6 @@ impl VideoFacadeTrait for VideoFacade {
     /// This function calls [`business::facades::temp_file`] service to store temporary files
     /// permanently on the given location.
     ///
-    /// # TODO
-    /// Facade has to check if user (represented by user_id) is an artist and can save videos.
     ///
     /// # Arguments
     ///
@@ -84,6 +83,11 @@ impl VideoFacadeTrait for VideoFacade {
         user_id: i32,
         video_model: VideoUploadReq,
     ) -> Result<models::video::Video> {
+        video_model
+            .validate_model(&EmptyContext::new())
+            .await
+            .app_error_kind("Validation failed", AppErrorKind::BadRequestError)?;
+
         let mut tx = self.unit_of_work.begin().await?;
         let video_path = self
             .temp_file_facade

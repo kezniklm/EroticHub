@@ -1,5 +1,6 @@
 use crate::api::controllers::utils::route_util::{add_redirect_header, build_watch_path};
 use crate::api::extractors::htmx_extractor::HtmxRequest;
+use crate::api::extractors::permissions_extractor::AsInteger;
 use crate::api::templates::template::BaseTemplate;
 use crate::api::templates::video::edit::template::EditVideoTemplate;
 use crate::api::templates::video::list::template::VideoListTemplate;
@@ -9,10 +10,11 @@ use crate::api::templates::video::upload::template::{
     VideoUploadInputTemplate, VideoUploadTemplate,
 };
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
+use crate::business::models::user::UserRole::{self, Artist};
 use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
-use crate::business::models::user::UserRole::{self, Artist};
+use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::web::{Data, Form, Path};
 use actix_web::{HttpResponse, Responder, Result};
@@ -28,11 +30,13 @@ use askama_actix::TemplateToResponse;
 ///
 /// # Returns
 /// Redirects user to the newly created video
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn create_video(
     Form(form): Form<VideoUploadReq>,
     video_facade: Data<VideoFacade>,
+    identity: Identity,
 ) -> Result<impl Responder> {
-    let video = video_facade.save_video(1, form).await?;
+    let video = video_facade.save_video(identity.id_i32()?, form).await?;
     let video_id = video.id;
 
     let mut response = HttpResponse::Created().finish();
@@ -51,6 +55,7 @@ pub async fn create_video(
 ///
 /// # Returns
 /// Redirects user to the patched video
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn patch_video(
     path: Path<GetVideoByIdReq>,
     Form(form): Form<VideoEditReq>,
@@ -75,6 +80,7 @@ pub async fn patch_video(
 ///
 /// # Returns
 /// Redirects user to the main page
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn delete_video(
     path: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
@@ -178,6 +184,7 @@ pub async fn upload_video_template(
 ///
 /// # Returns
 /// `EditVideoTemplate`
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn edit_video_template(
     params: Path<GetVideoByIdReq>,
     htmx_request: HtmxRequest,
