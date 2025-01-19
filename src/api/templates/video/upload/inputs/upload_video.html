@@ -1,3 +1,16 @@
 <label for="videoFile" class="form-label">Video</label>
-<input class="form-control" type="file" name="file" id="videoFile" hx-post="/temp/video"
-       hx-encoding='multipart/form-data' hx-target="#video-input" accept="{{ accepted_mimetype }}" required>
+<input
+        class="form-control"
+        type="file"
+        name="file"
+        id="videoFile"
+        hx-post="/temp/video"
+        hx-encoding='multipart/form-data'
+        hx-target="#video-input"
+        accept="{{ accepted_mimetype }}"
+        custom-validator="file"
+        custom-validator-trigger="change"
+        max-size="500MB"
+        required
+>
+<label class="invalid-feedback" for="videoFile"></label>
