@@ -12,9 +12,11 @@ use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
+use crate::business::models::user::UserRole::{self, Artist};
 use actix_session::Session;
 use actix_web::web::{Data, Form, Path};
 use actix_web::{HttpResponse, Responder, Result};
+use actix_web_grants::protect;
 use askama_actix::TemplateToResponse;
 
 /// Creates new video
@@ -152,6 +154,7 @@ pub async fn list_videos(htmx_request: HtmxRequest, session: Session) -> impl Re
 ///
 /// # Returns
 /// `VideoUploadTemplate`
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn upload_video_template(
     htmx_request: HtmxRequest,
     session: Session,

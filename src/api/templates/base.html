@@ -46,8 +46,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container">
             <!-- Logo -->
-            <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container"
-                hx-swap="outerHTML">Erotic<span>Hub</span></a>
+            <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container">Erotic<span>Hub</span></a>
             <!-- Toggler -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -76,8 +75,9 @@
                 </form>
                 <!-- Right Icons (on large screens) -->
                 <div class="d-none d-lg-flex align-items-center ms-3">
-                    <a class="icon-btn me-4" hx-get="/video/new" hx-push-url="true" hx-target="#content-container"
-                   hx-swap="outerHTML"><i class="bi bi-camera-video-fill"></i></a>
+                    <a class="icon-btn me-4" hx-get="/video/new" hx-push-url="true" hx-target="#content-container">
+                        <i class="bi bi-camera-video-fill"></i>
+                    </a>
                     <div id="account-container" class="account-container">
                         <a href="#" id="account-icon" class="account-btn">
                             {% match user_session_data %}
@@ -104,7 +104,7 @@
                                 <span class="popup-label">Liked Videos</span>
                             </a>
                             <a href="#" class="popup-item" hx-get="/user/account" hx-target="#content-container"
-                                hx-swap="outerHTML" hx-trigger="click" hx-push-url="true">
+                               hx-trigger="click" hx-push-url="true">
                                 <div class="popup-icon">
                                     <i class="bi bi-person-circle"></i>
                                 </div>
@@ -168,12 +168,12 @@
         <!-- Content dynamically loaded via HTMX -->
     </div>
 
-    {% endif %}
     <div class="container centered-content" id="content-container">
+    {% endif %}
         {{ child_template|safe }}
+    {% if !htmx_request.hx_request %}
     </div>
 
-    {% if !htmx_request.hx_request %}
 
 </body>
 
