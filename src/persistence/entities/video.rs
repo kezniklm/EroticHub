@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(sqlx::FromRow)]
 #[cfg_attr(test, derive(Debug, PartialEq, Clone))]
+#[derive(Debug)]
 pub struct Video {
     pub id: i32,
     pub artist_id: i32,

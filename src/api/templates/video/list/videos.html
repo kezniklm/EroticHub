@@ -1,0 +1,9 @@
+{% for video in videos %}
+<div class="col-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="video-card  my-2 mx-1" hx-get="/video/{{ video.id }}/watch" hx-push-url="true"  hx-swap="innerHTML" hx-params="none" hx-target="#content-container">
+        <img src="{{ video.thumbnail_path }}" alt="video_thumbnail" class="video-img">
+        <div class="title">{{ video.name }}</div>
+        <div class="title">{{ video.artist_name }}</div>
+    </div>
+</div>
+{% endfor %}

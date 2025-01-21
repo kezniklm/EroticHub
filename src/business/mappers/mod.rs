@@ -6,3 +6,4 @@ pub mod payment_method;
 mod stream;
 pub mod user;
 mod video;
+pub mod video_category;

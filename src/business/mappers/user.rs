@@ -1,6 +1,6 @@
-use crate::business::models::user_detail::UserDetail;
+use crate::business::models::user_detail::{UserDetail, Username};
 use crate::business::models::user_list::UserList;
-use crate::persistence::entities::user::User;
+use crate::persistence::entities::user::{User, UserName};
 
 impl From<User> for UserDetail {
     fn from(user: User) -> Self {
@@ -37,6 +37,15 @@ impl From<User> for UserList {
             username: user.username,
             email: user.email,
             profile_picture_path: user.profile_picture_path,
+        }
+    }
+}
+
+impl From<UserName> for Username {
+    fn from(user: UserName) -> Self {
+        Username {
+            id: user.id,
+            username: user.username,
         }
     }
 }

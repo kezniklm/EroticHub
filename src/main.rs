@@ -13,6 +13,7 @@ use erotic_hub::business::facades::stream::StreamFacade;
 use erotic_hub::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use erotic_hub::business::facades::user::UserFacade;
 use erotic_hub::business::facades::video::VideoFacade;
+use erotic_hub::business::facades::video_category::VideoCategoryFacade;
 use erotic_hub::business::models::stream::StreamStorage;
 use erotic_hub::persistence::repositories::artist::ArtistRepository;
 use erotic_hub::persistence::repositories::comment::CommentRepository;
@@ -22,6 +23,7 @@ use erotic_hub::persistence::repositories::stream::PgStreamRepo;
 use erotic_hub::persistence::repositories::temp_file::PgTempFileRepo;
 use erotic_hub::persistence::repositories::user::PostgresUserRepo;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
+use erotic_hub::persistence::repositories::video_category::VideoCategoryRepository;
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
 use erotic_hub::{get_temp_directory_path, get_video_thumbnail_dirs, init_configuration};
 use log::warn;
@@ -45,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
     if let Err(e) = dotenvy::dotenv() {
         warn!("failed loading .env file: {e}")
     };
-
+    // std::env::set_var("RUST_LOG", "debug");
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     init_gstreamer()
         .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
@@ -64,6 +66,9 @@ async fn main() -> anyhow::Result<()> {
 
     let comment_repo = Arc::new(CommentRepository::new(pool.clone()));
     let comment_facade = Arc::new(CommentFacade::new(comment_repo));
+
+    let video_category_repo = Arc::new(VideoCategoryRepository::new(pool.clone()));
+    let video_category_facade = Arc::new(VideoCategoryFacade::new(video_category_repo));
 
     let temp_file_repo = Arc::new(PgTempFileRepo::new(pool.clone()));
 
@@ -120,6 +125,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::from(video_facade.clone()))
             .app_data(web::Data::from(artist_facade.clone()))
             .app_data(web::Data::from(comment_facade.clone()))
+            .app_data(web::Data::from(video_category_facade.clone()))
             .app_data(web::Data::from(membership_facade.clone()))
             .configure(video_routes)
             .configure(user_routes)

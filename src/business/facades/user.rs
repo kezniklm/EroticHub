@@ -1,5 +1,5 @@
 use crate::business::mappers::generic::ToMappedList;
-use crate::business::models::user_detail::UserDetail;
+use crate::business::models::user_detail::{UserDetail, Username};
 use crate::business::models::user_list::UserList;
 use crate::persistence::repositories::user::UserRepo;
 use async_trait::async_trait;
@@ -9,6 +9,7 @@ use std::sync::Arc;
 #[async_trait]
 pub trait UserFacadeTrait {
     async fn list_users(&self) -> anyhow::Result<Vec<UserDetail>>;
+    async fn get_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Username>>;
 }
 
 #[derive(Debug, Clone)]
@@ -34,5 +35,13 @@ impl UserFacadeTrait for UserFacade {
         let _user_lists_example = users2.to_mapped_list(UserList::from); //TODO REMOVE - used only as an example
 
         Ok(user_details)
+    }
+
+    async fn get_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Username>> {
+        let users = self.user_repository.fetch_usernames_by_id(ids).await?;
+
+        let usernames = users.to_mapped_list(Username::from);
+
+        Ok(usernames)
     }
 }

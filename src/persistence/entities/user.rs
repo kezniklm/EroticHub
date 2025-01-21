@@ -10,3 +10,9 @@ pub struct User {
     pub artist_id: Option<i32>,
     pub paying_member_id: Option<i32>,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct UserName {
+    pub id: i32,
+    pub username: String,
+}

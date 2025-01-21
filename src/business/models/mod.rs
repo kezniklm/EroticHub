@@ -9,3 +9,4 @@ pub mod temp_file;
 pub mod user_detail;
 pub mod user_list;
 pub mod video;
+pub mod video_category;

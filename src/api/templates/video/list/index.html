@@ -25,62 +25,17 @@
         </div>
 
         <div class="tags-container flex-grow-1 mx-3 d-flex overflow-auto" onscroll="checkScroll()">
+            {% for category in categories %}
             <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Teen" class="d-none" onchange="toggleTag(this)">
-                <span>Teen</span>
+                <input type="checkbox" data-value="{{ category.id }}" class="d-none"
+                       hx-get="/video"
+                       hx-target="#video-grid"
+                       hx-swap="innerHTML"
+                       hx-vals='{"filter": ""}'
+                       onchange="updateFilters(this)">
+                <span class="text-capitalize mx-auto">{{ category.name }}</span>
             </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="MILF" class="d-none" onchange="toggleTag(this)">
-                <span>MILF</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Amateur" class="d-none" onchange="toggleTag(this)">
-                <span>Amateur</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Hentai" class="d-none" onchange="toggleTag(this)">
-                <span>Hentai</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Big Tits" class="d-none" onchange="toggleTag(this)">
-                <span>Big Tits</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Category 6" class="d-none" onchange="toggleTag(this)">
-                <span>Category 6</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Category 7" class="d-none" onchange="toggleTag(this)">
-                <span>Category 7</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Teen" class="d-none" onchange="toggleTag(this)">
-                <span>Teen</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="MILF" class="d-none" onchange="toggleTag(this)">
-                <span>MILF</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Amateur" class="d-none" onchange="toggleTag(this)">
-                <span>Amateur</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Hentai" class="d-none" onchange="toggleTag(this)">
-                <span>Hentai</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Big Tits" class="d-none" onchange="toggleTag(this)">
-                <span>Big Tits</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Category 6" class="d-none" onchange="toggleTag(this)">
-                <span>Category 6</span>
-            </label>
-            <label class="tag btn me-2">
-                <input type="checkbox" name="category" value="Category 7" class="d-none" onchange="toggleTag(this)">
-                <span>Category 7</span>
-            </label>
+            {% endfor %}
         </div>
 
         <div class="arrow-wrapper right">
@@ -90,33 +45,4 @@
         </div>
     </div>
 </div>
-
-<!-- Video Grid -->
-<div class="container">
-    <div class="row g-4">
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <div class="video-card" hx-get="/video/3/watch" hx-push-url="true" hx-target="#content-container">
-                <img src="https://via.placeholder.com/200x150.png?text=Video+1" alt="Video 1" class="video-img">
-                <div class="title">Video Title 1</div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <div class="video-card">
-                <img src="https://via.placeholder.com/300x200.png?text=Video+2" alt="Video 2" class="video-img">
-                <div class="title">Video Title 2</div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <div class="video-card">
-                <img src="https://via.placeholder.com/250x250.png?text=Video+3" alt="Video 3" class="video-img">
-                <div class="title">Video Title 3</div>
-            </div>
-        </div>
-        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-            <div class="video-card">
-                <img src="https://via.placeholder.com/400x300.png?text=Video+4" alt="Video 4" class="video-img">
-                <div class="title">Video Title 4</div>
-            </div>
-        </div>
-    </div>
-</div>
+{{ videos_template|safe }}
