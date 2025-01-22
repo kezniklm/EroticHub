@@ -6,5 +6,4 @@ use askama_actix::Template;
 pub struct MembershipDetailsTemplate {
     pub user_id: i32,
     pub membership_details: MembershipDetails,
-    pub membership_url: String,
 }

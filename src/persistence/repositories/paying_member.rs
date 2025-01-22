@@ -7,6 +7,7 @@ use std::fmt::Debug;
 pub trait PayingMemberRepo: Debug {
     async fn get_paying_member(&self, user_id: i32) -> anyhow::Result<Option<PayingMember>>;
     async fn add_paying_member(&self, user_id: i32) -> anyhow::Result<i32>;
+    async fn extend_validity(&self, user_id: i32, number_of_months: i32) -> anyhow::Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -44,5 +45,18 @@ impl PayingMemberRepo for PostgresPayingMemberRepo {
         println!("add_paying_member: {:?}", paying_member_id);
 
         Ok(paying_member_id)
+    }
+
+    async fn extend_validity(&self, user_id: i32, number_of_months: i32) -> anyhow::Result<()> {
+        sqlx::query!(
+            "UPDATE paying_member 
+             SET valid_until = COALESCE(valid_until, NOW()) + interval '1 month' * $1 
+             WHERE user_id = $2",
+            number_of_months as f64,
+            user_id,
+        )
+        .execute(&self.pg_pool)
+        .await?;
+        Ok(())
     }
 }
