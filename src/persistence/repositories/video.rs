@@ -13,6 +13,12 @@ pub trait VideoRepo {
         -> Result<Video>;
     async fn delete_video(&self, video_id: i32, user_id: i32) -> Result<bool>;
     async fn get_video_by_id(&self, video_id: i32) -> Result<Option<Video>>;
+    async fn fetch_videos(
+        &self,
+        ord: Option<&str>,
+        filter: Option<Vec<i32>>,
+        offset: Option<i32>,
+    ) -> anyhow::Result<Vec<Video>>;
 }
 
 #[derive(Debug, Clone)]
@@ -223,6 +229,70 @@ impl VideoRepo for PgVideoRepo {
         .db_error("Video doesn't exist")?;
 
         Ok(result)
+    }
+
+    async fn fetch_videos(
+        &self,
+        ord: Option<&str>,
+        filter: Option<Vec<i32>>,
+        offset: Option<i32>,
+    ) -> anyhow::Result<Vec<Video>> {
+        let mut query = QueryBuilder::new(
+            r#"SELECT
+            id,
+            artist_id,
+            name,
+            visibility,
+            file_path,
+            thumbnail_path,
+            description FROM video"#,
+        );
+
+        // did not really find a better solution(it works), may be you will
+        if let Some(filter) = filter {
+            query.push(" JOIN video_category_video ON id = video_id ");
+            if filter.len() > 1 {
+                let mut filter_array = String::new();
+                filter_array.push_str(
+                    &filter
+                        .iter()
+                        .map(|&x| x.to_string()) // Convert each i32 to String
+                        .collect::<Vec<String>>()
+                        .join(","),
+                );
+                query.push(format!(
+                    " WHERE video.id IN (SELECT video_id FROM video_category_video \
+                    WHERE category_id IN ({})
+                    GROUP BY
+                        video_id
+                    HAVING
+                    COUNT(DISTINCT category_id) = {})",
+                    filter_array,
+                    filter.len()
+                ));
+            } else {
+                query.push(" WHERE category_id = ");
+                query.push_bind(filter[0].clone());
+            }
+        }
+
+        query.push(" GROUP BY video.id ");
+
+        if let Some(ord) = ord {
+            query.push(" ORDER BY ");
+            query.push_bind(ord);
+            query.push(" ");
+        }
+
+        query.push(" LIMIT 20");
+        if let Some(offset) = offset {
+            query.push(" OFFSET ");
+            query.push_bind(offset);
+        }
+
+        let result = query.build_query_as().fetch_all(&self.pg_pool).await;
+
+        Ok(result?)
     }
 }
 

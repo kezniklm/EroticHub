@@ -1,8 +1,6 @@
 use crate::business::models::error::AppErrorKind::BadRequestError;
 use crate::business::models::error::{AppError, MapToAppError};
-use crate::business::models::user::{
-    UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole,
-};
+use crate::business::models::user::{UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole, Username};
 use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
@@ -17,6 +15,7 @@ use std::io::Read;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 use validator::ValidationError;
+use crate::business::mappers::generic::ToMappedList;
 
 const PROFILE_PICTURE_FOLDER_PATH: &str = "resources/images/users/";
 const VALIDATION_ERROR_TEXT: &str = "Validation failed";
@@ -55,6 +54,7 @@ pub trait UserFacadeTrait {
     async fn create_profile_picture_folders(
         profile_picture_folder_path: String,
     ) -> anyhow::Result<()>;
+    async fn get_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Username>>;
 }
 
 #[derive(Debug, Clone)]
@@ -258,5 +258,13 @@ impl UserFacadeTrait for UserFacade {
         profile_picture_folder_path: String,
     ) -> anyhow::Result<()> {
         Ok(create_dir_if_not_exist(profile_picture_folder_path).await?)
+    }
+
+    async fn get_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Username>> {
+        let users = self.user_repository.fetch_usernames_by_id(ids).await?;
+
+        let usernames = users.to_mapped_list(Username::from);
+
+        Ok(usernames)
     }
 }

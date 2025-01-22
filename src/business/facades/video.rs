@@ -27,6 +27,13 @@ pub trait VideoFacadeTrait {
     async fn get_video_model(&self, video_id: i32, user_id: i32) -> Result<models::video::Video>;
     async fn get_playable_video(&self, video_id: i32, user_id: i32) -> Result<NamedFile>;
     async fn get_thumbnail_file(&self, video_id: i32, user_id: i32) -> Result<NamedFile>;
+    async fn get_video_list(&self) -> Result<Vec<Video>>;
+    async fn fetch_videos(
+        &self,
+        ord: Option<&str>,
+        filter: Option<Vec<i32>>,
+        offset: Option<i32>,
+    ) -> Result<Vec<Video>>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
 }
 
@@ -238,6 +245,39 @@ impl VideoFacadeTrait for VideoFacade {
             .app_error("Thumbnail doesn't exist")?;
 
         Ok(file)
+    }
+
+    async fn get_video_list(&self) -> Result<Vec<Video>> {
+        let videos = self.video_repo.list_videos().await;
+        let videos = match videos {
+            Ok(videos) => videos,
+            Err(_e) => {
+                return Err(AppError::new(
+                    "Error fetching videos",
+                    AppErrorKind::InternalServerError,
+                ))
+            }
+        };
+        Ok(videos)
+    }
+
+    async fn fetch_videos(
+        &self,
+        ord: Option<&str>,
+        filter: Option<Vec<i32>>,
+        offset: Option<i32>,
+    ) -> Result<Vec<Video>> {
+        let videos = self.video_repo.fetch_videos(ord, filter, offset).await;
+        let videos = match videos {
+            Ok(videos) => videos,
+            Err(_e) => {
+                return Err(AppError::new(
+                    "Error fetching videos",
+                    AppErrorKind::InternalServerError,
+                ))
+            }
+        };
+        Ok(videos)
     }
 
     fn get_video_thumbnail_dirs(&self) -> (String, String) {

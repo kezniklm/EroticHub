@@ -1,6 +1,7 @@
 document.addEventListener("htmx:load", function () {
     checkScroll();
     fetchUserCountry();
+    updateFilters();
 });
 
 function scrollTags(direction) {
@@ -108,5 +109,52 @@ async function fetchUserCountry() {
         document.getElementById(
             "location-heading"
         ).textContent = `Hot Videos in your location`;
+    }
+}
+
+document.addEventListener("htmx:afterRequest", (event) => {
+    const trigger = document.querySelector("#scroll-trigger");
+        // If the server responds with 204 (No Content), remove the trigger
+        if (event.detail.xhr.status === 204) {
+        trigger.remove();
+    } else {
+        // Update offset as before
+        let offset = parseInt(trigger.getAttribute("hx-vals").match(/"offset":\s*(\d+)/)[1], 10);
+        offset += 20;
+        trigger.setAttribute("hx-vals", `{"offset": ${offset}}`);
+    }
+});
+
+
+function updateFilters(checkbox) {
+    const selectedTags = Array.from(document.querySelectorAll('input[data-value]:checked'))
+        .map(checkbox => checkbox.getAttribute('data-value'));
+
+    const tag = checkbox.closest('.tag');
+    if (checkbox.checked) {
+        tag.classList.add('selected');
+    } else {
+        tag.classList.remove('selected');
+    }
+
+    const tagsContainer = document.querySelector('.tags-container');
+
+    if (selectedTags.length === 0) {
+        if (tagsContainer) {
+            tagsContainer.querySelectorAll('input[data-value]').forEach(input => {
+                input.removeAttribute('hx-vals');
+            });
+        }
+        htmx.ajax('GET', '/video', {
+            target: '#video-grid',
+            swap: 'innerHTML'
+        });
+    } else {
+        const filterString = selectedTags.join(',');
+        if (tagsContainer) {
+            tagsContainer.querySelectorAll('input[data-value]').forEach(input => {
+                input.setAttribute('hx-vals', JSON.stringify({ filter: filterString }));
+            });
+        }
     }
 }

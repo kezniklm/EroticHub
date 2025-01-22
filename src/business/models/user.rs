@@ -72,3 +72,9 @@ impl Display for UserRole {
         write!(f, "{}", format!("{:?}", self).to_uppercase())
     }
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Username {
+    pub id: i32,
+    pub username: String,
+}

@@ -1,3 +1,4 @@
+use actix_files::NamedFile;
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use serde::{Deserialize, Serialize};
@@ -65,6 +66,15 @@ pub struct Video {
     pub description: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct VideoList {
+    pub id: i32,
+    pub artist_id: i32,
+    pub artist_name: String,
+    pub thumbnail_path: String,
+    pub name: String,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct EditVideoTemplateModel {
     pub id: i32,
@@ -76,4 +86,11 @@ pub struct EditVideoTemplateModel {
 #[derive(Serialize, Deserialize)]
 pub struct GetVideoByIdReq {
     pub id: i32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct FetchVideoByFilters {
+    pub offset: Option<i32>,
+    pub ord: Option<String>,
+    pub filter: Option<String>,
 }
