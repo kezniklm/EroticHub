@@ -1,6 +1,9 @@
+use crate::business::mappers::generic::ToMappedList;
 use crate::business::models::error::AppErrorKind::BadRequestError;
 use crate::business::models::error::{AppError, MapToAppError};
-use crate::business::models::user::{UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole, Username};
+use crate::business::models::user::{
+    UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole, Username,
+};
 use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
@@ -15,7 +18,6 @@ use std::io::Read;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
 use validator::ValidationError;
-use crate::business::mappers::generic::ToMappedList;
 
 const PROFILE_PICTURE_FOLDER_PATH: &str = "resources/images/users/";
 const VALIDATION_ERROR_TEXT: &str = "Validation failed";
