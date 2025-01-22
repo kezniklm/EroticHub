@@ -6,6 +6,7 @@ use crate::persistence::repositories::temp_file::TempFileRepo;
 use actix_files::NamedFile;
 use async_trait::async_trait;
 use log::{debug, warn};
+use sqlx::{Postgres, Transaction};
 use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
@@ -26,8 +27,13 @@ pub trait TempFileFacadeTrait {
     async fn check_mime_type(&self, file: Option<String>, allowed_types: Vec<String>)
         -> Result<()>;
 
-    async fn persist_permanently(&self, file_id: i32, user_id: i32, path: String)
-        -> Result<String>;
+    async fn persist_permanently(
+        &self,
+        file_id: i32,
+        user_id: i32,
+        path: String,
+        tx: &mut Transaction<Postgres>,
+    ) -> Result<String>;
     async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> Result<()>;
     fn get_temp_directory_path(&self) -> String;
 }
@@ -168,10 +174,11 @@ impl TempFileFacadeTrait for TempFileFacade {
         file_id: i32,
         user_id: i32,
         permanent_path: String,
+        tx: &mut Transaction<Postgres>,
     ) -> Result<String> {
         let temp_file = self
             .temp_file_repo
-            .get_file(file_id, user_id)
+            .get_file_tx(file_id, user_id, tx)
             .await
             .app_error_kind("Video file doesn't exist", AppErrorKind::NotFound)?;
 

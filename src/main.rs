@@ -28,6 +28,7 @@ use erotic_hub::persistence::repositories::paying_member::PostgresPayingMemberRe
 use erotic_hub::persistence::repositories::payment_method::PostgresPaymentMethodRepo;
 use erotic_hub::persistence::repositories::stream::PgStreamRepo;
 use erotic_hub::persistence::repositories::temp_file::PgTempFileRepo;
+use erotic_hub::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use erotic_hub::persistence::repositories::user::UserRepository;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
@@ -92,6 +93,7 @@ async fn main() -> anyhow::Result<()> {
 
     let redis_store = RedisSessionStore::new_pooled(redis_pool).await?;
 
+    let unit_of_work = Arc::new(PostgresUnitOfWork::new(pool.clone()));
     let stream_storage = Arc::new(StreamStorage::default());
     let user_repo = Arc::new(UserRepository::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
@@ -125,6 +127,7 @@ async fn main() -> anyhow::Result<()> {
     let video_facade = Arc::new(VideoFacade::new(
         temp_file_facade.clone(),
         video_repo,
+        unit_of_work,
         video_dir.clone(),
         thumbnail_dir.clone(),
     ));

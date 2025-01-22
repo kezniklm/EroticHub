@@ -5,6 +5,7 @@ use crate::business::models::video::{VideoEditReq, VideoUploadReq};
 use crate::business::util::file::create_dir_if_not_exist;
 use crate::business::Result;
 use crate::persistence::entities::video::{PatchVideo, Video, VideoVisibility};
+use crate::persistence::repositories::unit_of_work::UnitOfWork;
 use crate::persistence::repositories::video::VideoRepo;
 use actix_files::NamedFile;
 use async_trait::async_trait;
@@ -33,6 +34,7 @@ pub trait VideoFacadeTrait {
 pub struct VideoFacade {
     temp_file_facade: Arc<TempFileFacade>,
     video_repo: Arc<dyn VideoRepo + Sync + Send>,
+    unit_of_work: Arc<dyn UnitOfWork + Sync + Send>,
     video_dir: String,
     thumbnail_dir: String,
 }
@@ -41,12 +43,14 @@ impl VideoFacade {
     pub fn new(
         temp_file_facade: Arc<TempFileFacade>,
         video_repo: Arc<dyn VideoRepo + Sync + Send>,
+        unit_of_work: Arc<dyn UnitOfWork + Sync + Send>,
         video_dir: String,
         thumbnail_dir: String,
     ) -> Self {
         Self {
             temp_file_facade,
             video_repo,
+            unit_of_work,
             video_dir,
             thumbnail_dir,
         }
@@ -80,9 +84,15 @@ impl VideoFacadeTrait for VideoFacade {
         user_id: i32,
         video_model: VideoUploadReq,
     ) -> Result<models::video::Video> {
+        let mut tx = self.unit_of_work.begin().await?;
         let video_path = self
             .temp_file_facade
-            .persist_permanently(video_model.temp_video_id, user_id, self.video_dir.clone())
+            .persist_permanently(
+                video_model.temp_video_id,
+                user_id,
+                self.video_dir.clone(),
+                &mut tx,
+            )
             .await?;
         let thumbnail_path = self
             .temp_file_facade
@@ -90,6 +100,7 @@ impl VideoFacadeTrait for VideoFacade {
                 video_model.temp_thumbnail_id,
                 user_id,
                 self.thumbnail_dir.clone(),
+                &mut tx,
             )
             .await?;
 
@@ -103,7 +114,9 @@ impl VideoFacadeTrait for VideoFacade {
             description: video_model.description,
         };
 
-        let video_entity = self.video_repo.save_video(entity).await?;
+        let video_entity = self.video_repo.save_video(entity, &mut tx).await?;
+
+        tx.commit().await.app_error("Failed save the video")?;
 
         Ok(models::video::Video::from(&video_entity))
     }
@@ -114,10 +127,12 @@ impl VideoFacadeTrait for VideoFacade {
         video_id: i32,
         edited_video: VideoEditReq,
     ) -> Result<models::video::Video> {
+        let mut tx = self.unit_of_work.begin().await?;
+
         let video_path = if let Some(file_id) = edited_video.temp_video_id {
             let path = self
                 .temp_file_facade
-                .persist_permanently(file_id, user_id, self.video_dir.clone())
+                .persist_permanently(file_id, user_id, self.video_dir.clone(), &mut tx)
                 .await?;
             Some(path)
         } else {
@@ -127,7 +142,7 @@ impl VideoFacadeTrait for VideoFacade {
         let thumbnail_path = if let Some(temp_thumbnail) = edited_video.temp_thumbnail_id {
             let path = self
                 .temp_file_facade
-                .persist_permanently(temp_thumbnail, user_id, self.thumbnail_dir.clone())
+                .persist_permanently(temp_thumbnail, user_id, self.thumbnail_dir.clone(), &mut tx)
                 .await?;
             Some(path)
         } else {
@@ -143,7 +158,9 @@ impl VideoFacadeTrait for VideoFacade {
             description: edited_video.description,
         };
 
-        let video = self.video_repo.patch_video(db_entity).await?;
+        let video = self.video_repo.patch_video(db_entity, &mut tx).await?;
+
+        tx.commit().await.app_error("Failed to patch the video")?;
 
         Ok(models::video::Video::from(&video))
     }

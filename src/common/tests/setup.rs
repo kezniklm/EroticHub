@@ -14,6 +14,7 @@ use crate::persistence::repositories::artist::ArtistRepository;
 use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
+use crate::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
 use actix_web::web;
@@ -54,6 +55,7 @@ impl AsyncContext {
         let (video_dir, thumbnail_dir, temp_file_dir) = get_resources_dirs(&self.test_folders_root);
 
         let app_config = Arc::new(init_configuration().expect("Failed to load config.yaml"));
+        let unit_of_work = Arc::new(PostgresUnitOfWork::new(self.pg_pool.clone()));
         let stream_storage = Arc::new(StreamStorage::default());
         let user_repo = Arc::new(UserRepository::new(self.pg_pool.clone()));
         let user_facade = Arc::new(UserFacade::new(user_repo));
@@ -71,6 +73,7 @@ impl AsyncContext {
         let video_facade = Arc::new(VideoFacade::new(
             temp_file_facade.clone(),
             video_repo,
+            unit_of_work,
             video_dir,
             thumbnail_dir,
         ));

@@ -8,8 +8,9 @@ use sqlx::{PgPool, Postgres, QueryBuilder, Transaction};
 pub trait VideoRepo {
     #[allow(dead_code)]
     async fn list_videos(&self) -> anyhow::Result<Vec<Video>>;
-    async fn save_video(&self, video: Video) -> Result<Video>;
-    async fn patch_video(&self, video: PatchVideo) -> Result<Video>;
+    async fn save_video(&self, video: Video, tx: &mut Transaction<Postgres>) -> Result<Video>;
+    async fn patch_video(&self, video: PatchVideo, tx: &mut Transaction<Postgres>)
+        -> Result<Video>;
     async fn delete_video(&self, video_id: i32, user_id: i32) -> Result<bool>;
     async fn get_video_by_id(&self, video_id: i32) -> Result<Option<Video>>;
 }
@@ -70,7 +71,7 @@ impl VideoRepo for PgVideoRepo {
         Ok(result)
     }
 
-    async fn save_video(&self, video: Video) -> Result<Video> {
+    async fn save_video(&self, video: Video, tx: &mut Transaction<Postgres>) -> Result<Video> {
         let result = sqlx::query_as!(
             Video,
             r#"
@@ -92,14 +93,17 @@ impl VideoRepo for PgVideoRepo {
             video.description,
             video.visibility as VideoVisibility
         )
-        .fetch_one(&self.pg_pool)
+        .fetch_one(tx.as_mut())
         .await?;
 
         Ok(result)
     }
 
-    async fn patch_video(&self, video: PatchVideo) -> Result<Video> {
-        let mut transaction = self.pg_pool.begin().await?;
+    async fn patch_video(
+        &self,
+        video: PatchVideo,
+        tx: &mut Transaction<Postgres>,
+    ) -> Result<Video> {
         let mut query: QueryBuilder<Postgres> = QueryBuilder::new(r#"UPDATE video SET "#);
 
         let mut first = true;
@@ -164,18 +168,14 @@ impl VideoRepo for PgVideoRepo {
         query.push(" RETURNING *");
 
         if video.file_path.is_some() {
-            Self::remove_old_video(video.id, &mut transaction).await?;
+            Self::remove_old_video(video.id, tx).await?;
         }
 
         if video.thumbnail_path.is_some() {
-            Self::remove_old_thumbnail(video.id, &mut transaction).await?;
+            Self::remove_old_thumbnail(video.id, tx).await?;
         }
 
-        let result: Video = query
-            .build_query_as()
-            .fetch_one(transaction.as_mut())
-            .await?;
-        transaction.commit().await?;
+        let result: Video = query.build_query_as().fetch_one(tx.as_mut()).await?;
 
         Ok(result)
     }
@@ -241,10 +241,13 @@ mod test {
         let repo = create_repository(ctx.pg_pool.clone());
 
         let created_video = create_test_video(Some(1), None);
+        let mut tx = ctx.pg_pool.begin().await?;
 
-        repo.save_video(created_video.clone())
+        repo.save_video(created_video.clone(), &mut tx)
             .await
             .expect("Failed to save video");
+
+        tx.commit().await?;
         let video = repo
             .get_video_by_id(created_video.id)
             .await
@@ -262,9 +265,14 @@ mod test {
             .expect("Failed to create dummy artist");
         let repo = create_repository(ctx.pg_pool.clone());
 
-        repo.save_video(create_test_video(None, None)).await?;
-        repo.save_video(create_test_video(None, None)).await?;
+        let mut tx = ctx.pg_pool.begin().await?;
 
+        repo.save_video(create_test_video(None, None), &mut tx)
+            .await?;
+        repo.save_video(create_test_video(None, None), &mut tx)
+            .await?;
+
+        tx.commit().await?;
         let video = repo.get_video_by_id(2).await?.unwrap();
         assert_eq!(
             video.id, 2,
@@ -281,10 +289,16 @@ mod test {
             .await
             .expect("Failed to create dummy artist");
         let repo = create_repository(ctx.pg_pool.clone());
+        let mut tx = ctx.pg_pool.begin().await?;
 
-        let video1 = repo.save_video(create_test_video(Some(1), None)).await?;
-        let video2 = repo.save_video(create_test_video(Some(2), None)).await?;
+        let video1 = repo
+            .save_video(create_test_video(Some(1), None), &mut tx)
+            .await?;
+        let video2 = repo
+            .save_video(create_test_video(Some(2), None), &mut tx)
+            .await?;
 
+        tx.commit().await?;
         let video = repo
             .list_videos()
             .await
@@ -314,7 +328,13 @@ mod test {
             .await
             .expect("Failed to create dummy artist");
         let repo = create_repository(ctx.pg_pool.clone());
-        let video1 = repo.save_video(create_test_video(Some(1), None)).await?;
+        let mut tx = ctx.pg_pool.begin().await?;
+        let video1 = repo
+            .save_video(create_test_video(Some(1), None), &mut tx)
+            .await?;
+        tx.commit().await?;
+
+        let mut tx = ctx.pg_pool.begin().await?;
 
         let edited_video = PatchVideo {
             id: video1.id,
@@ -325,7 +345,8 @@ mod test {
             thumbnail_path: None,
             description: Some(String::from("Description2")),
         };
-        let updated_video = repo.patch_video(edited_video).await?;
+        let updated_video = repo.patch_video(edited_video, &mut tx).await?;
+        tx.commit().await?;
         assert_eq!(updated_video.visibility, VideoVisibility::Paying);
         assert_eq!(updated_video.name, String::from("John2"));
         assert_eq!(
