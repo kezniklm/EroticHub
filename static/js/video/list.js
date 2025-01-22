@@ -112,6 +112,7 @@ async function fetchUserCountry() {
     }
 }
 
+/*
 document.addEventListener("htmx:afterRequest", (event) => {
     const trigger = document.querySelector("#scroll-trigger");
         // If the server responds with 204 (No Content), remove the trigger
@@ -124,13 +125,22 @@ document.addEventListener("htmx:afterRequest", (event) => {
         trigger.setAttribute("hx-vals", `{"offset": ${offset}}`);
     }
 });
+*/
 
 
 function updateFilters(checkbox) {
+    if (!checkbox) {
+        return;
+    }
+
     const selectedTags = Array.from(document.querySelectorAll('input[data-value]:checked'))
         .map(checkbox => checkbox.getAttribute('data-value'));
 
     const tag = checkbox.closest('.tag');
+    if (!tag) {
+        console.error("Tag container not found for checkbox:", checkbox);
+        return;
+    }
     if (checkbox.checked) {
         tag.classList.add('selected');
     } else {
