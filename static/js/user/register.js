@@ -198,7 +198,7 @@ function validateProfilePicture() {
     return true;
 }
 
-function previewImage() {
+function previewRegisterImage() {
     const input = document.getElementById("register-profile_picture");
     const preview = document.getElementById("imagePreview");
 
