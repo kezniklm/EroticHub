@@ -106,13 +106,6 @@ function shouldValidate(event) {
     return target?.matches("form[data-validate]");
 }
 
-function clearErrors() {
-    document.querySelectorAll(".error-message").forEach((el) => {
-        el.textContent = "";
-        el.classList.add("hidden");
-    });
-}
-
 function validateUsername() {
     const username = document.getElementById("register-username").value;
     const usernameError = document.getElementById("username-error");
