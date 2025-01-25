@@ -10,6 +10,7 @@ pub struct AppConfiguration {
     pub video: VideoConfig,
     pub thumbnail: Thumbnail,
     pub stream: Stream,
+    pub file_size_limit_mb: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

@@ -1,13 +1,11 @@
 use crate::api::video::{create_upload_req, upload_video};
 use crate::common::users::{CHARLES_ARTIST, JOHN_ARTIST, JOHN_NOT_ARTIST, JOHN_PAYING};
 use crate::common::utils::{create_empty_cookie, extract_id, login_as};
-use actix_http::body::{BoxBody, EitherBody, MessageBody};
-use actix_http::header::TryIntoHeaderPair;
+use actix_http::body::{BoxBody, EitherBody};
 use actix_http::Request;
 use actix_service::Service;
 use actix_web::cookie::Cookie;
 use actix_web::dev::ServiceResponse;
-use actix_web::web::Header;
 use actix_web::{test, Error};
 use erotic_hub::business::models::stream::LiveStreamStart;
 use erotic_hub::business::models::video::VideoVisibility;

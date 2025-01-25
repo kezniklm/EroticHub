@@ -101,12 +101,14 @@ pub async fn authenticate_stream_request(
     let stream_url = stream_url
         .to_str()
         .map_err(|_| AppError::new("Access to the stream denied!", AppErrorKind::AccessDenied))?;
+    println!("1. {stream_url}");
 
     stream_facade
         .authenticate_stream(identity.id_i32(), stream_url)
         .await
         // Map all errors to 403 Forbidden, since it's needed by Nginx plugin
         .map_err(|err| AppError::new(&err.message, AppErrorKind::AccessDenied))?;
+    println!("2. {stream_url}");
 
     Ok(HttpResponse::Ok().finish())
 }

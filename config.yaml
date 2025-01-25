@@ -1,4 +1,5 @@
 app:
+  file_size_limit_mb: 1000
   video:
     accepted_mime_type:
       - "video/mp4"

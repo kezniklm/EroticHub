@@ -30,7 +30,7 @@ use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
 use erotic_hub::{
     get_profile_picture_folder_path, get_temp_directory_path, get_video_thumbnail_dirs,
-    init_configuration, setup_auth, setup_redis_pool,
+    init_configuration, setup_auth, setup_multipart_config, setup_redis_pool,
 };
 use log::warn;
 use sqlx::postgres::PgPoolOptions;
@@ -156,6 +156,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(web::Data::from(artist_facade.clone()))
             .app_data(web::Data::from(comment_facade.clone()))
             .app_data(web::Data::from(membership_facade.clone()))
+            .app_data(setup_multipart_config(config.clone()))
             .configure(video_routes)
             .configure(user_routes)
             .configure(temp_file_routes)

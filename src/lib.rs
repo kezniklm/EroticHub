@@ -1,13 +1,16 @@
 use crate::configuration::models::Configuration;
 use actix_identity::IdentityMiddleware;
+use actix_multipart::form::MultipartFormConfig;
 use actix_session::config::PersistentSession;
 use actix_session::storage::RedisSessionStore;
 use actix_session::SessionMiddleware;
 use actix_web::cookie::{Key, SameSite};
+use actix_web::HttpResponse;
 use config::Config;
 use deadpool_redis::Runtime;
 use log::info;
 use std::env;
+use std::sync::Arc;
 use std::time::Duration;
 
 pub mod api;
@@ -106,4 +109,15 @@ pub async fn setup_redis_pool() -> anyhow::Result<deadpool_redis::Pool> {
     let pool = redis_config.create_pool(Some(Runtime::Tokio1))?;
 
     Ok(pool)
+}
+
+pub fn setup_multipart_config(config: Arc<Configuration>) -> MultipartFormConfig {
+    let total_limit_mb = config.app.file_size_limit_mb * 1024 * 1024;
+    MultipartFormConfig::default()
+        .total_limit(total_limit_mb as usize)
+        .memory_limit(200 * 1024 * 1024)
+        .error_handler(|err, _req| {
+            let response = HttpResponse::BadRequest().force_close().finish();
+            actix_web::error::InternalError::from_response(err, response).into()
+        })
 }
