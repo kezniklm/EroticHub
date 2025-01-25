@@ -52,9 +52,6 @@ pub trait UserFacadeTrait {
         profile_picture: &mut NamedTempFile,
     ) -> Result<(), AppError>;
     async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>>;
-    async fn create_profile_picture_folders(
-        profile_picture_folder_path: String,
-    ) -> anyhow::Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -65,6 +62,12 @@ pub struct UserFacade {
 impl UserFacade {
     pub fn new(user_repository: Arc<dyn UserRepositoryTrait + Send + Sync>) -> Self {
         Self { user_repository }
+    }
+
+    pub async fn create_profile_picture_folders(
+        profile_picture_folder_path: String,
+    ) -> anyhow::Result<()> {
+        create_dir_if_not_exist(profile_picture_folder_path).await
     }
 }
 
@@ -243,6 +246,7 @@ impl UserFacadeTrait for UserFacade {
 
         let mut user_permissions = HashSet::from([UserRole::Registered]);
 
+        // TODO: check for validity of the membership
         if user.paying_member_id.is_some() {
             user_permissions.insert(UserRole::PayingMember);
         }
@@ -252,11 +256,5 @@ impl UserFacadeTrait for UserFacade {
         }
 
         Ok(user_permissions)
-    }
-
-    async fn create_profile_picture_folders(
-        profile_picture_folder_path: String,
-    ) -> anyhow::Result<()> {
-        Ok(create_dir_if_not_exist(profile_picture_folder_path).await?)
     }
 }

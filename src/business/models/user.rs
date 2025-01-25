@@ -37,7 +37,7 @@ pub struct UserRegisterMultipart {
     pub profile_picture: Option<TempFile>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UserLogin {
     pub username: String,
     pub password: String,

@@ -88,7 +88,7 @@ body {
   color: #fff;
 }
 
-input[class="form-control"]::file-selector-button {
+input.form-control::file-selector-button {
   display: none;
 }
 

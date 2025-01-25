@@ -1,5 +1,7 @@
 use crate::api::controllers::utils::route_util::{add_redirect_header, build_watch_path};
 use crate::api::extractors::htmx_extractor::HtmxRequest;
+use crate::api::extractors::permissions_extractor::{AsInteger, AsIntegerOptional};
+use crate::api::extractors::template_extractor::TemplateReq;
 use crate::api::templates::template::BaseTemplate;
 use crate::api::templates::video::edit::template::EditVideoTemplate;
 use crate::api::templates::video::list::template::VideoListTemplate;
@@ -9,12 +11,15 @@ use crate::api::templates::video::upload::template::{
     VideoUploadInputTemplate, VideoUploadTemplate,
 };
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
+use crate::business::models::user::UserRole::{self, Artist};
 use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
+use actix_identity::Identity;
 use actix_session::Session;
 use actix_web::web::{Data, Form, Path};
 use actix_web::{HttpResponse, Responder, Result};
+use actix_web_grants::protect;
 use askama_actix::TemplateToResponse;
 
 /// Creates new video
@@ -26,12 +31,19 @@ use askama_actix::TemplateToResponse;
 ///
 /// # Returns
 /// Redirects user to the newly created video
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn create_video(
     Form(form): Form<VideoUploadReq>,
     video_facade: Data<VideoFacade>,
+    template_req: TemplateReq,
+    identity: Identity,
 ) -> Result<impl Responder> {
-    let video = video_facade.save_video(1, form).await?;
+    let video = video_facade.save_video(identity.id_i32()?, form).await?;
     let video_id = video.id;
+
+    if !template_req.return_template {
+        return Ok(HttpResponse::Created().body(video_id.to_string()));
+    }
 
     let mut response = HttpResponse::Created().finish();
 
@@ -49,12 +61,16 @@ pub async fn create_video(
 ///
 /// # Returns
 /// Redirects user to the patched video
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn patch_video(
     path: Path<GetVideoByIdReq>,
     Form(form): Form<VideoEditReq>,
     video_facade: Data<VideoFacade>,
+    identity: Identity,
 ) -> Result<impl Responder> {
-    let video = video_facade.patch_video(1, path.id, form).await?;
+    let video = video_facade
+        .patch_video(identity.id_i32()?, path.id, form)
+        .await?;
 
     let template = ShowVideoTemplate {
         video,
@@ -73,11 +89,15 @@ pub async fn patch_video(
 ///
 /// # Returns
 /// Redirects user to the main page
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn delete_video(
     path: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
+    identity: Identity,
 ) -> Result<impl Responder> {
-    video_facade.delete_video(1, path.id).await?;
+    video_facade
+        .delete_video(identity.id_i32()?, path.id)
+        .await?;
 
     let mut response = HttpResponse::NoContent().finish();
 
@@ -94,8 +114,11 @@ pub async fn delete_video(
 pub async fn get_video(
     request: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
+    identity: Option<Identity>,
 ) -> Result<NamedFile> {
-    let file = video_facade.get_playable_video(request.id, 1).await?;
+    let file = video_facade
+        .get_playable_video(request.id, identity.id_i32())
+        .await?;
     Ok(file)
 }
 
@@ -108,8 +131,11 @@ pub async fn get_video(
 pub async fn get_thumbnail(
     request: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
+    identity: Option<Identity>,
 ) -> Result<NamedFile> {
-    let file = video_facade.get_thumbnail_file(request.id, 1).await?;
+    let file = video_facade
+        .get_thumbnail_file(request.id, identity.id_i32())
+        .await?;
     Ok(file)
 }
 
@@ -125,8 +151,11 @@ pub async fn watch_video(
     video_facade: Data<VideoFacade>,
     htmx_request: HtmxRequest,
     session: Session,
+    identity: Option<Identity>,
 ) -> Result<impl Responder> {
-    let video = video_facade.get_video_model(req.id, 1).await?;
+    let video = video_facade
+        .get_video_model(req.id, identity.id_i32())
+        .await?;
     let video_id = video.id;
     let template = ShowVideoTemplate {
         video,
@@ -152,6 +181,7 @@ pub async fn list_videos(htmx_request: HtmxRequest, session: Session) -> impl Re
 ///
 /// # Returns
 /// `VideoUploadTemplate`
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn upload_video_template(
     htmx_request: HtmxRequest,
     session: Session,
@@ -175,13 +205,17 @@ pub async fn upload_video_template(
 ///
 /// # Returns
 /// `EditVideoTemplate`
+#[protect(any("Artist"), ty = "UserRole")]
 pub async fn edit_video_template(
     params: Path<GetVideoByIdReq>,
     htmx_request: HtmxRequest,
     session: Session,
     video_facade: Data<VideoFacade>,
+    identity: Option<Identity>,
 ) -> Result<impl Responder> {
-    let video = video_facade.get_video_model(params.id, 1).await?;
+    let video = video_facade
+        .get_video_model(params.id, identity.id_i32())
+        .await?;
     let video_input = VideoPreviewTemplate {
         temp_file_id: None,
         player_template: PlayerTemplate::from_saved(video.id),

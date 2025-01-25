@@ -1,14 +1,30 @@
 <h2>Edit existing video</h2>
 <h4>{{ video.name }}</h4>
-<form action="" hx-patch="/video/{{ video.id }}">
+<form action="" hx-patch="/video/{{ video.id }}" class="validated" novalidate>
     <div class="mb-3">
         <label for="nameInput" class="form-label">Video name</label>
-        <input type="text" id="nameInput" name="name" value="{{ video.name }}"
-               class="form-control text-input" required>
+        <input
+                type="text"
+                id="nameInput"
+                name="name"
+                value="{{ video.name }}"
+                class="form-control text-input"
+                minlength="3"
+                maxlength="128"
+                required
+        >
+        <label class="invalid-feedback" for="nameInput"></label>
     </div>
     <div class="mb-3">
         <label class="form-label" for="descriptionInput">Video description</label>
-        <textarea class="form-control text-input" id="descriptionInput" name="description">{{ video.description }}</textarea>
+        <textarea
+                class="form-control text-input"
+                id="descriptionInput"
+                name="description"
+                maxlength="5000"
+                rows="10"
+        >{{ video.description }}</textarea>
+        <label class="invalid-feedback" for="descriptionInput"></label>
     </div>
     <div class="mb-3">
         <label for="visibilityInput" class="form-label">Video visibility</label>

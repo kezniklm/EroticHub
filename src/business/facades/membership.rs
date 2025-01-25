@@ -56,6 +56,7 @@ impl MembershipFacade {
     }
 }
 
+// TODO: use payment_method_id (paying_member) and paying_member_id (user) fields accordingly
 #[async_trait]
 impl MembershipFacadeTrait for MembershipFacade {
     async fn has_payment_method(&self, user_id: i32) -> anyhow::Result<bool> {

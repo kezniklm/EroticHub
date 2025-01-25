@@ -5,6 +5,7 @@ function handleDOMContentLoaded() {
     initializeAgeVerification();
     setupAccountPopup();
     setupAuthPopup();
+    setupValidations();
 }
 
 function handleAfterSwap(event) {
@@ -12,6 +13,7 @@ function handleAfterSwap(event) {
         setupAccountPopup();
         setupAuthPopup();
     }
+    setupValidations();
 }
 
 function isAllowedSwap(target) {

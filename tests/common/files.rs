@@ -8,6 +8,18 @@ pub const VIDEO1: TestFile = TestFile {
     test_file_type: TestFileType::Video,
 };
 
+pub const VIDEO2: TestFile = TestFile {
+    dir_path: TEST_DATA_PATH,
+    file_name: "video2.mp4",
+    test_file_type: TestFileType::Video,
+};
+
+pub const PLACEHOLDER_PNG: TestFile = TestFile {
+    dir_path: TEST_DATA_PATH,
+    file_name: "placeholder.png",
+    test_file_type: TestFileType::Image,
+};
+
 pub struct TestFile {
     dir_path: &'static str,
     file_name: &'static str,
@@ -15,7 +27,7 @@ pub struct TestFile {
 }
 
 impl TestFile {
-    fn get_path_to_file(&self) -> PathBuf {
+    pub fn get_path_to_file(&self) -> PathBuf {
         Path::new(&self.dir_path)
             .join(self.test_file_type.get_folder_name())
             .join(self.file_name)
