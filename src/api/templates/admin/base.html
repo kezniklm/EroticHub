@@ -1,6 +1,8 @@
 {% block extra_styles %}
-  <link rel="stylesheet" type="text/css" href="/static/css/admin/index.css">
+<link rel="stylesheet" type="text/css" href="/static/css/admin/index.css" />
 {% endblock %}
+
+<!-- TODO: fix toggler (smaller screens) -->
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top admin-navbar">
@@ -9,9 +11,9 @@
     <a
       class="navbar-brand"
       href="#"
-      hx-get="/"
+      hx-get="/admin"
       hx-push-url="true"
-      hx-target="#content-container"
+      hx-target="#admin-content-container"
       >Admin Section</a
     >
     <!-- Toggler -->
@@ -34,7 +36,14 @@
           <a class="nav-link" href="#">Categories</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="#">Memberships</a>
+          <a
+            class="nav-link"
+            href="#"
+            hx-get="/admin/memberships"
+            hx-push-url="true"
+            hx-target="#admin-content-container"
+            >Memberships</a
+          >
         </li>
         <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
       </ul>
@@ -42,6 +51,6 @@
   </div>
 </nav>
 
-<div class="container centered-content" id="content-container">
+<div id="admin-content-container">
   {{ child_template|safe }}
 </div>
