@@ -495,3 +495,9 @@ body.no-scroll {
 .buttons-container button {
   flex-grow: 1;
 }
+
+.banner img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
