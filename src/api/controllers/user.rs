@@ -4,14 +4,15 @@ use crate::api::templates::user::detail::template::UserDetailTemplate;
 use crate::api::templates::user::liked_videos::template::LikedVideosTemplate;
 use crate::api::templates::user::logged_in::template::UserLoggedInTemplate;
 use crate::api::templates::user::login::template::UserLoginTemplate;
+use crate::api::templates::user::password_change::template::PasswordChangeTemplate;
 use crate::api::templates::user::register::template::UserRegisterTemplate;
 use crate::api::templates::user::validation::template::ValidationTemplate;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
 use crate::business::models::error::MapToAppError;
 use crate::business::models::user::UserRole::{self, Registered};
 use crate::business::models::user::{
-    EmailQuery, ProfilePictureUpdate, UserDetailUpdate, UserLogin, UserRegisterMultipart,
-    UserSessionData, UsernameQuery,
+    EmailQuery, ProfilePictureUpdate, UserDetailUpdate, UserLogin, UserPasswordUpdate,
+    UserRegisterMultipart, UserSessionData, UsernameQuery,
 };
 use crate::business::Result;
 use actix_identity::Identity;
@@ -160,6 +161,47 @@ pub async fn user_update(
         session,
         UserDetailTemplate {
             user_session_data: Some(user_session_data),
+            user_detail,
+        },
+    )
+    .to_response())
+}
+
+pub async fn change_password_form(
+    htmx_request: HtmxRequest,
+    session: Session,
+    _identity: Identity,
+) -> Result<impl Responder> {
+    Ok(BaseTemplate::wrap(htmx_request, session, PasswordChangeTemplate {}).to_response())
+}
+
+pub async fn change_password(
+    user_facade: web::Data<UserFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+    identity: Identity,
+    user_password_update: web::Form<UserPasswordUpdate>,
+) -> Result<impl Responder> {
+    user_facade
+        .change_password(
+            identity.id()?.parse().app_error("Unauthorised")?,
+            user_password_update.into_inner(),
+        )
+        .await?;
+
+    let user_session_data = session
+        .get::<UserSessionData>("user_session_data")
+        .unwrap_or(None);
+
+    let user_detail = user_facade
+        .get_user_detail(identity.id()?.parse().app_error("Unauthorised")?)
+        .await?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        UserDetailTemplate {
+            user_session_data,
             user_detail,
         },
     )

@@ -57,6 +57,15 @@ pub struct UserDetailUpdate {
     pub email: String,
 }
 
+#[derive(Clone, Debug, Deserialize, Validate)]
+pub struct UserPasswordUpdate {
+    pub old_password: String,
+    #[validate(length(min = 8, max = 128))]
+    pub password: String,
+    #[validate(must_match(other = "password"))]
+    pub password2: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UserSessionData {
     pub profile_picture_path: Option<String>,

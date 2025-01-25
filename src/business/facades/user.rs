@@ -1,8 +1,8 @@
 use crate::business::models::error::AppErrorKind::BadRequestError;
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::user::{
-    ProfilePictureUpdate, UserDetail, UserDetailUpdate, UserLogin, UserRegister,
-    UserRegisterMultipart, UserRole,
+    ProfilePictureUpdate, UserDetail, UserDetailUpdate, UserLogin, UserPasswordUpdate,
+    UserRegister, UserRegisterMultipart, UserRole,
 };
 use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
@@ -76,6 +76,12 @@ pub trait UserFacadeTrait {
         user_id: i32,
         profile_picture_update: ProfilePictureUpdate,
     ) -> Result<Option<UserDetail>>;
+
+    async fn change_password(
+        &self,
+        user_id: i32,
+        user_password_update: UserPasswordUpdate,
+    ) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -352,7 +358,7 @@ impl UserFacadeTrait for UserFacade {
 
         if no_changes {
             return Err(AppError::new(
-                "No changes detected. Username and email are the same as current values.",
+                "Username and email are the same as current values.",
                 BadRequestError,
             ));
         }
@@ -451,5 +457,41 @@ impl UserFacadeTrait for UserFacade {
         };
 
         Ok(Some(updated_user_model))
+    }
+
+    async fn change_password(
+        &self,
+        user_id: i32,
+        user_password_update: UserPasswordUpdate,
+    ) -> Result<()> {
+        user_password_update
+            .validate()
+            .app_error(VALIDATION_ERROR_TEXT)?;
+
+        let user = self.user_repository.get_user_by_id(user_id).await?;
+
+        let mut user = match user {
+            Some(user) => user,
+            None => {
+                return Err(AppError::new(
+                    "User with provided id does not exist",
+                    BadRequestError,
+                ))
+            }
+        };
+
+        if !self
+            .validate_password(&user.password_hash, &user_password_update.old_password)
+            .await?
+        {
+            return Err(AppError::new("Old password is invalid", BadRequestError));
+        }
+
+        user.password_hash = Some(
+            hash(user_password_update.password.as_str(), DEFAULT_COST)
+                .app_error(VALIDATION_ERROR_TEXT)?,
+        );
+
+        Ok(())
     }
 }
