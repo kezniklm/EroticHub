@@ -1,7 +1,8 @@
 use crate::business::models::error::AppErrorKind::BadRequestError;
-use crate::business::models::error::{AppError, MapToAppError};
+use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::user::{
-    UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole,
+    ProfilePictureUpdate, UserDetail, UserDetailUpdate, UserLogin, UserRegister,
+    UserRegisterMultipart, UserRole,
 };
 use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
@@ -11,12 +12,14 @@ use crate::persistence::entities::user::User;
 use crate::persistence::repositories::user::UserRepositoryTrait;
 use async_trait::async_trait;
 use bcrypt::{hash, verify, DEFAULT_COST};
+use log::info;
 use std::collections::HashSet;
 use std::fmt::Debug;
 use std::io::Read;
+use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
-use validator::ValidationError;
+use validator::{Validate, ValidationError};
 
 const PROFILE_PICTURE_FOLDER_PATH: &str = "resources/images/users/";
 const VALIDATION_ERROR_TEXT: &str = "Validation failed";
@@ -40,6 +43,12 @@ pub trait UserFacadeTrait {
         profile_picture: NamedTempFile,
         profile_picture_path: String,
     ) -> Result<Option<String>, AppError>;
+    async fn replace_profile_picture(
+        &self,
+        profile_picture: NamedTempFile,
+        profile_picture_path: String,
+        original_picture_path: Option<String>,
+    ) -> Result<Option<String>>;
     async fn validate_password(
         &self,
         password_hash: &Option<String>,
@@ -55,6 +64,18 @@ pub trait UserFacadeTrait {
     async fn create_profile_picture_folders(
         profile_picture_folder_path: String,
     ) -> anyhow::Result<()>;
+    async fn get_user_detail(&self, user_id: i32) -> Result<Option<UserDetail>>;
+    async fn update(
+        &self,
+        user_id: i32,
+        user_detail_update: UserDetailUpdate,
+    ) -> Result<Option<UserDetail>>;
+
+    async fn update_profile_picture(
+        &self,
+        user_id: i32,
+        profile_picture_update: ProfilePictureUpdate,
+    ) -> Result<Option<UserDetail>>;
 }
 
 #[derive(Debug, Clone)]
@@ -105,6 +126,7 @@ impl UserFacadeTrait for UserFacade {
                     unique_file_name,
                     get_file_extension(profile_picture_file_name.clone()).await
                 );
+
                 self.persist_profile_picture(profile_picture.file, profile_picture_save_path)
                     .await?;
 
@@ -158,10 +180,50 @@ impl UserFacadeTrait for UserFacade {
         &self,
         profile_picture: NamedTempFile,
         profile_picture_path: String,
-    ) -> Result<Option<String>, AppError> {
+    ) -> Result<Option<String>> {
         tokio::fs::copy(profile_picture.path(), &profile_picture_path)
             .await
             .app_error("Failed to save profile picture")?;
+        Ok(Some(profile_picture_path))
+    }
+
+    async fn replace_profile_picture(
+        &self,
+        profile_picture: NamedTempFile,
+        profile_picture_path: String,
+        original_picture_path: Option<String>,
+    ) -> Result<Option<String>> {
+        tokio::fs::copy(profile_picture.path(), &profile_picture_path)
+            .await
+            .app_error("Failed to save profile picture")?;
+
+        if let Some(original_picture_path) = original_picture_path {
+            let original_file_name = match Path::new(&original_picture_path)
+                .file_name()
+                .and_then(|name| name.to_str())
+            {
+                Some(file_name) => file_name,
+                None => {
+                    return Err(AppError::new(
+                        "Original profile picture has been corrupted",
+                        AppErrorKind::InternalServerError,
+                    ))
+                }
+            };
+
+            let original_profile_picture_save_path =
+                format!("{}{}", PROFILE_PICTURE_FOLDER_PATH, original_file_name);
+
+            info!(
+                "old:{}\nnew:{}",
+                original_profile_picture_save_path, profile_picture_path
+            );
+
+            tokio::fs::remove_file(original_profile_picture_save_path)
+                .await
+                .app_error("Failed to delete original profile picture")?;
+        }
+
         Ok(Some(profile_picture_path))
     }
 
@@ -258,5 +320,136 @@ impl UserFacadeTrait for UserFacade {
         profile_picture_folder_path: String,
     ) -> anyhow::Result<()> {
         Ok(create_dir_if_not_exist(profile_picture_folder_path).await?)
+    }
+
+    async fn get_user_detail(&self, user_id: i32) -> Result<Option<UserDetail>> {
+        let user = self.user_repository.get_user_by_id(user_id).await?;
+
+        match user {
+            Some(user) => Ok(Some(UserDetail::from(user))),
+            None => Ok(None),
+        }
+    }
+
+    async fn update(
+        &self,
+        user_id: i32,
+        user_detail_update: UserDetailUpdate,
+    ) -> Result<Option<UserDetail>> {
+        let user_option = self.user_repository.get_user_by_id(user_id).await?;
+
+        user_detail_update
+            .validate()
+            .app_error(VALIDATION_ERROR_TEXT)?;
+
+        let mut user = match user_option {
+            None => return Err(AppError::from(ValidationError::new("User does not exist"))),
+            Some(user) => user,
+        };
+
+        let no_changes =
+            user.username == user_detail_update.username && user.email == user_detail_update.email;
+
+        if no_changes {
+            return Err(AppError::new(
+                "No changes detected. Username and email are the same as current values.",
+                BadRequestError,
+            ));
+        }
+
+        if user_detail_update.username != user.username
+            && self
+                .user_repository
+                .get_user_by_username(&user_detail_update.username)
+                .await?
+                .is_some()
+        {
+            return Err(AppError::new("Username already exists", BadRequestError));
+        }
+
+        if user_detail_update.email != user.email
+            && self
+                .user_repository
+                .get_user_by_email(&user_detail_update.email)
+                .await?
+                .is_some()
+        {
+            return Err(AppError::new("Email already exists", BadRequestError));
+        }
+
+        user.username = user_detail_update.username;
+        user.email = user_detail_update.email;
+
+        let updated_user = self.user_repository.update_user(user).await?;
+
+        match updated_user {
+            Some(user) => Ok(Some(UserDetail::from(user))),
+            None => Err(AppError::from(ValidationError::new(
+                "User update was not successful",
+            ))),
+        }
+    }
+
+    async fn update_profile_picture(
+        &self,
+        user_id: i32,
+        profile_picture_update: ProfilePictureUpdate,
+    ) -> Result<Option<UserDetail>> {
+        let user_option = self.user_repository.get_user_by_id(user_id).await?;
+
+        let mut user = match user_option {
+            None => return Err(AppError::from(ValidationError::new("User does not exist"))),
+            Some(user) => user,
+        };
+
+        user.profile_picture_path = match profile_picture_update.profile_picture {
+            Some(mut profile_picture) => {
+                self.validate_picture_mime_type(&mut profile_picture.file)
+                    .await?;
+
+                let profile_picture_file_name = match &profile_picture.file_name {
+                    Some(file_name) => file_name.clone(),
+                    _ => "".to_string(),
+                };
+
+                let unique_file_name = uuid::Uuid::new_v4().to_string();
+
+                let profile_picture_save_path = format!(
+                    "{}{}.{}",
+                    PROFILE_PICTURE_FOLDER_PATH,
+                    unique_file_name,
+                    get_file_extension(profile_picture_file_name.clone()).await
+                );
+
+                self.replace_profile_picture(
+                    profile_picture.file,
+                    profile_picture_save_path,
+                    user.profile_picture_path,
+                )
+                .await?;
+
+                format!(
+                    "{}{}.{}",
+                    "user-images/",
+                    unique_file_name,
+                    get_file_extension(profile_picture_file_name).await
+                )
+                .into()
+            }
+            None => None,
+        };
+
+        let updated_user_entity = self
+            .user_repository
+            .update_user(user)
+            .await
+            .app_error("There was an error updating user")?;
+
+        let updated_user_model = match updated_user_entity {
+            Some(updated_user_entity) => UserDetail::from(updated_user_entity),
+            None => return Err(AppError::from(ValidationError::new("User does not exist"))),
+        };
+
+        Ok(Some(updated_user_model))
     }
 }

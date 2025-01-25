@@ -37,13 +37,27 @@ pub struct UserRegisterMultipart {
     pub profile_picture: Option<TempFile>,
 }
 
+#[derive(MultipartForm)]
+pub struct ProfilePictureUpdate {
+    #[multipart(limit = "10MB")]
+    pub profile_picture: Option<TempFile>,
+}
+
 #[derive(Clone, Debug, Deserialize)]
 pub struct UserLogin {
     pub username: String,
     pub password: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Validate)]
+pub struct UserDetailUpdate {
+    #[validate(length(min = 3, max = 12))]
+    pub username: String,
+    #[validate(email)]
+    pub email: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UserSessionData {
     pub profile_picture_path: Option<String>,
 }

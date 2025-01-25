@@ -7,9 +7,11 @@ use crate::api::templates::user::login::template::UserLoginTemplate;
 use crate::api::templates::user::register::template::UserRegisterTemplate;
 use crate::api::templates::user::validation::template::ValidationTemplate;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
+use crate::business::models::error::MapToAppError;
 use crate::business::models::user::UserRole::{self, Registered};
 use crate::business::models::user::{
-    EmailQuery, UserLogin, UserRegisterMultipart, UserSessionData, UsernameQuery,
+    EmailQuery, ProfilePictureUpdate, UserDetailUpdate, UserLogin, UserRegisterMultipart,
+    UserSessionData, UsernameQuery,
 };
 use crate::business::Result;
 use actix_identity::Identity;
@@ -105,19 +107,90 @@ pub async fn login(
     .to_response())
 }
 
-pub async fn detail(
+pub async fn user_detail(
+    user_facade: web::Data<UserFacade>,
     htmx_request: HtmxRequest,
     session: Session,
     identity: Identity,
 ) -> Result<impl Responder> {
+    let user_session_data = session
+        .get::<UserSessionData>("user_session_data")
+        .unwrap_or(None);
+
+    let user_detail = user_facade
+        .get_user_detail(identity.id()?.parse().app_error("Unauthorised")?)
+        .await?;
+
     Ok(BaseTemplate::wrap(
         htmx_request,
         session,
         UserDetailTemplate {
-            user_id: identity.id()?,
+            user_session_data,
+            user_detail,
         },
     )
     .to_response())
+}
+
+pub async fn user_update(
+    user_facade: web::Data<UserFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+    identity: Identity,
+    user_detail_update: web::Form<UserDetailUpdate>,
+) -> Result<impl Responder> {
+    let user_detail = user_facade
+        .update(
+            identity.id()?.parse().app_error("Unauthorised")?,
+            user_detail_update.into_inner(),
+        )
+        .await?;
+
+    let user_session_data = UserSessionData {
+        profile_picture_path: match user_detail.clone() {
+            Some(user_detail) => user_detail.profile_picture_path,
+            None => None,
+        },
+    };
+
+    session.insert("user_session_data", user_session_data.clone())?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        UserDetailTemplate {
+            user_session_data: Some(user_session_data),
+            user_detail,
+        },
+    )
+    .to_response())
+}
+
+pub async fn profile_picture_update(
+    user_facade: web::Data<UserFacade>,
+    session: Session,
+    identity: Identity,
+    MultipartForm(profile_picture_update): MultipartForm<ProfilePictureUpdate>,
+) -> Result<impl Responder> {
+    let user_detail = user_facade
+        .update_profile_picture(
+            identity.id()?.parse().app_error("Unauthorised")?,
+            profile_picture_update,
+        )
+        .await?;
+
+    let user_session_data = UserSessionData {
+        profile_picture_path: match user_detail.clone() {
+            Some(user_detail) => user_detail.profile_picture_path,
+            None => None,
+        },
+    };
+
+    session.insert("user_session_data", user_session_data.clone())?;
+
+    Ok(HttpResponse::SeeOther()
+        .append_header(("HX-Redirect", "/user/account"))
+        .finish())
 }
 
 #[protect(any("Registered"), ty = "UserRole")]

@@ -1,6 +1,6 @@
 use crate::api::controllers::user::{
-    detail, liked_videos, login, login_form, logout, register_form, register_user, validate_email,
-    validate_username,
+    liked_videos, login, login_form, logout, profile_picture_update, register_form, register_user,
+    user_detail, user_update, validate_email, validate_username,
 };
 use actix_web::web;
 use actix_web::web::scope;
@@ -18,7 +18,12 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
             .route("/login", web::get().to(login_form))
             .route("/login", web::post().to(login))
             .route("/logout", web::get().to(logout))
-            .route("/account", web::get().to(detail))
+            .route("/account", web::get().to(user_detail))
+            .route("/account/edit", web::post().to(user_update))
+            .route(
+                "/account/profile-picture-update",
+                web::post().to(profile_picture_update),
+            )
             .route("/liked-videos", web::get().to(liked_videos)),
     );
 }
