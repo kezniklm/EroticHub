@@ -1,5 +1,6 @@
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::admin::index::template::AdminIndexTemplate;
+use crate::api::templates::admin::memberships::template::AdminMembershipsTemplate;
 use crate::api::templates::admin::template::AdminSectionTemplate;
 use crate::api::templates::template::BaseTemplate;
 use crate::business::models::user::UserRole::{self, Admin};
@@ -20,5 +21,17 @@ pub async fn get_admin_section(
         htmx_request,
         session,
         AdminSectionTemplate::wrap(AdminIndexTemplate {}),
+    ))
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn get_admin_memberships(
+    htmx_request: HtmxRequest,
+    session: Session,
+) -> Result<impl Responder> {
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        AdminSectionTemplate::wrap(AdminMembershipsTemplate {}),
     ))
 }
