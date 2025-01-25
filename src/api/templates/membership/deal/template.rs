@@ -5,7 +5,6 @@ use crate::business::models::{deal::DealModel, membership_details::MembershipDet
 #[derive(Template)]
 #[template(path = "membership/deal/index.html")]
 pub struct DealTemplate {
-    pub user_id: i32,
     pub membership_details: MembershipDetails,
     pub deals: Vec<DealModel>,
 }

@@ -94,6 +94,9 @@ function validateInput(input) {
     if (!errorLabel) {
         return;
     }
+    if (errorLabel.textContent) {
+        return
+    }
     errorLabel.textContent = getErrorMessage(input);
 }
 

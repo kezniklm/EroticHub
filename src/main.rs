@@ -103,7 +103,7 @@ async fn main() -> anyhow::Result<()> {
         video_repo,
         artist_facade.clone(),
         user_facade.clone(),
-        unit_of_work,
+        unit_of_work.clone(),
         video_dir.clone(),
         thumbnail_dir.clone(),
     ));
@@ -123,6 +123,7 @@ async fn main() -> anyhow::Result<()> {
     let payment_method_repo = Arc::new(PostgresPaymentMethodRepo::new(pool.clone()));
     let deal_repo = Arc::new(PostgresDealRepo::new(pool.clone()));
     let membership_facade = Arc::new(MembershipFacade::new(
+        unit_of_work.clone(),
         paying_member_repo,
         payment_method_repo,
         deal_repo,

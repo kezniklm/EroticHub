@@ -1,13 +1,18 @@
 use async_trait::async_trait;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use std::fmt::Debug;
 
 use crate::persistence::entities::deal::{Deal, DealExtended};
+use crate::persistence::Result;
 
 #[async_trait]
 pub trait DealRepo: Debug {
-    async fn get_deals(&self) -> anyhow::Result<Vec<DealExtended>>;
-    async fn get_deal(&self, deal_id: i32) -> anyhow::Result<Option<DealExtended>>;
+    async fn get_deals(&self, tx: Option<&mut Transaction<Postgres>>) -> Result<Vec<DealExtended>>;
+    async fn get_deal(
+        &self,
+        deal_id: i32,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<Option<DealExtended>>;
 }
 
 #[derive(Debug, Clone)]
@@ -23,10 +28,12 @@ impl PostgresDealRepo {
 
 #[async_trait]
 impl DealRepo for PostgresDealRepo {
-    async fn get_deals(&self) -> anyhow::Result<Vec<DealExtended>> {
-        let deals = sqlx::query_as!(Deal, "SELECT * FROM deal ORDER BY number_of_months ASC")
-            .fetch_all(&self.pg_pool)
-            .await?;
+    async fn get_deals(&self, tx: Option<&mut Transaction<Postgres>>) -> Result<Vec<DealExtended>> {
+        let query = sqlx::query_as!(Deal, "SELECT * FROM deal ORDER BY number_of_months ASC");
+        let deals = match tx {
+            Some(tx) => query.fetch_all(tx.as_mut()).await,
+            None => query.fetch_all(&self.pg_pool).await,
+        }?;
 
         let max_price_per_month = deals
             .iter()
@@ -49,9 +56,13 @@ impl DealRepo for PostgresDealRepo {
         Ok(deals_extended)
     }
 
-    async fn get_deal(&self, deal_id: i32) -> anyhow::Result<Option<DealExtended>> {
+    async fn get_deal(
+        &self,
+        deal_id: i32,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<Option<DealExtended>> {
         // not done using a query to get DealExtended instead of Deal
-        let deals = self.get_deals().await?;
+        let deals = self.get_deals(tx).await?;
         Ok(deals.into_iter().find(|deal| deal.id == deal_id))
     }
 }

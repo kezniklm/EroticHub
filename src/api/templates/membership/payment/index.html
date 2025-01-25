@@ -38,13 +38,13 @@
   {% match membership_details.payment_method %}
   {% when Some with (payment_method) %}
       <p>Your current card number: {{ payment_method.card_number_classified }}</p>
-      <a href="/membership/{{ user_id }}/payment-method?back_to=/membership/{{ user_id }}/deal/{{ deal.id }}" class="btn btn-primary">Change payment method</a>
+      <a href="/membership/payment-method?back_to=/membership/deal/{{ deal.id }}" class="btn btn-primary">Change payment method</a>
   {% when None %}
       <p>You have no payment method set up</p>
-      <a href="/membership/{{ user_id }}/payment-method?back_to=/membership/{{ user_id }}/deal/{{ deal.id }}" class="btn btn-primary">Add payment method</a>
+      <a href="/membership/payment-method?back_to=/membership/deal/{{ deal.id }}" class="btn btn-primary">Add payment method</a>
   {% endmatch %}
 </div>
 
-<form action="/membership/{{ user_id }}/deal/{{ deal.id }}" method="post" class="needs-validation" novalidate>
+<form hx-post="/membership/deal/{{ deal.id }}" class="needs-validation" novalidate>
   <button type="submit" class="btn btn-primary btn-lg btn-block mb-4">Confirm payment</button>
 </form>
