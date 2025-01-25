@@ -57,7 +57,7 @@ async fn main() -> anyhow::Result<()> {
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     init_gstreamer()
         .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
-    let config = init_configuration().expect("Failed to load config.yaml");
+    let config = Arc::new(init_configuration().expect("Failed to load config.yaml"));
 
     let pool = setup_db_pool().await?;
 
@@ -116,6 +116,7 @@ async fn main() -> anyhow::Result<()> {
         stream_storage.clone(),
         stream_repo.clone(),
         None,
+        config.clone(),
     ));
 
     let paying_member_repo = Arc::new(PostgresPayingMemberRepo::new(pool.clone()));
@@ -143,7 +144,7 @@ async fn main() -> anyhow::Result<()> {
             .wrap(session_middleware)
             .wrap(NormalizePath::trim())
             .wrap(Logger::default())
-            .app_data(web::Data::new(config.clone()))
+            .app_data(web::Data::from(config.clone()))
             .app_data(web::Data::from(stream_storage.clone()))
             .app_data(web::Data::from(stream_facade.clone()))
             .app_data(web::Data::from(stream_storage.clone()))

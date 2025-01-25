@@ -5,6 +5,7 @@ use crate::business::models::stream::{
 };
 use crate::business::models::video::Video;
 use crate::business::{models, Result};
+use crate::configuration::models::Configuration;
 use crate::persistence::entities::error::MapToDatabaseError;
 use crate::persistence::entities::stream::{LiveStream, LiveStreamStatus};
 use crate::persistence::repositories::stream::StreamRepoTrait;
@@ -15,6 +16,7 @@ use gstreamer::Pipeline;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::Arc;
 use std::thread;
 use std::thread::JoinHandle;
@@ -94,6 +96,7 @@ pub struct StreamFacade {
     stream_storage: Arc<StreamStorage>,
     stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
     gstreamer_proxy: Arc<dyn GStreamerProxyTrait + Send + Sync>,
+    app_configuration: Arc<Configuration>,
 }
 
 impl StreamFacade {
@@ -102,12 +105,14 @@ impl StreamFacade {
         stream_storage: Arc<StreamStorage>,
         stream_repo: Arc<dyn StreamRepoTrait + Send + Sync>,
         gstreamer_proxy: Option<Arc<dyn GStreamerProxyTrait + Send + Sync>>,
+        app_configuration: Arc<Configuration>,
     ) -> Self {
         Self {
             video_facade,
             stream_storage,
             stream_repo,
             gstreamer_proxy: gstreamer_proxy.unwrap_or(Arc::new(GStreamerProxy {})),
+            app_configuration,
         }
     }
 
@@ -181,15 +186,17 @@ impl StreamFacadeTrait for StreamFacade {
             .add_stream(LiveStream::from(&live_stream))
             .await?;
 
-        let stream_info = CompoundStreamInfo::new(
-            stream_id.to_string(),
-            video.file_path,
-            vec![
-                StreamResolution::P360,
-                // StreamResolution::P480,
-                // StreamResolution::P720,
-            ],
-        );
+        let resolutions: Result<Vec<StreamResolution>> = self
+            .app_configuration
+            .app
+            .stream
+            .resolutions
+            .iter()
+            .map(|res| StreamResolution::from_str(res))
+            .collect();
+
+        let stream_info =
+            CompoundStreamInfo::new(stream_id.to_string(), video.file_path, resolutions?);
         self.create_stream(Arc::new(stream_info))?;
         Ok(stream_id)
     }

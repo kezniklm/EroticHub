@@ -101,7 +101,7 @@ pub async fn authenticate_stream_request(
     let stream_url = stream_url
         .to_str()
         .map_err(|_| AppError::new("Access to the stream denied!", AppErrorKind::AccessDenied))?;
-    println!("{:?}", request);
+
     stream_facade
         .authenticate_stream(identity.id_i32(), stream_url)
         .await

@@ -120,6 +120,7 @@ impl AsyncContext {
             stream_storage.clone(),
             stream_repo.clone(),
             Some(stream_proxy_mock),
+            app_config.clone(),
         ));
 
         move |config: &mut ServiceConfig| {

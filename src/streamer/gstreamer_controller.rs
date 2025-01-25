@@ -122,7 +122,7 @@ fn add_elements_to_pipeline(
     stream: Arc<dyn CompoundStreamInfoTrait>,
     resolution: &StreamResolution,
 ) -> Result<()> {
-    let (width, height) = resolution.get_resolution();
+    let (width, height, bitrate) = resolution.get_resolution();
     let rtmp_url = stream.compose_rtmp_url(resolution.clone());
 
     // Video elements
@@ -142,7 +142,7 @@ fn add_elements_to_pipeline(
         )]),
     )?;
 
-    let x264_enc = build_element("x264enc", None)?;
+    let x264_enc = build_element("x264enc", Some(&[("bitrate", &bitrate.to_string())]))?;
     let flv_mux = build_element("flvmux", Some(&[("name", "mux"), ("streamable", "true")]))?;
     let queue2 = build_element("queue", None)?;
     let rtmp_sink = build_element("rtmpsink", Some(&[("location", rtmp_url.as_str())]))?;

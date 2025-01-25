@@ -5,3 +5,8 @@ app:
   thumbnail:
     accepted_mime_type:
       - "image/png"
+  stream:
+    resolutions:
+      - "360"
+      - "480"
+      - "720"
