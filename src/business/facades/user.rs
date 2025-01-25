@@ -82,6 +82,8 @@ pub trait UserFacadeTrait {
         user_id: i32,
         user_password_update: UserPasswordUpdate,
     ) -> Result<()>;
+
+    async fn delete_user(&self, user_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -491,6 +493,21 @@ impl UserFacadeTrait for UserFacade {
             hash(user_password_update.password.as_str(), DEFAULT_COST)
                 .app_error(VALIDATION_ERROR_TEXT)?,
         );
+
+        Ok(())
+    }
+
+    async fn delete_user(&self, user_id: i32) -> Result<()> {
+        let user = self.user_repository.get_user_by_id(user_id).await?;
+
+        if user.is_none() {
+            return Err(AppError::new(
+                "User with provided id does not exist",
+                BadRequestError,
+            ));
+        };
+
+        self.user_repository.delete_user(user_id).await?;
 
         Ok(())
     }

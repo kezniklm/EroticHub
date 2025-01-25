@@ -1,7 +1,7 @@
 use crate::api::controllers::user::{
-    change_password, change_password_form, liked_videos, login, login_form, logout,
-    profile_picture_update, register_form, register_user, user_detail, user_update, validate_email,
-    validate_username,
+    change_password, change_password_form, delete, delete_form, liked_videos, login, login_form,
+    logout, profile_picture_update, register_form, register_user, user_detail, user_update,
+    validate_email, validate_username,
 };
 use actix_web::web;
 use actix_web::web::scope;
@@ -28,5 +28,7 @@ pub fn user_routes(cfg: &mut web::ServiceConfig) {
             .route("/liked-videos", web::get().to(liked_videos))
             .route("/change-password", web::get().to(change_password_form))
             .route("/change-password", web::post().to(change_password))
+            .route("/delete", web::get().to(delete_form))
+            .route("/delete", web::post().to(delete)),
     );
 }

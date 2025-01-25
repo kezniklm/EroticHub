@@ -1,5 +1,6 @@
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::templates::template::BaseTemplate;
+use crate::api::templates::user::delete::template::DeleteTemplate;
 use crate::api::templates::user::detail::template::UserDetailTemplate;
 use crate::api::templates::user::liked_videos::template::LikedVideosTemplate;
 use crate::api::templates::user::logged_in::template::UserLoggedInTemplate;
@@ -206,6 +207,29 @@ pub async fn change_password(
         },
     )
     .to_response())
+}
+
+pub async fn delete_form(
+    htmx_request: HtmxRequest,
+    session: Session,
+    _identity: Identity,
+) -> Result<impl Responder> {
+    Ok(BaseTemplate::wrap(htmx_request, session, DeleteTemplate {}).to_response())
+}
+
+pub async fn delete(
+    user_facade: web::Data<UserFacade>,
+    identity: Identity,
+) -> Result<impl Responder> {
+    user_facade
+        .delete_user(identity.id()?.parse().app_error("Unauthorised")?)
+        .await?;
+
+    identity.logout();
+
+    Ok(HttpResponse::SeeOther()
+        .append_header(("HX-Redirect", "/"))
+        .finish())
 }
 
 pub async fn profile_picture_update(

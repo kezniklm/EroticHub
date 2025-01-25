@@ -1,3 +1,4 @@
+pub mod delete;
 pub mod detail;
 pub mod liked_videos;
 pub mod logged_in;
