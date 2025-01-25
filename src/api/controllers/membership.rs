@@ -19,8 +19,6 @@ use actix_web::{web, HttpResponse, Responder, Result};
 use actix_web_grants::protect;
 use config::Map;
 
-// TODO: allow changing prices for admins
-
 #[protect(any("Registered"), ty = "UserRole")]
 pub async fn get_membership_details(
     membership_facade: web::Data<MembershipFacade>,

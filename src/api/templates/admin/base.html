@@ -1,0 +1,47 @@
+{% block extra_styles %}
+  <link rel="stylesheet" type="text/css" href="/static/css/admin/index.css">
+{% endblock %}
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top admin-navbar">
+  <div class="container">
+    <!-- Logo -->
+    <a
+      class="navbar-brand"
+      href="#"
+      hx-get="/"
+      hx-push-url="true"
+      hx-target="#content-container"
+      >Admin Section</a
+    >
+    <!-- Toggler -->
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+      aria-controls="navbarNav"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <!-- Navbar Content -->
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <!-- Left Menu -->
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="#">Categories</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Memberships</a>
+        </li>
+        <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container centered-content" id="content-container">
+  {{ child_template|safe }}
+</div>

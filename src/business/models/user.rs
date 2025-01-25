@@ -13,6 +13,7 @@ pub struct UserDetail {
     pub profile_picture_path: Option<String>,
     pub artist_id: Option<i32>,
     pub paying_member_id: Option<i32>,
+    pub is_admin: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Validate)]
@@ -88,6 +89,7 @@ pub enum UserRole {
     PayingMember,
     Registered,
     Artist,
+    Admin,
 }
 
 impl Display for UserRole {
