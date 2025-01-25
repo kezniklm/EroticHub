@@ -10,6 +10,7 @@ use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::facades::video::VideoFacade;
 use crate::business::models::stream::StreamStorage;
+use crate::common::tests::stream::StreamProxyMock;
 use crate::persistence::repositories::artist::ArtistRepository;
 use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
@@ -17,6 +18,7 @@ use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
+use crate::streamer::gstreamer_controller::init_gstreamer;
 use crate::{init_configuration, setup_auth, setup_redis_pool, CONFIG_FILE_KEY};
 use actix_http::body::{BoxBody, EitherBody};
 use actix_http::Request;
@@ -81,6 +83,10 @@ impl AsyncContext {
     pub fn configure_app(&self) -> impl Fn(&mut ServiceConfig) {
         let (video_dir, thumbnail_dir, temp_file_dir) = get_resources_dirs(&self.test_folders_root);
 
+        init_gstreamer().expect(
+            "Failed to initialize GStreamer. Check if you have it installed on your system",
+        );
+
         let app_config = Arc::new(init_configuration().expect("Failed to load test-config.yaml"));
         let unit_of_work = Arc::new(PostgresUnitOfWork::new(self.pg_pool.clone()));
         let stream_storage = Arc::new(StreamStorage::default());
@@ -108,10 +114,12 @@ impl AsyncContext {
         ));
 
         let stream_repo = Arc::new(PgStreamRepo::new(self.pg_pool.clone()));
+        let stream_proxy_mock = Arc::new(StreamProxyMock {});
         let stream_facade = Arc::new(StreamFacade::new(
             video_facade.clone(),
             stream_storage.clone(),
             stream_repo.clone(),
+            Some(stream_proxy_mock),
         ));
 
         move |config: &mut ServiceConfig| {

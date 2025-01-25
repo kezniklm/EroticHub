@@ -90,7 +90,7 @@ fn pipeline_listen(
     Ok(())
 }
 
-pub fn create_stream_pipeline(
+fn create_stream_pipeline(
     parent_stream: Arc<dyn CompoundStreamInfoTrait>,
     resolution: &StreamResolution,
 ) -> Result<Pipeline> {

@@ -58,8 +58,6 @@ async fn main() -> anyhow::Result<()> {
     init_gstreamer()
         .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
     let config = init_configuration().expect("Failed to load config.yaml");
-    init_gstreamer()
-        .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
 
     let pool = setup_db_pool().await?;
 
@@ -117,6 +115,7 @@ async fn main() -> anyhow::Result<()> {
         video_facade.clone(),
         stream_storage.clone(),
         stream_repo.clone(),
+        None,
     ));
 
     let paying_member_repo = Arc::new(PostgresPayingMemberRepo::new(pool.clone()));
