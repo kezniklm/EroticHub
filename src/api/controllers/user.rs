@@ -1,4 +1,5 @@
 use crate::api::extractors::htmx_extractor::HtmxRequest;
+use crate::api::extractors::permissions_extractor::AsInteger;
 use crate::api::templates::template::BaseTemplate;
 use crate::api::templates::user::delete::template::DeleteTemplate;
 use crate::api::templates::user::detail::template::UserDetailTemplate;
@@ -9,7 +10,6 @@ use crate::api::templates::user::password_change::template::PasswordChangeTempla
 use crate::api::templates::user::register::template::UserRegisterTemplate;
 use crate::api::templates::user::validation::template::ValidationTemplate;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
-use crate::business::models::error::MapToAppError;
 use crate::business::models::user::UserRole::{self, Registered};
 use crate::business::models::user::{
     EmailQuery, ProfilePictureUpdate, UserDetailUpdate, UserLogin, UserPasswordUpdate,
@@ -119,9 +119,7 @@ pub async fn user_detail(
         .get::<UserSessionData>("user_session_data")
         .unwrap_or(None);
 
-    let user_detail = user_facade
-        .get_user_detail(identity.id()?.parse().app_error("Unauthorised")?)
-        .await?;
+    let user_detail = user_facade.get_user_detail(identity.id_i32()?).await?;
 
     Ok(BaseTemplate::wrap(
         htmx_request,
@@ -142,10 +140,7 @@ pub async fn user_update(
     user_detail_update: web::Form<UserDetailUpdate>,
 ) -> Result<impl Responder> {
     let user_detail = user_facade
-        .update(
-            identity.id()?.parse().app_error("Unauthorised")?,
-            user_detail_update.into_inner(),
-        )
+        .update(identity.id_i32()?, user_detail_update.into_inner())
         .await?;
 
     let user_session_data = UserSessionData {
@@ -184,19 +179,14 @@ pub async fn change_password(
     user_password_update: web::Form<UserPasswordUpdate>,
 ) -> Result<impl Responder> {
     user_facade
-        .change_password(
-            identity.id()?.parse().app_error("Unauthorised")?,
-            user_password_update.into_inner(),
-        )
+        .change_password(identity.id_i32()?, user_password_update.into_inner())
         .await?;
 
     let user_session_data = session
         .get::<UserSessionData>("user_session_data")
         .unwrap_or(None);
 
-    let user_detail = user_facade
-        .get_user_detail(identity.id()?.parse().app_error("Unauthorised")?)
-        .await?;
+    let user_detail = user_facade.get_user_detail(identity.id_i32()?).await?;
 
     Ok(BaseTemplate::wrap(
         htmx_request,
@@ -221,9 +211,7 @@ pub async fn delete(
     user_facade: web::Data<UserFacade>,
     identity: Identity,
 ) -> Result<impl Responder> {
-    user_facade
-        .delete_user(identity.id()?.parse().app_error("Unauthorised")?)
-        .await?;
+    user_facade.delete_user(identity.id_i32()?).await?;
 
     identity.logout();
 
@@ -239,10 +227,7 @@ pub async fn profile_picture_update(
     MultipartForm(profile_picture_update): MultipartForm<ProfilePictureUpdate>,
 ) -> Result<impl Responder> {
     let user_detail = user_facade
-        .update_profile_picture(
-            identity.id()?.parse().app_error("Unauthorised")?,
-            profile_picture_update,
-        )
+        .update_profile_picture(identity.id_i32()?, profile_picture_update)
         .await?;
 
     let user_session_data = UserSessionData {
