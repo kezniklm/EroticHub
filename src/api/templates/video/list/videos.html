@@ -1,0 +1,23 @@
+{% for video in videos %}
+<div class="col-12 col-sm-6 col-md-4 col-lg-3">
+    <div class="video-card pb-3 my-2 mx-1" >
+        <div hx-get="/video/{{ video.id }}/watch" hx-push-url="true"  hx-swap="innerHTML" hx-params="none" hx-target="#content-container">
+            <img src="{{ video.thumbnail_path }}" alt="video_thumbnail" class="video-img">
+        </div>
+        <!-- add link to artist profile !-->
+        <div class="px-3">
+            <div class="">
+                <div class="d-flex justify-content-between">
+                    <a class="video-card-link">{{ video.artist_name }}</a>
+                    <span class="likes ">
+                    123
+                </span>
+                </div>
+            </div>
+            <div class="" hx-get="/video/{{ video.id }}/watch" hx-push-url="true"  hx-swap="innerHTML" hx-params="none" hx-target="#content-container">
+                <a class="video-card-link">{{ video.name }}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}

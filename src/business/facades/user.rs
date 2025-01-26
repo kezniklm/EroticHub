@@ -1,7 +1,8 @@
+use crate::business::mappers::generic::ToMappedList;
 use crate::business::models::error::AppErrorKind::BadRequestError;
 use crate::business::models::error::{AppError, MapToAppError};
 use crate::business::models::user::{
-    UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole,
+    UserDetail, UserLogin, UserRegister, UserRegisterMultipart, UserRole, Username,
 };
 use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
@@ -52,6 +53,7 @@ pub trait UserFacadeTrait {
         profile_picture: &mut NamedTempFile,
     ) -> Result<(), AppError>;
     async fn get_permissions(&self, user_id: i32) -> Result<HashSet<UserRole>>;
+    async fn get_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Username>>;
 }
 
 #[derive(Debug, Clone)]
@@ -256,5 +258,13 @@ impl UserFacadeTrait for UserFacade {
         }
 
         Ok(user_permissions)
+    }
+
+    async fn get_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Username>> {
+        let users = self.user_repository.fetch_usernames_by_id(ids).await?;
+
+        let usernames = users.to_mapped_list(Username::from);
+
+        Ok(usernames)
     }
 }

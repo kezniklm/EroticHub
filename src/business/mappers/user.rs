@@ -1,5 +1,5 @@
-use crate::business::models::user::{UserDetail, UserRegister, UserRegisterMultipart};
-use crate::persistence::entities::user::User;
+use crate::business::models::user::{UserDetail, UserRegister, UserRegisterMultipart, Username};
+use crate::persistence::entities::user::{User, UserName};
 
 impl From<User> for UserDetail {
     fn from(user: User) -> Self {
@@ -49,6 +49,15 @@ impl From<&UserRegisterMultipart> for UserRegister {
             password: user_register.password.to_string(),
             password2: user_register.password2.to_string(),
             email: user_register.email.to_string(),
+        }
+    }
+}
+
+impl From<UserName> for Username {
+    fn from(user: UserName) -> Self {
+        Username {
+            id: user.id,
+            username: user.username,
         }
     }
 }

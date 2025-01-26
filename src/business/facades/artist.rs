@@ -1,5 +1,5 @@
 use crate::business::mappers::generic::ToMappedList;
-use crate::business::models::artist_detail::ArtistDetail;
+use crate::business::models::artist_detail::{ArtistDetail, ArtistName};
 use crate::business::models::error::{AppErrorKind, MapToAppError};
 use crate::business::Result;
 use crate::persistence::entities::artist::Artist;
@@ -12,6 +12,7 @@ use std::sync::Arc;
 #[async_trait]
 pub trait ArtistFacadeTrait {
     async fn list_artists(&self) -> anyhow::Result<Vec<ArtistDetail>>;
+    async fn get_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>>;
     async fn get_artist_internal(
         &self,
         user_id: i32,
@@ -55,5 +56,14 @@ impl ArtistFacadeTrait for ArtistFacade {
             )?;
 
         Ok(artist)
+    }
+
+    async fn get_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>> {
+        let artist_names = self
+            .artist_repository
+            .fetch_artists_names_by_id(ids)
+            .await?;
+
+        Ok(artist_names)
     }
 }

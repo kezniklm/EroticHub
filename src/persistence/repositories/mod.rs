@@ -8,3 +8,4 @@ pub mod temp_file;
 pub mod unit_of_work;
 pub mod user;
 pub mod video;
+pub mod video_category;

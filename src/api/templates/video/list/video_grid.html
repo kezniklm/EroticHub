@@ -1,0 +1,10 @@
+<!-- Video Grid -->
+<div class="container"  id="scroll-trigger"
+      hx-get="/video"
+      hx-trigger="revealed"
+      hx-vals='{"offset": 20}'
+      hx-swap="beforeend">
+    <div class="row" id="video-grid">
+        {% include "videos.html" %}
+    </div>
+</div>

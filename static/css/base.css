@@ -187,7 +187,7 @@ input.form-control::file-selector-button {
   background-color: #222;
   border-radius: 0.5rem;
   overflow: hidden;
-  text-align: center;
+  text-align: left;
 }
 
 .video-card .video-img {
@@ -202,6 +202,15 @@ input.form-control::file-selector-button {
   font-size: 0.9rem;
   color: #fff;
   text-align: center;
+}
+
+.video-card-link {
+    color: #ddd;
+    text-decoration: none;
+}
+
+.video-card-link:hover {
+    color: #fff;
 }
 
 #age-verification-popup {

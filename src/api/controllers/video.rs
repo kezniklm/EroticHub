@@ -1,25 +1,35 @@
-use crate::api::controllers::utils::route_util::{add_redirect_header, build_watch_path};
+use crate::api::controllers::utils::route_util::{
+    add_redirect_header, build_get_video_path, build_watch_path,
+};
+use crate::api::controllers::utils::video_utils::parse_option_string;
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::extractors::permissions_extractor::{AsInteger, AsIntegerOptional};
 use crate::api::extractors::template_extractor::TemplateReq;
 use crate::api::templates::template::BaseTemplate;
 use crate::api::templates::video::edit::template::EditVideoTemplate;
-use crate::api::templates::video::list::template::VideoListTemplate;
+use crate::api::templates::video::list::template::{
+    IndexTemplate, VideoGridTemplate, VideosTemplate,
+};
 use crate::api::templates::video::show::template::{PlayerTemplate, ShowVideoTemplate};
 use crate::api::templates::video::upload::template::{
     ThumbnailPreviewTemplate, ThumbnailUploadInputTemplate, VideoPreviewTemplate,
     VideoUploadInputTemplate, VideoUploadTemplate,
 };
+use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
+use crate::business::facades::video_category::{VideoCategoryFacade, VideoCategoryFacadeTrait};
 use crate::business::models::user::UserRole::{self, Artist};
-use crate::business::models::video::{GetVideoByIdReq, VideoEditReq, VideoUploadReq};
+use crate::business::models::video::{
+    FetchVideoByFilters, GetVideoByIdReq, VideoEditReq, VideoList, VideoUploadReq,
+};
 use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
 use actix_identity::Identity;
 use actix_session::Session;
-use actix_web::web::{Data, Form, Path};
+use actix_web::web::{Data, Form, Path, Query};
 use actix_web::{HttpResponse, Responder, Result};
 use actix_web_grants::protect;
+use anyhow::anyhow;
 use askama_actix::TemplateToResponse;
 
 /// Creates new video
@@ -165,14 +175,109 @@ pub async fn watch_video(
     Ok(BaseTemplate::wrap(htmx_request, session, template))
 }
 
-/// Returns template which displays all videos
-///
-/// `GET /`
-///
-/// # Returns
-/// `VideoListTemplate` - template with list of all videos
-pub async fn list_videos(htmx_request: HtmxRequest, session: Session) -> impl Responder {
-    BaseTemplate::wrap(htmx_request, session, VideoListTemplate {})
+pub async fn main_page(
+    video_facade: Data<VideoFacade>,
+    artist_facade: Data<ArtistFacade>,
+    category_facade: Data<VideoCategoryFacade>,
+    req: Query<FetchVideoByFilters>,
+    session: Session,
+    htmx_request: HtmxRequest,
+) -> impl Responder {
+    let serialized_videos = get_videos(video_facade, artist_facade, req.clone()).await;
+
+    let serialized_videos = match serialized_videos {
+        Ok(videos) => videos,
+        Err(e) => return HttpResponse::InternalServerError().json(e.to_string()),
+    };
+
+    let categories = category_facade.list_categories().await;
+
+    let categories = match categories {
+        Ok(categories) => categories,
+        Err(e) => return HttpResponse::InternalServerError().json(e.to_string()),
+    };
+
+    let template = IndexTemplate {
+        videos_template: VideoGridTemplate {
+            videos: serialized_videos,
+        },
+        categories,
+    };
+
+    BaseTemplate::wrap(htmx_request, session, template).to_response()
+}
+
+pub async fn list_videos(
+    video_facade: Data<VideoFacade>,
+    artist_facade: Data<ArtistFacade>,
+    req: Query<FetchVideoByFilters>,
+) -> impl Responder {
+    let serialized_videos = get_videos(video_facade, artist_facade, req.clone()).await;
+
+    let serialized_videos = match serialized_videos {
+        Ok(videos) => videos,
+        Err(e) => {
+            if e.to_string() == "No videos" {
+                return HttpResponse::NoContent().json("No videos");
+            } else {
+                return HttpResponse::InternalServerError().json(e.to_string());
+            }
+        }
+    };
+
+    let template = VideosTemplate {
+        videos: serialized_videos,
+    };
+
+    template.to_response()
+}
+
+pub async fn get_videos(
+    video_facade: Data<VideoFacade>,
+    artist_facade: Data<ArtistFacade>,
+    req: Query<FetchVideoByFilters>,
+) -> anyhow::Result<Vec<VideoList>> {
+    let offset = req.offset;
+    let filter: Option<Vec<i32>> = parse_option_string(req.filter.clone())?;
+    let ord = req.ord.as_deref();
+
+    let videos = video_facade.fetch_videos(ord, filter, offset).await;
+
+    let videos = match videos {
+        Ok(videos) => {
+            if videos.is_empty() {
+                return Err(anyhow::anyhow!("No videos"));
+            } else {
+                videos
+            }
+        }
+        Err(e) => return Err(anyhow!(e.to_string())),
+    };
+
+    let mut artists_ids = Vec::new();
+    videos.iter().for_each(|v| {
+        artists_ids.push(v.artist_id);
+    });
+
+    let artists = artist_facade.get_artists_names_by_id(artists_ids).await?;
+
+    let mut serialized_videos = Vec::new();
+    for video in &videos {
+        for artist in &artists {
+            if video.artist_id == artist.id {
+                let (_video_path, thumbnail_path) = build_get_video_path(video.id);
+                serialized_videos.push(VideoList {
+                    id: video.id,
+                    artist_id: video.artist_id,
+                    artist_name: artist.name.clone(),
+                    thumbnail_path,
+                    name: video.name.clone(),
+                })
+            }
+        }
+    }
+
+    Ok(serialized_videos)
 }
 
 /// Returns template with create new video form
