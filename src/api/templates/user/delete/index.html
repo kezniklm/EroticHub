@@ -13,10 +13,10 @@
         <span>This action cannot be undone.</span>
     </p>
     <div class="form-actions">
-        <button hx-post="/user/delete" hx-target="#content-container" hx-swap="outerHTML" class="confirm-btn">
+        <button hx-post="/user/delete" hx-target="#content-container" hx-swap="innerHTML" class="confirm-btn">
             Yes, Delete My Account
         </button>
-        <button hx-get="/user/account" hx-target="#content-container" hx-swap="outerHTML" class="cancel-btn">
+        <button hx-get="/user/account" hx-target="#content-container" hx-swap="innerHTML" class="cancel-btn">
             Keep My Account
         </button>
     </div>

@@ -13,7 +13,7 @@
 <div class="change-password">
     <h2 class="form-title">Change Password</h2>
     <form id="password-change-form" hx-post="/user/change-password" data-validate="true" hx-target="#content-container"
-        hx-swap="outerHTML">
+        hx-swap="innerHTML">
         <div class="form-group">
             <label for="old-password">Old Password</label>
             <input type="password" placeholder="Old Password" id="old-password" name="old_password" required autocomplete="old-password" />

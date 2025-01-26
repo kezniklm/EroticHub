@@ -15,7 +15,7 @@
         {% match user_detail %}
             {% when Some(user_detail) %}
                 <h2 class="form-title">My account</h2>
-                <form id="user-edit-form" hx-post="/user/account/edit" data-validate="true" hx-target="#content-container" hx-swap="outerHTML">
+                <form id="user-edit-form" hx-post="/user/account/edit" data-validate="true" hx-target="#content-container" hx-swap="innerHTML">
                     <div class="form-group">
                         <label for="user-username">Username</label>
                         <input type="text" placeholder="Username" id="user-username" name="username" required
@@ -37,8 +37,8 @@
                     </div>
 
                     <div class="action-spans">
-                        <p class="change-password">Want to update your password? <a href="#" hx-get="/user/change-password" hx-target="#content-container" hx-swap="outerHTML" hx-push-url="true">Click here</a></p>
-                        <p class="delete-account">Want to delete your account? <a href="#" hx-get="/user/delete" hx-target="#content-container" hx-swap="outerHTML" hx-push-url="true">Click here</a></p>
+                        <p class="change-password">Want to update your password? <a href="#" hx-get="/user/change-password" hx-target="#content-container" hx-swap="innerHTML" hx-push-url="true">Click here</a></p>
+                        <p class="delete-account">Want to delete your account? <a href="#" hx-get="/user/delete" hx-target="#content-container" hx-swap="innerHTML" hx-push-url="true">Click here</a></p>
                     </div>
 
                     <div class="form-actions">
