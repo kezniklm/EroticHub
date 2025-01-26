@@ -1,4 +1,6 @@
+use crate::business::models::error::{AppError, AppErrorKind};
 use gstreamer::Pipeline;
+use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
 pub type Stream = (Arc<dyn CompoundStreamInfoTrait>, PipelinesList);
@@ -34,11 +36,32 @@ impl StreamResolution {
         }
     }
 
-    pub fn get_resolution(&self) -> (u32, u32) {
+    /// Returns (width, height, bitrate)
+    pub fn get_resolution(&self) -> (u32, u32, u32) {
         match &self {
-            StreamResolution::P360 => (640, 360),
-            StreamResolution::P480 => (854, 480),
-            StreamResolution::P720 => (1280, 720),
+            StreamResolution::P360 => (640, 360, 288),
+            StreamResolution::P480 => (854, 480, 448),
+            StreamResolution::P720 => (1280, 720, 2048),
         }
+    }
+}
+
+impl FromStr for StreamResolution {
+    type Err = AppError;
+
+    fn from_str(resolution: &str) -> Result<Self, Self::Err> {
+        let value = match resolution {
+            "360" => StreamResolution::P360,
+            "480" => StreamResolution::P480,
+            "720" => StreamResolution::P720,
+            &_ => {
+                return Err(AppError::new(
+                    "Unknown resolution defined",
+                    AppErrorKind::InternalServerError,
+                ))
+            }
+        };
+
+        Ok(value)
     }
 }

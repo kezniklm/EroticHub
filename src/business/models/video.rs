@@ -24,7 +24,7 @@ impl Display for VideoVisibility {
 
 #[derive(MultipartForm)]
 pub struct VideoUploadForm {
-    #[multipart(limit = "500MB")]
+    #[multipart(limit = "1GB")]
     pub file: TempFile,
 }
 

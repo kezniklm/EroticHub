@@ -6,6 +6,8 @@ variables:
   DATABASE_URL: "postgres://user:password@postgres:5432/erotic-hub"
   TEST_DATABASE_URL: "postgres://user:password@postgres:5432/test_template_db"
   REDIS_DATABASE_URL: "redis://redis:6379"
+  NGINX_HLS_URL: "http://localhost:8081/hls/"
+  STREAM_PATH_PREFIX: "stream"
   RUST_BACKTRACE: 1
 
 default:

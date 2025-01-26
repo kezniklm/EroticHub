@@ -34,7 +34,7 @@ async function setupStream(url) {
                 overrideNative: true,
             }
         },
-    }, function() {
+    }, function () {
         const player = this;
 
         player.qualityLevels();
@@ -44,7 +44,7 @@ async function setupStream(url) {
             type: 'application/x-mpegURL',
             withCredentials: true,
         })
-        player.hlsQualitySelector({ displayCurrentQuality: true} );
+        player.hlsQualitySelector({displayCurrentQuality: true});
     });
 
     if (!await isPlaylistAvailable(player)) {
@@ -68,7 +68,7 @@ async function loadingPlaceholder(player) {
     let intervalID = null;
     let dotsCount = 2;
     let startTime = Date.now();
-    const cycle = async function() {
+    const cycle = async function () {
         if (await isPlaylistAvailable(player)) {
             videoElement.style.display = "unset";
             loadingHeader.style.display = "none";
@@ -102,6 +102,8 @@ function loadingDots(dotsCount) {
  */
 async function isPlaylistAvailable(player) {
     const streamSource = player.currentSource().src;
-    const response = await fetch(streamSource);
+    const response = await fetch(streamSource, {
+        credentials: "include",
+    });
     return response.status === 200;
 }

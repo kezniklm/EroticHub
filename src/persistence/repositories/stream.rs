@@ -1,5 +1,5 @@
 use crate::persistence::entities::stream::{LiveStream, LiveStreamStatus};
-use crate::persistence::entities::video::VideoVisibility;
+use crate::persistence::entities::video::{Video, VideoVisibility};
 use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
@@ -9,6 +9,7 @@ pub trait StreamRepoTrait {
     async fn add_stream(&self, stream: LiveStream) -> Result<i32>;
     async fn change_status(&self, stream_id: i32, status: LiveStreamStatus) -> Result<()>;
     async fn get_stream(&self, stream_id: i32) -> Result<Option<LiveStream>>;
+    async fn get_streamed_video(&self, stream_id: i32) -> Result<Video>;
     async fn get_visibility(&self, stream_id: i32) -> Result<VideoVisibility>;
 }
 
@@ -60,6 +61,28 @@ impl StreamRepoTrait for PgStreamRepo {
         .fetch_optional(&self.pg_pool)
         .await?;
         Ok(stream)
+    }
+
+    async fn get_streamed_video(&self, stream_id: i32) -> Result<Video> {
+        let video = sqlx::query_as!(
+            Video,
+            r#"SELECT 
+                video.id,
+                artist_id,
+                visibility AS "visibility: VideoVisibility",
+                name,
+                file_path,
+                thumbnail_path,
+                description 
+            FROM video
+            JOIN live_stream ON live_stream.video_id = video.id
+            WHERE live_stream.id = $1"#,
+            stream_id
+        )
+        .fetch_one(&self.pg_pool)
+        .await?;
+
+        Ok(video)
     }
 
     async fn get_visibility(&self, stream_id: i32) -> Result<VideoVisibility> {
@@ -141,6 +164,24 @@ mod test {
                 "Live stream has unexpected status after change"
             );
         }
+
+        Ok(())
+    }
+
+    #[test_context(AsyncContext)]
+    #[tokio::test]
+    async fn get_streamed_video(ctx: &mut AsyncContext) -> Result<()> {
+        let video = create_dummy_video(&ctx).await?;
+        let stream = create_stream_entity(&video);
+        let repo = PgStreamRepo::new(ctx.pg_pool.clone());
+
+        let stream_id = repo.add_stream(stream.clone()).await?;
+        let streamed_video = repo.get_streamed_video(stream_id).await?;
+
+        assert_eq!(
+            streamed_video, video,
+            "Streamed video doesn't match the created video"
+        );
 
         Ok(())
     }
