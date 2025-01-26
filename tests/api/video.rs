@@ -406,7 +406,7 @@ async fn assert_get_requests(
     assert_eq!(thumbnail_file_resp.status(), expected_status);
 }
 
-fn create_upload_req(
+pub fn create_upload_req(
     name: String,
     video_visibility: VideoVisibility,
     description: Option<String>,
@@ -420,7 +420,7 @@ fn create_upload_req(
     }
 }
 
-async fn upload_video(
+pub async fn upload_video(
     upload_video_form: &mut VideoUploadReq,
     video_temp_id: Option<i32>,
     thumbnail_temp_id: Option<i32>,

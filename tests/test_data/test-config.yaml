@@ -1,7 +1,13 @@
 app:
+  file_size_limit_mb: 1000
   video:
     accepted_mime_type:
       - "video/mp4"
   thumbnail:
     accepted_mime_type:
       - "image/png"
+  stream:
+    resolutions:
+      - "360"
+      - "480"
+      - "720"
