@@ -1,1 +1,86 @@
-{{ user_id }}
+{% block extra_styles %}
+<link rel="stylesheet" type="text/css" href="/static/css/user/detail.css">
+{% endblock %}
+
+{% block extra_script %}
+<script src="/static/js/user/detail.js"></script>
+{% endblock %}
+
+<div class="banner">
+    <img src="https://placehold.co/2000x350?text=Banner" alt="Banner">
+</div>
+
+<div class="user-detail">
+    <div class="user-detail-left">
+        {% match user_detail %}
+            {% when Some(user_detail) %}
+                <h2 class="form-title">My account</h2>
+                <form id="user-edit-form" hx-post="/user/account/edit" data-validate="true" hx-target="#content-container" hx-swap="innerHTML">
+                    <div class="form-group">
+                        <label for="user-username">Username</label>
+                        <input type="text" placeholder="Username" id="user-username" name="username" required
+                               autocomplete="username" readonly
+                               value="{{ user_detail.username }}"
+                               hx-get="/user/validate/username" hx-trigger="blur"
+                               hx-target="#username-error" hx-swap="outerHTML"
+                               hx-vals='{"target_element": "username-error"}' />
+                        <p class="error-message hidden" id="username-error"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-email">Email</label>
+                        <input type="email" placeholder="Email" id="user-email" name="email" required autocomplete="email"
+                               readonly value="{{ user_detail.email }}"
+                               hx-get="/user/validate/email" hx-trigger="blur"
+                               hx-target="#email-error" hx-swap="outerHTML"
+                               hx-vals='{"target_element": "email-error"}' />
+                        <p class="error-message hidden" id="email-error"></p>
+                    </div>
+
+                    <div class="action-spans">
+                        <p class="change-password">Want to update your password? <a href="#" hx-get="/user/change-password" hx-target="#content-container" hx-swap="innerHTML" hx-push-url="true">Click here</a></p>
+                        <p class="delete-account">Want to delete your account? <a href="#" hx-get="/user/delete" hx-target="#content-container" hx-swap="innerHTML" hx-push-url="true">Click here</a></p>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="edit-btn" onclick="enableEditing(event)">Edit</button>
+                        <button type="submit" id="save-btn" class="hidden">Save</button>
+                    </div>
+                    <div class="error-group">
+                        <p class="error-message hidden" id="user-update-server-error"></p>
+                    </div>
+                </form>
+            {% when None %}
+        {% endmatch %}
+    </div>
+    <div class="user-detail-right">
+        <form id="profile-picture-form" hx-post="/user/account/profile-picture-update" hx-encoding="multipart/form-data">
+            <div class="user_profile_picture_preview">
+                <label for="change-profile_picture">
+                    {% match user_session_data %}
+                    {% when Some(user_session_data) %}
+                    {% match user_session_data.profile_picture_path %}
+                    {% when Some(profile_picture_path) %}
+                    <img id="imagePreview" src="/{{profile_picture_path}}" alt="Preview"
+                         onerror="this.src='/static/images/anonymous_profile_picture.jpg';" />
+                    <input type="hidden" id="originalProfilePictureUrl" value="/{{profile_picture_path}}">
+                    {% when None %}
+                    <img id="imagePreview" src="/static/images/anonymous_profile_picture.jpg"
+                         alt="Preview" />
+                    {% endmatch %}
+                    {% when None %}
+                    <img id="imagePreview" src="/static/images/anonymous_profile_picture.jpg" alt="Preview" />
+                    {% endmatch %}
+                </label>
+                <input class="hidden" id="change-profile_picture" name="profile_picture" type="file" accept="image/*"
+                       onchange="previewUserDetailImage()" />
+                <p>Change your profile picture <span class='highlight'>size up to 10MB</span></p>
+            </div>
+            <div class="update-profile-picture-container">
+                <button class="update-button">Update Profile Picture</button>
+            </div>
+            <div class="error-group">
+                <p class="error-message hidden" id="profile-picture-error"></p>
+            </div>
+        </form>
+    </div>
+</div>

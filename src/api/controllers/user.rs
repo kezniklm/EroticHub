@@ -1,15 +1,19 @@
 use crate::api::extractors::htmx_extractor::HtmxRequest;
+use crate::api::extractors::permissions_extractor::AsInteger;
 use crate::api::templates::template::BaseTemplate;
+use crate::api::templates::user::delete::template::DeleteTemplate;
 use crate::api::templates::user::detail::template::UserDetailTemplate;
 use crate::api::templates::user::liked_videos::template::LikedVideosTemplate;
 use crate::api::templates::user::logged_in::template::UserLoggedInTemplate;
 use crate::api::templates::user::login::template::UserLoginTemplate;
+use crate::api::templates::user::password_change::template::PasswordChangeTemplate;
 use crate::api::templates::user::register::template::UserRegisterTemplate;
 use crate::api::templates::user::validation::template::ValidationTemplate;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
 use crate::business::models::user::UserRole::{self, Registered};
 use crate::business::models::user::{
-    EmailQuery, UserLogin, UserRegisterMultipart, UserSessionData, UsernameQuery,
+    EmailQuery, ProfilePictureUpdate, UserDetailUpdate, UserLogin, UserPasswordUpdate,
+    UserRegisterMultipart, UserSessionData, UsernameQuery,
 };
 use crate::business::Result;
 use actix_identity::Identity;
@@ -105,19 +109,139 @@ pub async fn login(
     .to_response())
 }
 
-pub async fn detail(
+pub async fn user_detail(
+    user_facade: web::Data<UserFacade>,
     htmx_request: HtmxRequest,
     session: Session,
     identity: Identity,
 ) -> Result<impl Responder> {
+    let user_session_data = session
+        .get::<UserSessionData>("user_session_data")
+        .unwrap_or(None);
+
+    let user_detail = user_facade.get_user_detail(identity.id_i32()?).await?;
+
     Ok(BaseTemplate::wrap(
         htmx_request,
         session,
         UserDetailTemplate {
-            user_id: identity.id()?,
+            user_session_data,
+            user_detail,
         },
     )
     .to_response())
+}
+
+pub async fn user_update(
+    user_facade: web::Data<UserFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+    identity: Identity,
+    user_detail_update: web::Form<UserDetailUpdate>,
+) -> Result<impl Responder> {
+    let user_detail = user_facade
+        .update(identity.id_i32()?, user_detail_update.into_inner())
+        .await?;
+
+    let user_session_data = UserSessionData {
+        profile_picture_path: match user_detail.clone() {
+            Some(user_detail) => user_detail.profile_picture_path,
+            None => None,
+        },
+    };
+
+    session.insert("user_session_data", user_session_data.clone())?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        UserDetailTemplate {
+            user_session_data: Some(user_session_data),
+            user_detail,
+        },
+    )
+    .to_response())
+}
+
+pub async fn change_password_form(
+    htmx_request: HtmxRequest,
+    session: Session,
+    _identity: Identity,
+) -> Result<impl Responder> {
+    Ok(BaseTemplate::wrap(htmx_request, session, PasswordChangeTemplate {}).to_response())
+}
+
+pub async fn change_password(
+    user_facade: web::Data<UserFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+    identity: Identity,
+    user_password_update: web::Form<UserPasswordUpdate>,
+) -> Result<impl Responder> {
+    user_facade
+        .change_password(identity.id_i32()?, user_password_update.into_inner())
+        .await?;
+
+    let user_session_data = session
+        .get::<UserSessionData>("user_session_data")
+        .unwrap_or(None);
+
+    let user_detail = user_facade.get_user_detail(identity.id_i32()?).await?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        UserDetailTemplate {
+            user_session_data,
+            user_detail,
+        },
+    )
+    .to_response())
+}
+
+pub async fn delete_form(
+    htmx_request: HtmxRequest,
+    session: Session,
+    _identity: Identity,
+) -> Result<impl Responder> {
+    Ok(BaseTemplate::wrap(htmx_request, session, DeleteTemplate {}).to_response())
+}
+
+pub async fn delete(
+    user_facade: web::Data<UserFacade>,
+    identity: Identity,
+) -> Result<impl Responder> {
+    user_facade.delete_user(identity.id_i32()?).await?;
+
+    identity.logout();
+
+    Ok(HttpResponse::SeeOther()
+        .append_header(("HX-Redirect", "/"))
+        .finish())
+}
+
+pub async fn profile_picture_update(
+    user_facade: web::Data<UserFacade>,
+    session: Session,
+    identity: Identity,
+    MultipartForm(profile_picture_update): MultipartForm<ProfilePictureUpdate>,
+) -> Result<impl Responder> {
+    let user_detail = user_facade
+        .update_profile_picture(identity.id_i32()?, profile_picture_update)
+        .await?;
+
+    let user_session_data = UserSessionData {
+        profile_picture_path: match user_detail.clone() {
+            Some(user_detail) => user_detail.profile_picture_path,
+            None => None,
+        },
+    };
+
+    session.insert("user_session_data", user_session_data.clone())?;
+
+    Ok(HttpResponse::SeeOther()
+        .append_header(("HX-Redirect", "/user/account"))
+        .finish())
 }
 
 #[protect(any("Registered"), ty = "UserRole")]

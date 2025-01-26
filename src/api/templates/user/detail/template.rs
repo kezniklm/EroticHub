@@ -1,7 +1,9 @@
+use crate::business::models::user::{UserDetail, UserSessionData};
 use askama_actix::Template;
 
 #[derive(Template)]
 #[template(path = "user/detail/index.html")]
 pub struct UserDetailTemplate {
-    pub user_id: String, //TODO REMOVE - IT IS ONLY TEMPORARY
+    pub user_session_data: Option<UserSessionData>,
+    pub user_detail: Option<UserDetail>,
 }

@@ -1,0 +1,38 @@
+{% block extra_styles %}
+<link rel="stylesheet" type="text/css" href="/static/css/user/password_change.css">
+{% endblock %}
+
+{% block extra_script %}
+<script src="/static/js/user/password_change.js"></script>
+{% endblock %}
+
+<div class="banner">
+    <img src="https://placehold.co/2000x350?text=Banner" alt="Banner">
+</div>
+
+<div class="change-password">
+    <h2 class="form-title">Change Password</h2>
+    <form id="password-change-form" hx-post="/user/change-password" data-validate="true" hx-target="#content-container"
+        hx-swap="innerHTML">
+        <div class="form-group">
+            <label for="old-password">Old Password</label>
+            <input type="password" placeholder="Old Password" id="old-password" name="old_password" required autocomplete="old-password" />
+        </div>
+        <div class="form-group">
+            <label for="new-password">New Password</label>
+            <input type="password" placeholder="Password" id="new-password" name="password" required autocomplete="new-password" />
+        </div>
+
+        <div class="form-group">
+            <label for="new-password2">New Password</label>
+            <input type="password" placeholder="Re-enter your password" id="new-password2" name="password2" required autocomplete="new-password2" />
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" id="save-btn" >Save</button>
+        </div>
+        <div class="error-group">
+            <p class="error-message hidden" id="change-password-error"></p>
+        </div>
+    </form>
+</div>

@@ -150,3 +150,10 @@ function displayErrorMessage(container, message) {
     container.textContent = message;
     container.classList.remove("hidden");
 }
+
+function clearErrors() {
+    document.querySelectorAll(".error-message").forEach((el) => {
+        el.textContent = "";
+        el.classList.add("hidden");
+    });
+}
