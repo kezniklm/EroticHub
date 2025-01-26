@@ -2,6 +2,7 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
+use validator::Validate;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "UPPERCASE")]
@@ -33,21 +34,29 @@ pub struct ThumbnailUploadForm {
     pub file: TempFile,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Validate)]
 pub struct VideoUploadReq {
-    pub video_visibility: VideoVisibility,
+    #[validate(length(min = 3, max = 128))]
     pub name: String,
+    pub video_visibility: VideoVisibility,
+    #[validate(range(min = 1))]
     pub temp_thumbnail_id: i32,
+    #[validate(range(min = 1))]
     pub temp_video_id: i32,
+    #[validate(length(max = 5000))]
     pub description: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Validate)]
 pub struct VideoEditReq {
+    #[validate(length(min = 3, max = 128))]
     pub name: Option<String>,
     pub video_visibility: VideoVisibility,
+    #[validate(range(min = 1))]
     pub temp_thumbnail_id: Option<i32>,
+    #[validate(range(min = 1))]
     pub temp_video_id: Option<i32>,
+    #[validate(length(max = 5000))]
     pub description: Option<String>,
 }
 
@@ -65,6 +74,15 @@ pub struct Video {
     pub description: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct VideoList {
+    pub id: i32,
+    pub artist_id: i32,
+    pub artist_name: String,
+    pub thumbnail_path: String,
+    pub name: String,
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct EditVideoTemplateModel {
     pub id: i32,
@@ -76,4 +94,11 @@ pub struct EditVideoTemplateModel {
 #[derive(Serialize, Deserialize)]
 pub struct GetVideoByIdReq {
     pub id: i32,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct FetchVideoByFilters {
+    pub offset: Option<i32>,
+    pub ord: Option<String>,
+    pub filter: Option<String>,
 }

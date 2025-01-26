@@ -2,7 +2,7 @@ use log::error;
 use sqlx::Error;
 use std::fmt::Debug;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct DatabaseError {
     pub error: String,
 }

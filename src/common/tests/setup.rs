@@ -1,3 +1,4 @@
+use crate::api::extractors::permissions_extractor::extract;
 use crate::api::routes::stream::stream_routes;
 use crate::api::routes::temp_file::temp_file_routes;
 use crate::api::routes::user::user_routes;
@@ -9,15 +10,22 @@ use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::facades::video::VideoFacade;
 use crate::business::models::stream::StreamStorage;
-use crate::init_configuration;
 use crate::persistence::repositories::artist::ArtistRepository;
 use crate::persistence::repositories::comment::CommentRepository;
 use crate::persistence::repositories::stream::PgStreamRepo;
 use crate::persistence::repositories::temp_file::PgTempFileRepo;
+use crate::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
-use actix_web::web;
+use crate::{init_configuration, setup_auth, setup_redis_pool, CONFIG_FILE_KEY};
+use actix_http::body::{BoxBody, EitherBody};
+use actix_http::Request;
+use actix_session::storage::RedisSessionStore;
+use actix_web::dev::{Service, ServiceResponse};
+use actix_web::middleware::NormalizePath;
 use actix_web::web::ServiceConfig;
+use actix_web::{test, web, App};
+use actix_web_grants::GrantsMiddleware;
 use log::warn;
 use sqlx::{Executor, PgPool};
 use std::env;
@@ -50,10 +58,31 @@ pub struct EmptyAsyncContext {
 }
 
 impl AsyncContext {
+    pub async fn create_app(
+        &self,
+    ) -> impl Service<Request, Response = ServiceResponse<EitherBody<BoxBody>>, Error = actix_web::Error>
+    {
+        let redis_pool = setup_redis_pool().await.unwrap();
+        let redis_store = RedisSessionStore::new_pooled(redis_pool).await.unwrap();
+
+        let (identity_middleware, session_middleware) = setup_auth(&redis_store);
+
+        test::init_service(
+            App::new()
+                .configure(self.configure_app())
+                .wrap(GrantsMiddleware::with_extractor(extract))
+                .wrap(identity_middleware)
+                .wrap(session_middleware)
+                .wrap(NormalizePath::trim()),
+        )
+        .await
+    }
+
     pub fn configure_app(&self) -> impl Fn(&mut ServiceConfig) {
         let (video_dir, thumbnail_dir, temp_file_dir) = get_resources_dirs(&self.test_folders_root);
 
-        let app_config = Arc::new(init_configuration().expect("Failed to load config.yaml"));
+        let app_config = Arc::new(init_configuration().expect("Failed to load test-config.yaml"));
+        let unit_of_work = Arc::new(PostgresUnitOfWork::new(self.pg_pool.clone()));
         let stream_storage = Arc::new(StreamStorage::default());
         let user_repo = Arc::new(UserRepository::new(self.pg_pool.clone()));
         let user_facade = Arc::new(UserFacade::new(user_repo));
@@ -71,6 +100,9 @@ impl AsyncContext {
         let video_facade = Arc::new(VideoFacade::new(
             temp_file_facade.clone(),
             video_repo,
+            artist_facade.clone(),
+            user_facade.clone(),
+            unit_of_work,
             video_dir,
             thumbnail_dir,
         ));
@@ -113,6 +145,7 @@ impl AsyncTestContext for AsyncContext {
         let test_id = Uuid::new_v4();
         let (pg_pool, test_db_name) = setup_test_db(test_id).await;
         load_template_data(&pg_pool).await;
+        setup_config_env();
         let test_folders_root = create_test_resources_dir(test_id).await;
         AsyncContext {
             pg_pool,
@@ -134,6 +167,7 @@ impl AsyncTestContext for EmptyAsyncContext {
     async fn setup() -> EmptyAsyncContext {
         let test_id = Uuid::new_v4();
         let (pg_pool, test_db_name) = setup_test_db(test_id).await;
+        setup_config_env();
         let test_folders_root = create_test_resources_dir(test_id).await;
         EmptyAsyncContext {
             pg_pool,
@@ -154,6 +188,7 @@ impl AsyncTestContext for EmptyAsyncContext {
 async fn teardown(test_folders_root: String, pg_pool: PgPool, test_db_name: &str) {
     delete_test_resources_dir(test_folders_root).await;
     teardown_test_db(pg_pool, test_db_name).await;
+    teardown_config_env();
 }
 
 /// Loads environment variables from a `.env` file
@@ -327,4 +362,12 @@ async fn teardown_test_db(test_pool: PgPool, test_db_name: &str) {
 
     let admin_pool = connect_to_db(&admin_db_url).await;
     drop_database(&admin_pool, test_db_name).await;
+}
+
+fn setup_config_env() {
+    env::set_var(CONFIG_FILE_KEY, "tests/test_data/test-config.yaml")
+}
+
+fn teardown_config_env() {
+    env::remove_var(CONFIG_FILE_KEY);
 }

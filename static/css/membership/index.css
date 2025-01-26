@@ -27,3 +27,8 @@
   font-size: 1rem;
   margin-bottom: 1rem;
 }
+
+.payment-info--center {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #ffffff;
+}

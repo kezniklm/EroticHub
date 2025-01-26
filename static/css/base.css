@@ -5,11 +5,21 @@
   --primary-orange: #ff9900;
   --primary-orange-hover: #cc7a00;
   --primary-orange-active: #b36b00;
+  --secondary-gray: #666;
 
   /* Bootstrap color customizations */
   --bs-border-color: var(--primary-gray-lighter);
   --bs-body-bg: var(--primary-gray);
   --bs-body-color: var(--primary-white);
+  --bs-secondary-color: var(--secondary-gray);
+}
+
+#content-container {
+  margin-top: 4rem;
+}
+
+.row {
+  --bs-gutter-y: var(--bs-gutter-x);
 }
 
 .btn-primary {
@@ -78,7 +88,7 @@ body {
   color: #fff;
 }
 
-input[class="form-control"]::file-selector-button {
+input.form-control::file-selector-button {
   display: none;
 }
 
@@ -177,7 +187,7 @@ input[class="form-control"]::file-selector-button {
   background-color: #222;
   border-radius: 0.5rem;
   overflow: hidden;
-  text-align: center;
+  text-align: left;
 }
 
 .video-card .video-img {
@@ -192,6 +202,15 @@ input[class="form-control"]::file-selector-button {
   font-size: 0.9rem;
   color: #fff;
   text-align: center;
+}
+
+.video-card-link {
+    color: #ddd;
+    text-decoration: none;
+}
+
+.video-card-link:hover {
+    color: #fff;
 }
 
 #age-verification-popup {

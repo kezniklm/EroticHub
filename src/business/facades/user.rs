@@ -1,8 +1,9 @@
+use crate::business::mappers::generic::ToMappedList;
 use crate::business::models::error::AppErrorKind::BadRequestError;
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::user::{
     ProfilePictureUpdate, UserDetail, UserDetailUpdate, UserLogin, UserPasswordUpdate,
-    UserRegister, UserRegisterMultipart, UserRole,
+    UserRegister, UserRegisterMultipart, UserRole, Username,
 };
 use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
@@ -94,6 +95,12 @@ pub struct UserFacade {
 impl UserFacade {
     pub fn new(user_repository: Arc<dyn UserRepositoryTrait + Send + Sync>) -> Self {
         Self { user_repository }
+    }
+
+    pub async fn create_profile_picture_folders(
+        profile_picture_folder_path: String,
+    ) -> anyhow::Result<()> {
+        create_dir_if_not_exist(profile_picture_folder_path).await
     }
 }
 
@@ -313,6 +320,7 @@ impl UserFacadeTrait for UserFacade {
 
         let mut user_permissions = HashSet::from([UserRole::Registered]);
 
+        // TODO: check for validity of the membership
         if user.paying_member_id.is_some() {
             user_permissions.insert(UserRole::PayingMember);
         }

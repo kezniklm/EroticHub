@@ -4,7 +4,7 @@ use actix_web::{Error, FromRequest, HttpRequest};
 use std::future::Future;
 use std::pin::Pin;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct HtmxRequest {
     pub hx_request: bool,
 }

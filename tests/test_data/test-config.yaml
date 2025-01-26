@@ -1,0 +1,7 @@
+app:
+  video:
+    accepted_mime_type:
+      - "video/mp4"
+  thumbnail:
+    accepted_mime_type:
+      - "image/png"

@@ -134,7 +134,7 @@ impl StreamFacadeTrait for StreamFacade {
     async fn start_stream(&self, live_stream: LiveStreamStart, user_id: i32) -> Result<i32> {
         let video = self
             .video_facade
-            .get_video_entity(live_stream.video_id, user_id)
+            .get_video_entity(live_stream.video_id, Some(user_id))
             .await?;
 
         let stream_id = self
@@ -170,7 +170,7 @@ impl StreamFacadeTrait for StreamFacade {
 
         let video = self
             .video_facade
-            .get_video_model(stream_dto.video_id, user_id)
+            .get_video_model(stream_dto.video_id, Some(user_id))
             .await?;
 
         Ok((video, stream_dto))

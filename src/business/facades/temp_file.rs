@@ -6,6 +6,7 @@ use crate::persistence::repositories::temp_file::TempFileRepo;
 use actix_files::NamedFile;
 use async_trait::async_trait;
 use log::{debug, warn};
+use sqlx::{Postgres, Transaction};
 use std::path::Path;
 use std::sync::Arc;
 use tempfile::NamedTempFile;
@@ -23,11 +24,16 @@ pub trait TempFileFacadeTrait {
     async fn get_temp_file(&self, file_id: i32, user_id: i32) -> Result<NamedFile>;
     async fn create_temp_directory(temp_file_dir: String) -> anyhow::Result<()>;
     async fn delete_all_temp_files(&self) -> Result<()>;
-    async fn check_mime_type(&self, file: Option<String>, allowed_types: Vec<String>)
+    async fn check_mime_type(&self, file: &NamedTempFile, allowed_types: Vec<String>)
         -> Result<()>;
 
-    async fn persist_permanently(&self, file_id: i32, user_id: i32, path: String)
-        -> Result<String>;
+    async fn persist_permanently(
+        &self,
+        file_id: i32,
+        user_id: i32,
+        path: String,
+        tx: &mut Transaction<Postgres>,
+    ) -> Result<String>;
     async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> Result<()>;
     fn get_temp_directory_path(&self) -> String;
 }
@@ -126,25 +132,33 @@ impl TempFileFacadeTrait for TempFileFacade {
 
     async fn check_mime_type(
         &self,
-        file: Option<String>,
+        file: &NamedTempFile,
         allowed_types: Vec<String>,
     ) -> Result<()> {
-        if let Some(ref mime_type) = file {
-            let is_allowed = allowed_types.contains(mime_type);
-            if is_allowed {
-                return Ok(());
+        let temp_file_type =
+            infer::get_from_path(file.path()).app_error("Failed to read temporary file")?;
+        match temp_file_type {
+            None => Err(AppError::new(
+                "Failed to extract MimeType from file",
+                AppErrorKind::BadRequestError,
+            )),
+            Some(file_type) => {
+                let mime_type = file_type.mime_type().to_string();
+                let is_allowed = allowed_types.contains(&mime_type);
+                if is_allowed {
+                    return Ok(());
+                }
+
+                warn!(
+                    "File with unsupported MimeType '{}' was uploaded!",
+                    mime_type
+                );
+                Err(AppError::new(
+                    &format!("MimeType {:?} is not allowed", file),
+                    AppErrorKind::WrongMimeType,
+                ))
             }
-
-            warn!(
-                "File with unsupported MimeType '{}' was uploaded!",
-                mime_type
-            );
         }
-
-        Err(AppError::new(
-            &format!("MimeType {:?} is not allowed", file),
-            AppErrorKind::WrongMimeType,
-        ))
     }
 
     /// Persists temporary file permanently to the given location
@@ -168,10 +182,11 @@ impl TempFileFacadeTrait for TempFileFacade {
         file_id: i32,
         user_id: i32,
         permanent_path: String,
+        tx: &mut Transaction<Postgres>,
     ) -> Result<String> {
         let temp_file = self
             .temp_file_repo
-            .get_file(file_id, user_id)
+            .get_file_tx(file_id, user_id, tx)
             .await
             .app_error_kind("Video file doesn't exist", AppErrorKind::NotFound)?;
 
@@ -194,9 +209,13 @@ impl TempFileFacadeTrait for TempFileFacade {
     }
 
     async fn delete_temp_file(&self, temp_file_id: i32, user_id: i32) -> Result<()> {
-        self.temp_file_repo
+        let deleted_file = self
+            .temp_file_repo
             .delete_file(temp_file_id, user_id)
             .await?;
+        if deleted_file.is_none() {
+            return Err(AppError::new("File not found", AppErrorKind::NotFound));
+        }
 
         Ok(())
     }

@@ -93,6 +93,12 @@ impl From<ValidationError> for AppError {
     }
 }
 
+impl From<DatabaseError> for ValidationError {
+    fn from(_value: DatabaseError) -> Self {
+        ValidationError::new("Validation failed")
+    }
+}
+
 impl From<SessionInsertError> for AppError {
     fn from(value: SessionInsertError) -> Self {
         Self::new(&value.to_string(), AppErrorKind::InternalServerError)

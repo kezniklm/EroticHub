@@ -175,7 +175,10 @@ mod test {
         };
 
         let repo = PgVideoRepo::new(ctx.pg_pool.clone());
-        let video = repo.save_video(video).await?;
+
+        let mut tx = ctx.pg_pool.begin().await?;
+        let video = repo.save_video(video, &mut tx).await?;
+        tx.commit().await?;
 
         Ok(video)
     }

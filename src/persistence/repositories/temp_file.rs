@@ -2,7 +2,7 @@ use crate::persistence::entities::error::{DatabaseError, MapToDatabaseError};
 use crate::persistence::entities::temp_file::TempFile;
 use crate::persistence::Result;
 use async_trait::async_trait;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
 use std::path::Path;
 use tempfile::NamedTempFile;
 
@@ -14,12 +14,18 @@ pub trait TempFileRepo {
         temp_file: NamedTempFile,
     ) -> anyhow::Result<i32, DatabaseError>;
     async fn get_file(&self, file_id: i32, user_id: i32) -> Result<TempFile>;
+    async fn get_file_tx(
+        &self,
+        file_id: i32,
+        user_id: i32,
+        tx: &mut Transaction<Postgres>,
+    ) -> Result<TempFile>;
     async fn delete_all_files(&self, temp_directory_path: &Path) -> Result<()>;
     /// Deletes temporary file from the file system and database
     ///
     /// # Returns
     /// `bool` if deletion was successful
-    async fn delete_file(&self, file_id: i32, user_id: i32) -> Result<()>;
+    async fn delete_file(&self, file_id: i32, user_id: i32) -> Result<Option<TempFile>>;
 }
 
 pub struct PgTempFileRepo {
@@ -81,6 +87,28 @@ impl TempFileRepo for PgTempFileRepo {
         Ok(result)
     }
 
+    async fn get_file_tx(
+        &self,
+        file_id: i32,
+        user_id: i32,
+        tx: &mut Transaction<Postgres>,
+    ) -> Result<TempFile> {
+        let result = sqlx::query_as!(
+            TempFile,
+            r#"
+            SELECT f.id, f.user_id, f.file_path FROM temp_file f
+            WHERE f.id=$1 AND f.user_id=$2;
+        "#,
+            file_id,
+            user_id
+        )
+        .fetch_one(tx.as_mut())
+        .await
+        .db_error("Temporary file doesn't exist")?;
+
+        Ok(result)
+    }
+
     async fn delete_all_files(&self, temp_directory_path: &Path) -> Result<()> {
         let mut transaction = self.pg_pool.begin().await?;
 
@@ -98,17 +126,18 @@ impl TempFileRepo for PgTempFileRepo {
         Ok(())
     }
 
-    async fn delete_file(&self, file_id: i32, user_id: i32) -> Result<()> {
-        sqlx::query!(
+    async fn delete_file(&self, file_id: i32, user_id: i32) -> Result<Option<TempFile>> {
+        let deleted = sqlx::query_as!(
+            TempFile,
             "DELETE FROM temp_file WHERE id=$1 AND user_id=$2 RETURNING *",
             file_id,
             user_id
         )
-        .fetch_one(&self.pg_pool)
+        .fetch_optional(&self.pg_pool)
         .await
         .db_error("Failed to delete temporary file")?;
 
-        Ok(())
+        Ok(deleted)
     }
 }
 
@@ -190,12 +219,10 @@ mod test {
         repo.delete_file(file, 1)
             .await
             .expect("Failed to delete temporary file");
-        let delete_result = repo.delete_file(file, 2).await;
-        let expected_result: Result<()> =
-            Err(DatabaseError::new("Failed to delete temporary file"));
+        let delete_result = repo.delete_file(file, 2).await?;
 
-        assert_eq!(
-            delete_result, expected_result,
+        assert!(
+            delete_result.is_none(),
             "It's possible to delete temp file with user which didn't created it"
         );
 

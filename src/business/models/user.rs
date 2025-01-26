@@ -43,7 +43,7 @@ pub struct ProfilePictureUpdate {
     pub profile_picture: Option<TempFile>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UserLogin {
     pub username: String,
     pub password: String,
@@ -94,4 +94,10 @@ impl Display for UserRole {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", format!("{:?}", self).to_uppercase())
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct Username {
+    pub id: i32,
+    pub username: String,
 }

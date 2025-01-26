@@ -1,11 +1,11 @@
 use crate::api::controllers::video::{
     create_video, delete_video, edit_video_template, get_thumbnail, get_video, list_videos,
-    patch_video, upload_video_template, watch_video,
+    main_page, patch_video, upload_video_template, watch_video,
 };
 use actix_web::web;
 
 pub fn video_routes(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/").route("", web::get().to(list_videos)))
+    cfg.service(web::scope("/").route("", web::get().to(main_page)))
         .service(
             web::scope("/video")
                 .route("/new", web::get().to(upload_video_template))
@@ -14,7 +14,8 @@ pub fn video_routes(cfg: &mut web::ServiceConfig) {
                 .route("{id}", web::delete().to(delete_video))
                 .route("/{id}/edit", web::get().to(edit_video_template))
                 .route("/{id}/watch", web::get().to(watch_video))
-                .route("", web::post().to(create_video)),
+                .route("", web::post().to(create_video))
+                .route("", web::get().to(list_videos)),
         )
         .service(web::scope("/thumbnail").route("/{id}", web::get().to(get_thumbnail)));
 }

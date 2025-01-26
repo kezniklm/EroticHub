@@ -1,4 +1,4 @@
-use crate::persistence::entities::user::User;
+use crate::persistence::entities::user::{User, UserName};
 use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
@@ -12,6 +12,7 @@ pub trait UserRepositoryTrait: Debug {
     async fn get_user_by_email(&self, email: &str) -> Result<Option<User>>;
     async fn update_user(&self, user: User) -> Result<Option<User>>;
     async fn delete_user(&self, user_id: i32) -> Result<bool>;
+    async fn fetch_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<UserName>>;
 }
 
 #[derive(Debug, Clone)]
@@ -94,6 +95,22 @@ impl UserRepositoryTrait for UserRepository {
             .await?;
 
         Ok(user)
+    }
+
+    async fn fetch_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<UserName>> {
+        let users = sqlx::query_as!(
+            UserName,
+            r#"
+            SELECT id, username
+            FROM user_table
+            WHERE id IN (SELECT unnest($1::integer[]))
+            "#,
+            &ids
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(users)
     }
 
     async fn update_user(&self, user: User) -> Result<Option<User>> {
