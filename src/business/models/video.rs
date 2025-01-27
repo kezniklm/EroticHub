@@ -29,7 +29,7 @@ impl VideoVisibility {
             VideoVisibility::Registered => String::from("Registered user"),
             VideoVisibility::Paying => String::from("Paying members"),
         }
-    } 
+    }
 }
 
 #[derive(MultipartForm)]

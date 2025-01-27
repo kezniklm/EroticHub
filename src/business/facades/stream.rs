@@ -179,7 +179,9 @@ impl StreamFacadeTrait for StreamFacade {
             .get_video_entity(live_stream.video_id, Some(user_id))
             .await?;
 
-        self.video_facade.is_video_owner(&video, user_id).await?;
+        self.video_facade
+            .is_video_owner(video.artist_id, user_id)
+            .await?;
 
         let stream_id = self
             .stream_repo
@@ -226,7 +228,9 @@ impl StreamFacadeTrait for StreamFacade {
 
     async fn stop_stream(&self, user_id: i32, stream_id: i32) -> Result<()> {
         let video = self.stream_repo.get_streamed_video(stream_id).await?;
-        self.video_facade.is_video_owner(&video, user_id).await?;
+        self.video_facade
+            .is_video_owner(video.artist_id, user_id)
+            .await?;
 
         self.stream_storage
             .run_on(&stream_id.to_string(), |stream| {

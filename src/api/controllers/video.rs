@@ -80,14 +80,21 @@ pub async fn patch_video(
     form: QsForm<VideoEditReq>,
     video_facade: Data<VideoFacade>,
     identity: Identity,
+    session: Session,
 ) -> Result<impl Responder> {
     let video = video_facade
         .patch_video(identity.id_i32()?, path.id, form.into_inner())
         .await?;
 
+    let video_artist_id = video.artist_id;
     let template = ShowVideoTemplate {
         video,
         player_template: PlayerTemplate::from_saved(path.id),
+        session,
+        is_video_owner: video_facade
+            .is_video_owner(video_artist_id, identity.id_i32()?)
+            .await
+            .map_or(false, |_| true),
     };
     let mut response = template.to_response();
 
@@ -166,13 +173,20 @@ pub async fn watch_video(
     session: Session,
     identity: Option<Identity>,
 ) -> Result<impl Responder> {
-    let video = video_facade
-        .get_video_model(req.id, identity.id_i32())
-        .await?;
+    let user_id = identity.id_i32();
+    let video = video_facade.get_video_model(req.id, user_id).await?;
     let video_id = video.id;
+    let video_artist_id = video.artist_id;
+
     let template = ShowVideoTemplate {
         video,
         player_template: PlayerTemplate::from_saved(video_id),
+        session: session.clone(),
+
+        is_video_owner: video_facade
+            .is_video_owner(video_artist_id, user_id.unwrap_or(-1))
+            .await
+            .map_or(false, |_| true),
     };
 
     Ok(BaseTemplate::wrap(htmx_request, session, template))

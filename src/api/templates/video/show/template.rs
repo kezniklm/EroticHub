@@ -1,5 +1,7 @@
 use crate::api::controllers::utils::route_util::{build_get_temp_path, build_get_video_path};
+use crate::api::extractors::permissions_extractor::IsRole;
 use crate::business::models::video::Video;
+use actix_session::Session;
 use askama_actix::Template;
 
 #[derive(Template)]
@@ -7,6 +9,8 @@ use askama_actix::Template;
 pub struct ShowVideoTemplate<T: Template> {
     pub video: Video,
     pub player_template: T,
+    pub session: Session,
+    pub is_video_owner: bool,
 }
 
 #[derive(Template)]

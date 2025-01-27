@@ -46,7 +46,7 @@ pub trait VideoFacadeTrait {
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
     ) -> Result<Vec<Video>>;
-    async fn is_video_owner(&self, video: &Video, user_id: i32) -> Result<()>;
+    async fn is_video_owner(&self, video_artist_id: i32, user_id: i32) -> Result<()>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
 }
 
@@ -319,7 +319,11 @@ impl VideoFacadeTrait for VideoFacade {
 
         if permissions.contains(&UserRole::Artist) {
             // if permissions hashset contains any UserRole, user_id is always Some
-            if self.is_video_owner(video, user_id.unwrap()).await.is_ok() {
+            if self
+                .is_video_owner(video.artist_id, user_id.unwrap())
+                .await
+                .is_ok()
+            {
                 return Ok(());
             }
         }
@@ -370,14 +374,18 @@ impl VideoFacadeTrait for VideoFacade {
         Ok(videos)
     }
 
-    async fn is_video_owner(&self, video: &Video, user_id: i32) -> Result<()> {
+    async fn is_video_owner(&self, video_artist_id: i32, user_id: i32) -> Result<()> {
+        if user_id < 0 {
+            return Err(AppError::new("Video doesn't exist", AppErrorKind::NotFound));
+        }
+
         let artist = self
             .artist_facade
             .get_artist_internal(user_id, None)
             .await?; // if permissions hashset contains any UserRole, user_id is always Some
 
         // Artist has always access to his video
-        if artist.id != video.artist_id {
+        if artist.id != video_artist_id {
             return Err(AppError::new("Video doesn't exist", AppErrorKind::NotFound));
         }
         Ok(())

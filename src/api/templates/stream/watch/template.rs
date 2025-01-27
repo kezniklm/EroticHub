@@ -9,4 +9,5 @@ use askama_actix::Template;
 pub struct WatchStreamTemplate {
     pub stream: LiveStream,
     pub video: Video,
+    pub is_owner: bool,
 }
