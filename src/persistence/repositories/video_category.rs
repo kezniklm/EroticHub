@@ -62,13 +62,18 @@ impl VideoCategoryRepoTrait for VideoCategoryRepository {
                 let mut tx = self.pg_pool.begin().await?;
                 self.delete_assigned_categories(video_id, Some(&mut tx))
                     .await?;
-                query.execute(tx.as_mut()).await?;
+
+                if !category_ids.is_empty() {
+                    query.execute(tx.as_mut()).await?;
+                }
 
                 tx.commit().await?;
             }
             Some(tx) => {
                 self.delete_assigned_categories(video_id, Some(tx)).await?;
-                query.execute(tx.as_mut()).await?;
+                if !category_ids.is_empty() {
+                    query.execute(tx.as_mut()).await?;
+                }
             }
         }
 

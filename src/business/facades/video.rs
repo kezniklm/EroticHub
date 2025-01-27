@@ -154,7 +154,11 @@ impl VideoFacadeTrait for VideoFacade {
 
         let video_entity = self.video_repo.save_video(entity, &mut tx).await?;
         self.video_category_facade
-            .assign_categories(video_entity.id, video_model.category_ids, Some(&mut tx))
+            .assign_categories(
+                video_entity.id,
+                video_model.category_ids.unwrap_or_default(),
+                Some(&mut tx),
+            )
             .await?;
         tx.commit().await.app_error("Failed save the video")?;
 
@@ -210,7 +214,11 @@ impl VideoFacadeTrait for VideoFacade {
 
         let video = self.video_repo.patch_video(db_entity, &mut tx).await?;
         self.video_category_facade
-            .assign_categories(video.id, edited_video.category_ids, Some(&mut tx))
+            .assign_categories(
+                video.id,
+                edited_video.category_ids.unwrap_or_default(),
+                Some(&mut tx),
+            )
             .await?;
 
         tx.commit().await.app_error("Failed to patch the video")?;

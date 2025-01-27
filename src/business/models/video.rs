@@ -49,7 +49,7 @@ pub struct VideoUploadReq {
     #[validate(length(min = 3, max = 128))]
     pub name: String,
     pub video_visibility: VideoVisibility,
-    pub category_ids: Vec<i32>,
+    pub category_ids: Option<Vec<i32>>,
     #[validate(range(min = 1))]
     pub temp_thumbnail_id: i32,
     #[validate(range(min = 1))]
@@ -63,7 +63,7 @@ pub struct VideoEditReq {
     #[validate(length(min = 3, max = 128))]
     pub name: Option<String>,
     pub video_visibility: VideoVisibility,
-    pub category_ids: Vec<i32>,
+    pub category_ids: Option<Vec<i32>>,
     #[validate(range(min = 1))]
     pub temp_thumbnail_id: Option<i32>,
     #[validate(range(min = 1))]
