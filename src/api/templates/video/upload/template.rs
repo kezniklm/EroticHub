@@ -1,3 +1,4 @@
+use crate::business::models::video_category::VideoCategory;
 use crate::configuration::models::Configuration;
 use askama_actix::Template;
 use std::sync::Arc;
@@ -7,6 +8,7 @@ use std::sync::Arc;
 pub struct VideoUploadTemplate<V: Template, T: Template> {
     pub video_input: V,
     pub thumbnail_input: T,
+    pub categories: Vec<VideoCategory>,
 }
 
 #[derive(Template)]

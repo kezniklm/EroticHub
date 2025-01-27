@@ -1,13 +1,22 @@
 use crate::business::mappers::generic::ToMappedList;
-use crate::business::models::video_category::VideoCategory;
+use crate::business::models::video_category::{VideoCategory, VideoCategorySelected};
+use crate::business::Result;
 use crate::persistence::repositories::video_category::VideoCategoryRepoTrait;
 use async_trait::async_trait;
+use sqlx::{Postgres, Transaction};
 use std::fmt::Debug;
 use std::sync::Arc;
 
 #[async_trait]
 pub trait VideoCategoryFacadeTrait {
-    async fn list_categories(&self) -> anyhow::Result<Vec<VideoCategory>>;
+    async fn list_categories(&self) -> Result<Vec<VideoCategory>>;
+    async fn assign_categories(
+        &self,
+        video_id: i32,
+        category_ids: Vec<i32>,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()>;
+    async fn get_selected_categories(&self, video_id: i32) -> Result<Vec<VideoCategorySelected>>;
 }
 
 #[derive(Debug, Clone)]
@@ -25,11 +34,46 @@ impl VideoCategoryFacade {
 
 #[async_trait]
 impl VideoCategoryFacadeTrait for VideoCategoryFacade {
-    async fn list_categories(&self) -> anyhow::Result<Vec<VideoCategory>> {
+    async fn list_categories(&self) -> Result<Vec<VideoCategory>> {
         let categories_rows = self.category_repository.fetch_categories().await?;
 
         let categories = categories_rows.to_mapped_list(VideoCategory::from);
 
         Ok(categories)
+    }
+
+    async fn assign_categories(
+        &self,
+        video_id: i32,
+        category_ids: Vec<i32>,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()> {
+        self.category_repository
+            .assign_categories(video_id, category_ids, tx)
+            .await?;
+        Ok(())
+    }
+
+    async fn get_selected_categories(&self, video_id: i32) -> Result<Vec<VideoCategorySelected>> {
+        let categories = self.category_repository.fetch_categories().await?;
+        let assigned_categories = self
+            .category_repository
+            .get_assigned_categories(video_id)
+            .await?;
+
+        let result = categories
+            .iter()
+            .map(|category| {
+                let is_assigned = assigned_categories.contains(category);
+
+                VideoCategorySelected {
+                    id: category.id,
+                    name: category.name.clone(),
+                    selected: is_assigned,
+                }
+            })
+            .collect();
+
+        Ok(result)
     }
 }

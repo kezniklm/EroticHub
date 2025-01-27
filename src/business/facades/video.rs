@@ -1,6 +1,7 @@
 use crate::business::facades::artist::ArtistFacadeTrait;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacadeTrait;
+use crate::business::facades::video_category::VideoCategoryFacadeTrait;
 use crate::business::models;
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::user::UserRole;
@@ -55,17 +56,20 @@ pub struct VideoFacade {
     video_repo: Arc<dyn VideoRepo + Sync + Send>,
     artist_facade: Arc<dyn ArtistFacadeTrait + Sync + Send>,
     user_facade: Arc<dyn UserFacadeTrait + Sync + Send>,
+    video_category_facade: Arc<dyn VideoCategoryFacadeTrait + Sync + Send>,
     unit_of_work: Arc<dyn UnitOfWork + Sync + Send>,
     video_dir: String,
     thumbnail_dir: String,
 }
 
 impl VideoFacade {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         temp_file_facade: Arc<TempFileFacade>,
         video_repo: Arc<dyn VideoRepo + Sync + Send>,
         artist_facade: Arc<dyn ArtistFacadeTrait + Sync + Send>,
         user_facade: Arc<dyn UserFacadeTrait + Sync + Send>,
+        video_category_facade: Arc<dyn VideoCategoryFacadeTrait + Sync + Send>,
         unit_of_work: Arc<dyn UnitOfWork + Sync + Send>,
         video_dir: String,
         thumbnail_dir: String,
@@ -75,6 +79,7 @@ impl VideoFacade {
             video_repo,
             artist_facade,
             user_facade,
+            video_category_facade,
             unit_of_work,
             video_dir,
             thumbnail_dir,
@@ -148,7 +153,9 @@ impl VideoFacadeTrait for VideoFacade {
         };
 
         let video_entity = self.video_repo.save_video(entity, &mut tx).await?;
-
+        self.video_category_facade
+            .assign_categories(video_entity.id, video_model.category_ids, Some(&mut tx))
+            .await?;
         tx.commit().await.app_error("Failed save the video")?;
 
         Ok(models::video::Video::from(&video_entity))
@@ -202,6 +209,9 @@ impl VideoFacadeTrait for VideoFacade {
         };
 
         let video = self.video_repo.patch_video(db_entity, &mut tx).await?;
+        self.video_category_facade
+            .assign_categories(video.id, edited_video.category_ids, Some(&mut tx))
+            .await?;
 
         tx.commit().await.app_error("Failed to patch the video")?;
 
