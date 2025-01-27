@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Debug, Display, Formatter};
 use validator::Validate;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum VideoVisibility {
     All,
@@ -20,6 +20,16 @@ impl Display for VideoVisibility {
             VideoVisibility::Paying => write!(f, "PAYING"),
         }
     }
+}
+
+impl VideoVisibility {
+    pub fn get_visible_value(&self) -> String {
+        match self {
+            VideoVisibility::All => String::from("All users"),
+            VideoVisibility::Registered => String::from("Registered user"),
+            VideoVisibility::Paying => String::from("Paying members"),
+        }
+    } 
 }
 
 #[derive(MultipartForm)]

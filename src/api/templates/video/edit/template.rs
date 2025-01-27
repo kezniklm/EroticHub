@@ -1,6 +1,8 @@
 use crate::business::models::video::EditVideoTemplateModel;
 use crate::business::models::video_category::VideoCategorySelected;
 use askama_actix::Template;
+#[allow(unused_imports)]
+use crate::business::models::video::VideoVisibility; // used in video_edit.html template
 
 #[derive(Template)]
 #[template(path = "video/edit/video_edit.html")]

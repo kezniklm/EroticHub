@@ -29,10 +29,10 @@
     <div class="mb-3">
         <label for="visibilityInput" class="form-label">Video visibility</label>
         <select class="form-select" id="visibilityInput" name="video_visibility"
-                aria-label="Video visibility" value="{{ video.video_visibility }}">
-            <option value="ALL" selected>All users</option>
-            <option value="REGISTERED">Registered users</option>
-            <option value="PAYING">Paying members</option>
+                aria-label="Video visibility">
+            {% call render_visibility(VideoVisibility::All) %}
+            {% call render_visibility(VideoVisibility::Registered) %}
+            {% call render_visibility(VideoVisibility::Paying) %}
         </select>
     </div>
     <div class="mb-3">
@@ -67,5 +67,13 @@
         <option value="{{ category.id }}" selected>{{ category.name }}</option>
     {% else %} 
         <option value="{{ category.id }}">{{ category.name }}</option>
+    {% endif %}
+{% endmacro %}
+
+{% macro render_visibility(to_render) %}
+    {% if to_render == video.video_visibility %}
+        <option value="{{ to_render.to_string() }}" selected>{{ to_render.get_visible_value() }}</option>
+    {% else %}
+        <option value="{{ to_render.to_string() }}">{{ to_render.get_visible_value() }}</option>
     {% endif %}
 {% endmacro %}
