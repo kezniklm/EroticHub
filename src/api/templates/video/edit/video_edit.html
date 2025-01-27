@@ -1,71 +1,81 @@
-<h2>Edit existing video</h2>
-<h4>{{ video.name }}</h4>
-<form action="" hx-patch="/video/{{ video.id }}" class="validated" novalidate>
-    <div class="mb-3">
-        <label for="nameInput" class="form-label">Video name</label>
-        <input
-                type="text"
-                id="nameInput"
-                name="name"
-                value="{{ video.name }}"
-                class="form-control text-input"
-                minlength="3"
-                maxlength="128"
-                required
-        >
-        <label class="invalid-feedback" for="nameInput"></label>
+<form action="" hx-patch="/video/{{ video.id }}" class="validated video-form" novalidate>
+    <div class="video-form-header">
+        <div>
+            <h2>Edit video</h2>
+        </div>
+        <div class="buttons-container">
+            <button type="submit" id="save-video-btn" class="btn btn-outline-primary">Update
+            </button>
+            <button id="remove-video-btn" class="btn btn-outline-primary" hx-delete="/video/{{ video.id }}">
+                Remove
+            </button>
+            <button id="cancel-video-btn" class="btn btn-outline-primary" hx-get="/video/{{ video.id }}/watch" hx-target="#content-container" hx-push-url="true">
+                Cancel
+            </button>
+        </div>
     </div>
-    <div class="mb-3">
-        <label class="form-label" for="descriptionInput">Video description</label>
-        <textarea
-                class="form-control text-input"
-                id="descriptionInput"
-                name="description"
-                maxlength="5000"
-                rows="10"
-        >{{ video.description }}</textarea>
-        <label class="invalid-feedback" for="descriptionInput"></label>
-    </div>
-    <div class="mb-3">
-        <label for="visibilityInput" class="form-label">Video visibility</label>
-        <select class="form-select" id="visibilityInput" name="video_visibility"
-                aria-label="Video visibility">
-            {% call render_visibility(VideoVisibility::All) %}
-            {% call render_visibility(VideoVisibility::Registered) %}
-            {% call render_visibility(VideoVisibility::Paying) %}
-        </select>
-    </div>
-    <div class="mb-3">
-        <label for="categorySelector" class="form-label">Categories</label>
-        <select class="form-select multi-value-selector" id="categorySelector" name="category_ids[]" aria-label="Categories" size="5" multiple required>
-            {% for category in categories %}
-                {% call render_category(category) %}
-            {% endfor %}
-        </select>
-        <label class="invalid-feedback" for="categorySelector">Please select at least one category!</label>
-    </div>
-    <div class="mb-3" id="video-input">
-        {{ video_input|safe }}
-    </div>
-    <div class="mb-3" id="thumbnail-input">
-        {{ thumbnail_input|safe }}
-    </div>
-    <div class="buttons-container">
-        <button type="submit" id="save-video-btn" class="btn btn-outline-primary">Update
-        </button>
-        <button id="remove-video-btn" class="btn btn-outline-primary" hx-delete="/video/{{ video.id }}">
-            Remove
-        </button>
-        <button id="cancel-video-btn" class="btn btn-outline-primary" hx-get="/video/{{ video.id }}/watch" hx-target="#content-container" hx-push-url="true">
-            Cancel
-        </button>
+    <div class="form-flex">
+
+        <div class="data-panel">
+            <div class="mb-3">
+                <label for="nameInput" class="form-label">Video name</label>
+                <input
+                        type="text"
+                        id="nameInput"
+                        name="name"
+                        value="{{ video.name }}"
+                        class="form-control text-input"
+                        minlength="3"
+                        maxlength="128"
+                        required
+                >
+                <label class="invalid-feedback" for="nameInput"></label>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="descriptionInput">Video description</label>
+                <textarea
+                        class="form-control text-input"
+                        id="descriptionInput"
+                        name="description"
+                        maxlength="5000"
+                        rows="8"
+                >{{ video.description }}</textarea>
+                <label class="invalid-feedback" for="descriptionInput"></label>
+            </div>
+            <div class="mb-3">
+                <label for="visibilityInput" class="form-label">Video visibility</label>
+                <select class="form-select" id="visibilityInput" name="video_visibility"
+                        aria-label="Video visibility">
+                    {% call render_visibility(VideoVisibility::All) %}
+                    {% call render_visibility(VideoVisibility::Registered) %}
+                    {% call render_visibility(VideoVisibility::Paying) %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="categorySelector" class="form-label">Categories</label>
+                <select class="form-select multi-value-selector" id="categorySelector" name="category_ids[]" aria-label="Categories" size="7" multiple required>
+                    {% for category in categories %}
+                    {% call render_category(category) %}
+                    {% endfor %}
+                </select>
+                <label class="invalid-feedback" for="categorySelector">Please select at least one category!</label>
+            </div>
+        </div>
+        <div class="preview-panel">
+            <div class="mb-3" id="video-input">
+                {{ video_input|safe }}
+            </div>
+            <div class="mb-3" id="thumbnail-input">
+                {{ thumbnail_input|safe }}
+            </div>
+        </div>
     </div>
 </form>
 
 {% macro render_category(category) %}
     {% if category.selected %}
         <option value="{{ category.id }}" selected>{{ category.name }}</option>
-    {% else %} 
+    {% else %}
         <option value="{{ category.id }}">{{ category.name }}</option>
     {% endif %}
 {% endmacro %}
