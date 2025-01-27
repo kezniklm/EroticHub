@@ -37,11 +37,12 @@
     </div>
     <div class="mb-3">
         <label for="categorySelector" class="form-label">Categories</label>
-        <select class="form-select multi-value-selector" id="categorySelector" name="category_ids[]" aria-label="Categories" size="5" multiple>
+        <select class="form-select multi-value-selector" id="categorySelector" name="category_ids[]" aria-label="Categories" size="5" multiple required>
             {% for category in categories %}
                 {% call render_category(category) %}
             {% endfor %}
         </select>
+        <label class="invalid-feedback" for="categorySelector">Please select at least one category!</label>
     </div>
     <div class="mb-3" id="video-input">
         {{ video_input|safe }}
