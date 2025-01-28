@@ -9,6 +9,7 @@ variables:
   NGINX_HLS_URL: "http://localhost:8081/hls/"
   STREAM_PATH_PREFIX: "stream"
   RUST_BACKTRACE: 1
+  SESSION_SECRET_KEY: V9k5_UoB6vvk3h4yCxZLkfyohjP3Xymhg5OqNFhNUC43Xymhg5OqNFhNUC4asasrts
 
 default:
   image: ricaps/gstreamer-rust:latest
