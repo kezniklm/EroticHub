@@ -10,7 +10,7 @@ use std::fmt::Debug;
 pub trait ArtistRepoTrait: Debug {
     async fn list_artists(&self) -> anyhow::Result<Vec<Artist>>;
     async fn fetch_artists_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Artist>>;
-    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>>;
+    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> Result<Vec<ArtistName>>;
     async fn get_artist(
         &self,
         user_id: i32,
@@ -55,7 +55,7 @@ impl ArtistRepoTrait for ArtistRepository {
         Ok(artists)
     }
 
-    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>> {
+    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> Result<Vec<ArtistName>> {
         let artists = sqlx::query_as!(
             ArtistName,
             r#"
