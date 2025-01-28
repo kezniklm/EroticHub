@@ -26,6 +26,13 @@ pub trait DealRepo: Debug {
         input: UpdateDealInput,
         tx: Option<&mut Transaction<Postgres>>,
     ) -> Result<()>;
+    async fn delete_deal(&self, deal_id: i32, tx: Option<&mut Transaction<Postgres>>)
+        -> Result<()>;
+    async fn add_deal(
+        &self,
+        input: UpdateDealInput,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -91,6 +98,39 @@ impl DealRepo for PostgresDealRepo {
             input.number_of_months,
             input.price_per_month,
             deal_id
+        );
+        match tx {
+            Some(tx) => query.execute(tx.as_mut()).await,
+            None => query.execute(&self.pg_pool).await,
+        }?;
+
+        Ok(())
+    }
+
+    async fn delete_deal(
+        &self,
+        deal_id: i32,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()> {
+        let query = sqlx::query!("DELETE FROM deal WHERE id = $1", deal_id);
+        match tx {
+            Some(tx) => query.execute(tx.as_mut()).await,
+            None => query.execute(&self.pg_pool).await,
+        }?;
+
+        Ok(())
+    }
+
+    async fn add_deal(
+        &self,
+        input: UpdateDealInput,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()> {
+        let query = sqlx::query!(
+            "INSERT INTO deal (label, number_of_months, price_per_month) VALUES ($1, $2, $3)",
+            input.label,
+            input.number_of_months,
+            input.price_per_month
         );
         match tx {
             Some(tx) => query.execute(tx.as_mut()).await,
