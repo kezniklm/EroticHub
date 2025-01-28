@@ -1,7 +1,7 @@
 {% if let Some(temp_file_id) = temp_file_id %}
 <input type="hidden" name="temp_thumbnail_id" value="{{ temp_file_id }}" class="save-video-req"/>
 {% endif %}
-<img src="{{ file_path }}" alt="Thumbnail" width="650px" class="img-thumbnail">
+<img src="{{ file_path }}" alt="Thumbnail" class="img-thumbnail">
 <div class="mt-3">
 
     {% if let Some(temp_file_id) = temp_file_id %}

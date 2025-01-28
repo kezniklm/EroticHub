@@ -1,10 +1,10 @@
 use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::MultipartForm;
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use validator::Validate;
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum VideoVisibility {
     All,
@@ -18,6 +18,16 @@ impl Display for VideoVisibility {
             VideoVisibility::All => write!(f, "ALL"),
             VideoVisibility::Registered => write!(f, "REGISTERED"),
             VideoVisibility::Paying => write!(f, "PAYING"),
+        }
+    }
+}
+
+impl VideoVisibility {
+    pub fn get_visible_value(&self) -> String {
+        match self {
+            VideoVisibility::All => String::from("All users"),
+            VideoVisibility::Registered => String::from("Registered user"),
+            VideoVisibility::Paying => String::from("Paying members"),
         }
     }
 }
@@ -39,6 +49,7 @@ pub struct VideoUploadReq {
     #[validate(length(min = 3, max = 128))]
     pub name: String,
     pub video_visibility: VideoVisibility,
+    pub category_ids: Option<Vec<i32>>,
     #[validate(range(min = 1))]
     pub temp_thumbnail_id: i32,
     #[validate(range(min = 1))]
@@ -52,6 +63,7 @@ pub struct VideoEditReq {
     #[validate(length(min = 3, max = 128))]
     pub name: Option<String>,
     pub video_visibility: VideoVisibility,
+    pub category_ids: Option<Vec<i32>>,
     #[validate(range(min = 1))]
     pub temp_thumbnail_id: Option<i32>,
     #[validate(range(min = 1))]

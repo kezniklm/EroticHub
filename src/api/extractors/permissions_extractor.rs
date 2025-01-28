@@ -1,8 +1,8 @@
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
-use crate::business::models::user::UserRole;
+use crate::business::models::user::{UserRole, UserSessionData};
 use actix_identity::error::GetIdentityError;
 use actix_identity::Identity;
-use actix_session::SessionGetError;
+use actix_session::{Session, SessionGetError};
 use actix_web::dev::{Payload, ServiceRequest};
 use actix_web::web::Data;
 use actix_web::{Error, FromRequest};
@@ -56,5 +56,42 @@ pub trait AsIntegerOptional {
 impl AsIntegerOptional for Option<Identity> {
     fn id_i32(self) -> Option<i32> {
         self.map(|id| id.id_i32().ok())?
+    }
+}
+
+pub trait IsRole {
+    fn is_artist(&self) -> bool;
+    fn is_paying_member(&self) -> bool;
+    fn is_registered(&self) -> bool;
+
+    fn extract_and_check(
+        &self,
+        session_data: Result<Option<UserSessionData>, SessionGetError>,
+        expected_role: UserRole,
+    ) -> bool {
+        if let Ok(session_data) = session_data {
+            return match session_data {
+                None => false,
+                Some(data) => data.roles.contains(&expected_role),
+            };
+        };
+        false
+    }
+}
+
+impl IsRole for Session {
+    fn is_artist(&self) -> bool {
+        let session_data = self.get::<UserSessionData>("user_session_data");
+        self.extract_and_check(session_data, UserRole::Artist)
+    }
+
+    fn is_paying_member(&self) -> bool {
+        let session_data = self.get::<UserSessionData>("user_session_data");
+        self.extract_and_check(session_data, UserRole::PayingMember)
+    }
+
+    fn is_registered(&self) -> bool {
+        let session_data = self.get::<UserSessionData>("user_session_data");
+        self.extract_and_check(session_data, UserRole::Registered)
     }
 }

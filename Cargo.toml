@@ -53,6 +53,7 @@ image = "0.24"
 lazy_static = "1.5.0"
 actix-http = "3.9.0"
 infer = "0.16.0"
+serde_qs = {version = "0.13.0", features = ["actix4"]}
 
 [dev-dependencies]
 actix-multipart-test = "0.0.3"

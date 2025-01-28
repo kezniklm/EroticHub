@@ -9,6 +9,7 @@ use actix_web::HttpResponse;
 use config::Config;
 use deadpool_redis::Runtime;
 use log::info;
+use serde_qs::actix::QsQueryConfig;
 use std::env;
 use std::sync::Arc;
 use std::time::Duration;
@@ -120,4 +121,9 @@ pub fn setup_multipart_config(config: Arc<Configuration>) -> MultipartFormConfig
             let response = HttpResponse::BadRequest().force_close().finish();
             actix_web::error::InternalError::from_response(err, response).into()
         })
+}
+
+/// Setups non-strict mode of serde_qs, so the brackets can be encoded in name of parameters
+pub fn setup_qs_config() -> QsQueryConfig {
+    QsQueryConfig::default().qs_config(serde_qs::Config::new(10, false))
 }

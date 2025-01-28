@@ -57,6 +57,8 @@ pub async fn register_user(
         "user_session_data",
         UserSessionData {
             profile_picture_path: user.profile_picture_path.clone(),
+
+            roles: user_facade.get_permissions(user.id).await?,
         },
     )?;
 
@@ -100,6 +102,8 @@ pub async fn login(
         "user_session_data",
         UserSessionData {
             profile_picture_path: user.profile_picture_path.clone(),
+
+            roles: user_facade.get_permissions(user.id).await?,
         },
     )?;
 
@@ -148,6 +152,7 @@ pub async fn user_update(
             Some(user_detail) => user_detail.profile_picture_path,
             None => None,
         },
+        roles: user_facade.get_permissions(identity.id_i32()?).await?,
     };
 
     session.insert("user_session_data", user_session_data.clone())?;
@@ -235,6 +240,7 @@ pub async fn profile_picture_update(
             Some(user_detail) => user_detail.profile_picture_path,
             None => None,
         },
+        roles: user_facade.get_permissions(identity.id_i32()?).await?,
     };
 
     session.insert("user_session_data", user_session_data.clone())?;

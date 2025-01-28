@@ -26,11 +26,12 @@ use crate::configuration::models::Configuration;
 use actix_files::NamedFile;
 use actix_identity::Identity;
 use actix_session::Session;
-use actix_web::web::{Data, Form, Path, Query};
+use actix_web::web::{Data, Path, Query};
 use actix_web::{HttpResponse, Responder, Result};
 use actix_web_grants::protect;
 use anyhow::anyhow;
 use askama_actix::TemplateToResponse;
+use serde_qs::actix::QsForm;
 
 /// Creates new video
 ///
@@ -43,12 +44,14 @@ use askama_actix::TemplateToResponse;
 /// Redirects user to the newly created video
 #[protect(any("Artist"), ty = "UserRole")]
 pub async fn create_video(
-    Form(form): Form<VideoUploadReq>,
+    form: QsForm<VideoUploadReq>,
     video_facade: Data<VideoFacade>,
     template_req: TemplateReq,
     identity: Identity,
 ) -> Result<impl Responder> {
-    let video = video_facade.save_video(identity.id_i32()?, form).await?;
+    let video = video_facade
+        .save_video(identity.id_i32()?, form.into_inner())
+        .await?;
     let video_id = video.id;
 
     if !template_req.return_template {
@@ -74,17 +77,24 @@ pub async fn create_video(
 #[protect(any("Artist"), ty = "UserRole")]
 pub async fn patch_video(
     path: Path<GetVideoByIdReq>,
-    Form(form): Form<VideoEditReq>,
+    form: QsForm<VideoEditReq>,
     video_facade: Data<VideoFacade>,
     identity: Identity,
+    session: Session,
 ) -> Result<impl Responder> {
     let video = video_facade
-        .patch_video(identity.id_i32()?, path.id, form)
+        .patch_video(identity.id_i32()?, path.id, form.into_inner())
         .await?;
 
+    let video_artist_id = video.artist_id;
     let template = ShowVideoTemplate {
         video,
         player_template: PlayerTemplate::from_saved(path.id),
+        session,
+        is_video_owner: video_facade
+            .is_video_owner(video_artist_id, identity.id_i32()?)
+            .await
+            .map_or(false, |_| true),
     };
     let mut response = template.to_response();
 
@@ -163,13 +173,20 @@ pub async fn watch_video(
     session: Session,
     identity: Option<Identity>,
 ) -> Result<impl Responder> {
-    let video = video_facade
-        .get_video_model(req.id, identity.id_i32())
-        .await?;
+    let user_id = identity.id_i32();
+    let video = video_facade.get_video_model(req.id, user_id).await?;
     let video_id = video.id;
+    let video_artist_id = video.artist_id;
+
     let template = ShowVideoTemplate {
         video,
         player_template: PlayerTemplate::from_saved(video_id),
+        session: session.clone(),
+
+        is_video_owner: video_facade
+            .is_video_owner(video_artist_id, user_id.unwrap_or(-1))
+            .await
+            .map_or(false, |_| true),
     };
 
     Ok(BaseTemplate::wrap(htmx_request, session, template))
@@ -291,17 +308,21 @@ pub async fn upload_video_template(
     htmx_request: HtmxRequest,
     session: Session,
     config: Data<Configuration>,
-) -> impl Responder {
+    category_facade: Data<VideoCategoryFacade>,
+) -> Result<impl Responder> {
     let video_input = VideoUploadInputTemplate::new(config.clone().into_inner());
     let thumbnail_input = ThumbnailUploadInputTemplate::new(config.into_inner());
-    BaseTemplate::wrap(
+    let template = BaseTemplate::wrap(
         htmx_request,
         session,
         VideoUploadTemplate {
             video_input,
             thumbnail_input,
+            categories: category_facade.list_categories().await?,
         },
-    )
+    );
+
+    Ok(template.to_response())
 }
 
 /// Returns template with edit video form
@@ -316,10 +337,14 @@ pub async fn edit_video_template(
     htmx_request: HtmxRequest,
     session: Session,
     video_facade: Data<VideoFacade>,
+    video_category_facade: Data<VideoCategoryFacade>,
     identity: Option<Identity>,
 ) -> Result<impl Responder> {
     let video = video_facade
         .get_video_model(params.id, identity.id_i32())
+        .await?;
+    let categories = video_category_facade
+        .get_selected_categories(params.id)
         .await?;
     let video_input = VideoPreviewTemplate {
         temp_file_id: None,
@@ -336,6 +361,7 @@ pub async fn edit_video_template(
             video: video.into(),
             video_input,
             thumbnail_input,
+            categories,
         },
     );
 
