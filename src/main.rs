@@ -40,6 +40,9 @@ use sqlx::{Pool, Postgres};
 use std::env;
 use std::sync::Arc;
 
+static EH_HOST_KEY: &str = "EH_HOST";
+static EH_PORT_KEY: &str = "EH_PORT";
+
 async fn setup_db_pool() -> anyhow::Result<Pool<Postgres>> {
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = PgPoolOptions::new()
@@ -135,6 +138,12 @@ async fn main() -> anyhow::Result<()> {
         deal_repo,
     ));
 
+    let host = dotenvy::var(EH_HOST_KEY).expect("The host is not specified!");
+    let port: u16 = dotenvy::var(EH_PORT_KEY)
+        .expect("The host is not specified!")
+        .parse()
+        .expect("The port must be a number!");
+
     HttpServer::new(move || {
         let (identity_middleware, session_middleware) = setup_auth(&redis_store);
 
@@ -171,7 +180,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(stream_routes)
             .configure(membership_routes)
     })
-    .bind(("0.0.0.0", 8000))?
+    .bind((host, port))?
     .run()
     .await?;
 

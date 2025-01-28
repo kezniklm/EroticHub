@@ -1,7 +1,7 @@
 use crate::persistence::entities::error::DatabaseError;
 use actix_identity::error::{GetIdentityError, LoginError};
 use actix_session::SessionInsertError;
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use validator::ValidationError;
 
 #[derive(Debug, Clone)]
@@ -40,18 +40,24 @@ pub trait MapToAppError<T> {
     fn app_error_kind(self, message: &str, error: AppErrorKind) -> Result<T, AppError>;
 }
 
-impl<T, E> MapToAppError<T> for Result<T, E> {
+impl<T, E: Debug> MapToAppError<T> for Result<T, E> {
     fn app_error(self, message: &str) -> Result<T, AppError> {
         match self {
             Ok(obj) => Ok(obj),
-            Err(_) => Err(AppError::new(message, AppErrorKind::InternalServerError)),
+            Err(err) => {
+                println!("{:?}", err);
+                Err(AppError::new(message, AppErrorKind::InternalServerError))
+            },
         }
     }
 
     fn app_error_kind(self, message: &str, error: AppErrorKind) -> Result<T, AppError> {
         match self {
             Ok(obj) => Ok(obj),
-            Err(_) => Err(AppError::new(message, error)),
+            Err(err) => {
+                println!("{:?}", err);
+                Err(AppError::new(message, error))
+            },
         }
     }
 }

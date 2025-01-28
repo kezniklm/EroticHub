@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM payment_method WHERE paying_member_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "paying_member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "card_number",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "card_expiration_date",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 4,
+        "name": "card_cvc",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "37d9da510543ee7bd90fddf95b53fa5326016280c34c71d3d74776073d602999"
+}

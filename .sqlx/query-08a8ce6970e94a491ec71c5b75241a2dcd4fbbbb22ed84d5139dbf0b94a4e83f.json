@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT * FROM deal ORDER BY number_of_months ASC",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "label",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "price_per_month",
+        "type_info": "Numeric"
+      },
+      {
+        "ordinal": 3,
+        "name": "number_of_months",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "08a8ce6970e94a491ec71c5b75241a2dcd4fbbbb22ed84d5139dbf0b94a4e83f"
+}

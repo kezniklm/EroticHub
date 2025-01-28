@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE paying_member \n             SET valid_until = COALESCE(valid_until, NOW()) + interval '1 month' * $1 \n             WHERE user_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Float8",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ee990cc383804fb201b06f60a1936faa678c85d9998a0196d51d4abcff57cee5"
+}

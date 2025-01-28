@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE live_stream SET status = $1 WHERE id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "live_stream_status",
+            "kind": {
+              "Enum": [
+                "PENDING",
+                "RUNNING",
+                "ENDED"
+              ]
+            }
+          }
+        },
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9a733730e09f82e936408f043b58ab955f182e27bd2a7246be138f74012db8bc"
+}

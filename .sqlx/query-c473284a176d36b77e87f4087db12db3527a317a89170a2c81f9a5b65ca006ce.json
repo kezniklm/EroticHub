@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO video_category_video(video_id, category_id) \n               SELECT $1, UNNEST($2::integer[])",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c473284a176d36b77e87f4087db12db3527a317a89170a2c81f9a5b65ca006ce"
+}

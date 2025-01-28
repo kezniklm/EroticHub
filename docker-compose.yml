@@ -1,6 +1,32 @@
 version: "3.1"
 
 services:
+    erotic-hub:
+      container_name: erotic-hub
+      tty: true
+      build:
+        context: .
+        dockerfile: docker/erotic-hub/Dockerfile
+      environment:
+        - DATABASE_URL=postgres://postgres:example@db:5432/erotic-hub
+        - REDIS_DATABASE_URL=redis://redis:6379
+        - RTMP_SERVER=rtmp://nginx/hls/
+        - NGINX_HLS_URL=http://localhost:8081/hls/ # Public IP (host) of Nginx server
+        - STREAM_PATH_PREFIX=stream
+        - SESSION_SECRET_KEY=V9k5_UoB6vvk3h4yCxZLkfyohjP3Xymhg5OqNFhNUC43Xymhg5OqNFhNUC4asasrts
+        - EH_HOST=0.0.0.0
+        - EH_PORT=8000
+        - RUST_LOG=debug
+      ports:
+        - "8000:8000"
+      depends_on:
+        - "db"
+        - "redis"
+        - "nginx"
+      volumes:
+        - ./docker/erotic-hub/data:/usr/init-data
+      profiles:
+        - release
     # List of services to run
     db:
         # PostgreSQL database service
@@ -10,11 +36,20 @@ services:
             POSTGRES_PASSWORD: example # Set password for postgres (default) user
         ports:
             - "5432:5432" # Maps the port host:container
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready", "-d", "db_prod"]
+          interval: 30s
+          timeout: 90s
+          retries: 5
+        volumes:
+          - ./docker/postgres/db-data:/docker-entrypoint-initdb.d
 
     adminer:
         # Adminer web UI service
         image: adminer # Use latest adminer image (https://hub.docker.com/_/adminer/)
         restart: always
+        profiles:
+          - dev
         ports:
             - "8080:8080" # Maps the port host:container
 
@@ -24,6 +59,14 @@ services:
         restart: always # If container stops, always restart it
         ports:
             - "6379:6379" # Maps the port host:container
+        healthcheck:
+          test: ["CMD", "redis-cli","ping"]
+          interval: 30s
+          timeout: 90s
+          retries: 5
+        profiles:
+          - release
+          - dev
     nginx:
       container_name: nginx-rtmp
       build: docker/nginx-rtmp/.
@@ -35,3 +78,6 @@ services:
       ports:
         - "1935:1935"
         - "8081:80"
+      profiles:
+         - release
+         - dev

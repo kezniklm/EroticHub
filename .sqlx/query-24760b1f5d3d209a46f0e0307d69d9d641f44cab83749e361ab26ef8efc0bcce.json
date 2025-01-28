@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO user_table (username, password_hash, email, profile_picture_path, artist_id, paying_member_id)\n            VALUES ($1, $2, $3, $4, $5, $6)\n            RETURNING id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "profile_picture_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "artist_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 6,
+        "name": "paying_member_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 7,
+        "name": "is_admin",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "24760b1f5d3d209a46f0e0307d69d9d641f44cab83749e361ab26ef8efc0bcce"
+}
