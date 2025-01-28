@@ -1,9 +1,16 @@
 use async_trait::async_trait;
+use sqlx::types::BigDecimal;
 use sqlx::{PgPool, Postgres, Transaction};
 use std::fmt::Debug;
 
 use crate::persistence::entities::deal::{Deal, DealExtended};
 use crate::persistence::Result;
+
+pub struct UpdateDealInput {
+    pub label: String,
+    pub number_of_months: i32,
+    pub price_per_month: BigDecimal,
+}
 
 #[async_trait]
 pub trait DealRepo: Debug {
@@ -13,6 +20,12 @@ pub trait DealRepo: Debug {
         deal_id: i32,
         tx: Option<&mut Transaction<Postgres>>,
     ) -> Result<Option<DealExtended>>;
+    async fn update_deal(
+        &self,
+        deal_id: i32,
+        input: UpdateDealInput,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -64,5 +77,26 @@ impl DealRepo for PostgresDealRepo {
         // not done using a query to get DealExtended instead of Deal
         let deals = self.get_deals(tx).await?;
         Ok(deals.into_iter().find(|deal| deal.id == deal_id))
+    }
+
+    async fn update_deal(
+        &self,
+        deal_id: i32,
+        input: UpdateDealInput,
+        tx: Option<&mut Transaction<Postgres>>,
+    ) -> Result<()> {
+        let query = sqlx::query!(
+            "UPDATE deal SET label = $1, number_of_months = $2, price_per_month = $3 WHERE id = $4",
+            input.label,
+            input.number_of_months,
+            input.price_per_month,
+            deal_id
+        );
+        match tx {
+            Some(tx) => query.execute(tx.as_mut()).await,
+            None => query.execute(&self.pg_pool).await,
+        }?;
+
+        Ok(())
     }
 }

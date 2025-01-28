@@ -9,6 +9,7 @@ pub struct User {
     pub profile_picture_path: Option<String>,
     pub artist_id: Option<i32>,
     pub paying_member_id: Option<i32>,
+    pub is_admin: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]

@@ -10,6 +10,7 @@ impl From<User> for UserDetail {
             profile_picture_path: user.profile_picture_path,
             artist_id: user.artist_id,
             paying_member_id: user.paying_member_id,
+            is_admin: user.is_admin,
         }
     }
 }
@@ -24,6 +25,7 @@ impl From<UserDetail> for User {
             profile_picture_path: user_detail.profile_picture_path,
             artist_id: user_detail.artist_id,
             paying_member_id: user_detail.paying_member_id,
+            is_admin: user_detail.is_admin,
         }
     }
 }
@@ -38,6 +40,7 @@ impl From<UserRegister> for User {
             profile_picture_path: None,
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         }
     }
 }
