@@ -47,7 +47,7 @@ impl<T, E: Debug> MapToAppError<T> for Result<T, E> {
             Err(err) => {
                 println!("{:?}", err);
                 Err(AppError::new(message, AppErrorKind::InternalServerError))
-            },
+            }
         }
     }
 
@@ -57,7 +57,7 @@ impl<T, E: Debug> MapToAppError<T> for Result<T, E> {
             Err(err) => {
                 println!("{:?}", err);
                 Err(AppError::new(message, error))
-            },
+            }
         }
     }
 }
