@@ -16,12 +16,12 @@ pub struct BaseTemplate<T: Template> {
 impl<T: Template> BaseTemplate<T> {
     pub fn wrap(htmx_request: HtmxRequest, session: Session, child_template: T) -> Self {
         Self {
+            child_template,
             htmx_request,
             session: session.clone(),
             user_session_data: session
                 .get::<UserSessionData>("user_session_data")
                 .unwrap_or(None),
-            child_template,
         }
     }
 }

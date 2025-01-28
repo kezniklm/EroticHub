@@ -18,6 +18,7 @@ use crate::api::templates::video::upload::template::{
 use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::facades::video_category::{VideoCategoryFacade, VideoCategoryFacadeTrait};
+use crate::business::models::error::MapToAppError;
 use crate::business::models::user::UserRole::{self, Artist};
 use crate::business::models::video::{
     FetchVideoByFilters, GetVideoByIdReq, VideoEditReq, VideoList, VideoUploadReq,
@@ -29,7 +30,6 @@ use actix_session::Session;
 use actix_web::web::{Data, Path, Query};
 use actix_web::{HttpResponse, Responder, Result};
 use actix_web_grants::protect;
-use anyhow::anyhow;
 use askama_actix::TemplateToResponse;
 use serde_qs::actix::QsForm;
 
@@ -228,48 +228,26 @@ pub async fn list_videos(
     video_facade: Data<VideoFacade>,
     artist_facade: Data<ArtistFacade>,
     req: Query<FetchVideoByFilters>,
-) -> impl Responder {
-    let serialized_videos = get_videos(video_facade, artist_facade, req.clone()).await;
-
-    let serialized_videos = match serialized_videos {
-        Ok(videos) => videos,
-        Err(e) => {
-            if e.to_string() == "No videos" {
-                return HttpResponse::NoContent().json("No videos");
-            } else {
-                return HttpResponse::InternalServerError().json(e.to_string());
-            }
-        }
-    };
+) -> Result<impl Responder> {
+    let serialized_videos = get_videos(video_facade, artist_facade, req.clone()).await?;
 
     let template = VideosTemplate {
         videos: serialized_videos,
     };
 
-    template.to_response()
+    Ok(template.to_response())
 }
 
 pub async fn get_videos(
     video_facade: Data<VideoFacade>,
     artist_facade: Data<ArtistFacade>,
     req: Query<FetchVideoByFilters>,
-) -> anyhow::Result<Vec<VideoList>> {
+) -> Result<Vec<VideoList>> {
     let offset = req.offset;
-    let filter: Option<Vec<i32>> = parse_option_string(req.filter.clone())?;
+    let filter: Option<Vec<i32>> = parse_option_string(req.filter.clone()).app_error("filter")?;
     let ord = req.ord.as_deref();
 
-    let videos = video_facade.fetch_videos(ord, filter, offset).await;
-
-    let videos = match videos {
-        Ok(videos) => {
-            if videos.is_empty() {
-                return Err(anyhow::anyhow!("No videos"));
-            } else {
-                videos
-            }
-        }
-        Err(e) => return Err(anyhow!(e.to_string())),
-    };
+    let videos = video_facade.fetch_videos(ord, filter, offset).await?;
 
     let mut artists_ids = Vec::new();
     videos.iter().for_each(|v| {
