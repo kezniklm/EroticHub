@@ -28,6 +28,7 @@
     <!-- Auth Styles -->
     <link rel="stylesheet" type="text/css" href="/static/css/user/auth.css" />
     <link rel="stylesheet" type="text/css" href="/static/css/video/show.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/video/forms.css" />
     <link
       rel="stylesheet"
       type="text/css"
@@ -95,7 +96,7 @@
         <div class="collapse navbar-collapse" id="navbarNav">
           <!-- Left Menu -->
           <ul class="navbar-nav me-auto">
-            {% if is_artist %}
+            {% if session.is_artist() %}
             <li class="nav-item">
               <a
                 class="nav-link d-flex d-lg-none align-items-center"
@@ -135,7 +136,7 @@
                 >Membership
               </a>
             </li>
-            {% if is_admin %}
+            {% if session.is_admin() %}
             <li class="nav-item">
               <a
                 class="nav-link d-flex d-lg-none align-items-center"
@@ -189,7 +190,7 @@
           </form>
           <!-- Right Icons (on large screens) -->
           <div class="d-none d-lg-flex align-items-center ms-3">
-            {% if is_artist %}
+            {% if session.is_artist() %}
             <a
               class="icon-btn me-4"
               hx-get="/video/new"
@@ -259,7 +260,7 @@
                   </div>
                   <span class="popup-label">Membership</span>
                 </a>
-                {% if is_admin %}
+                {% if session.is_admin() %}
                 <a
                   href="#"
                   class="popup-item"

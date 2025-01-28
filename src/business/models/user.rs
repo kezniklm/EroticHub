@@ -2,7 +2,8 @@ use actix_multipart::form::tempfile::TempFile;
 use actix_multipart::form::text::Text;
 use actix_multipart::form::MultipartForm;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, fmt::Display};
+use std::collections::HashSet;
+use std::fmt::Display;
 use validator::Validate;
 
 #[derive(Clone, Debug)]
@@ -70,7 +71,7 @@ pub struct UserPasswordUpdate {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UserSessionData {
     pub profile_picture_path: Option<String>,
-    pub user_permissions: HashSet<UserRole>,
+    pub roles: HashSet<UserRole>,
 }
 
 #[derive(Deserialize)]

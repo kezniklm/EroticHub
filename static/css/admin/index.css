@@ -2,8 +2,10 @@
   top: 4rem;
   position: fixed;
   width: 100%;
+  z-index: 1000;
 }
 
 #content-container {
   margin-top: 8rem;
+  min-height: 86vh;
 }

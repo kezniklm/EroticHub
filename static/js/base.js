@@ -6,6 +6,7 @@ function handleDOMContentLoaded() {
     setupAccountPopup();
     setupAuthPopup();
     setupValidations();
+    initTooltips();
 }
 
 function handleAfterSwap(event) {
@@ -14,6 +15,7 @@ function handleAfterSwap(event) {
         setupAuthPopup();
     }
     setupValidations();
+    initTooltips();
 }
 
 function isAllowedSwap(target) {
@@ -157,3 +159,17 @@ function clearErrors() {
         el.classList.add("hidden");
     });
 }
+
+function initTooltips() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    [...tooltipTriggerList].map(tooltipTriggerEl => {
+        const tooltip = new bootstrap.Tooltip(tooltipTriggerEl);
+        const fnc = function () {
+            tooltip.hide();
+        };
+        tooltipTriggerEl.removeEventListener("click", fnc);
+        tooltipTriggerEl.addEventListener("click", fnc);
+        return tooltip;
+    });
+}
+

@@ -4,6 +4,7 @@ use crate::api::extractors::permissions_extractor::{AsInteger, AsIntegerOptional
 use crate::api::templates::stream::watch::template::WatchStreamTemplate;
 use crate::api::templates::template::BaseTemplate;
 use crate::business::facades::stream::{StreamFacade, StreamFacadeTrait};
+use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::error::{AppError, AppErrorKind};
 use crate::business::models::stream::LiveStreamStart;
 use crate::business::models::user::UserRole::{self, Artist};
@@ -47,14 +48,29 @@ pub async fn start_stream(
 pub async fn watch_stream(
     stream_id: Path<i32>,
     stream_facade: Data<StreamFacade>,
+    video_facade: Data<VideoFacade>,
     session: Session,
     htmx_request: HtmxRequest,
     identity: Option<Identity>,
 ) -> Result<impl Responder> {
+    let user_id = identity.id_i32();
     let (video, stream) = stream_facade
-        .get_stream(identity.id_i32(), stream_id.into_inner())
+        .get_stream(user_id, stream_id.into_inner())
         .await?;
-    let template = BaseTemplate::wrap(htmx_request, session, WatchStreamTemplate { stream, video });
+
+    let video_artist_id = video.artist_id;
+    let template = BaseTemplate::wrap(
+        htmx_request,
+        session,
+        WatchStreamTemplate {
+            stream,
+            video,
+            is_owner: video_facade
+                .is_video_owner(video_artist_id, user_id.unwrap_or(-1))
+                .await
+                .map_or(false, |_| true),
+        },
+    );
 
     Ok(template.to_response())
 }

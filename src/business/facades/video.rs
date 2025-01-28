@@ -1,6 +1,7 @@
 use crate::business::facades::artist::ArtistFacadeTrait;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacadeTrait;
+use crate::business::facades::video_category::VideoCategoryFacadeTrait;
 use crate::business::models;
 use crate::business::models::error::{AppError, AppErrorKind, MapToAppError};
 use crate::business::models::user::UserRole;
@@ -45,7 +46,7 @@ pub trait VideoFacadeTrait {
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
     ) -> Result<Vec<Video>>;
-    async fn is_video_owner(&self, video: &Video, user_id: i32) -> Result<()>;
+    async fn is_video_owner(&self, video_artist_id: i32, user_id: i32) -> Result<()>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
 }
 
@@ -55,17 +56,20 @@ pub struct VideoFacade {
     video_repo: Arc<dyn VideoRepo + Sync + Send>,
     artist_facade: Arc<dyn ArtistFacadeTrait + Sync + Send>,
     user_facade: Arc<dyn UserFacadeTrait + Sync + Send>,
+    video_category_facade: Arc<dyn VideoCategoryFacadeTrait + Sync + Send>,
     unit_of_work: Arc<dyn UnitOfWork + Sync + Send>,
     video_dir: String,
     thumbnail_dir: String,
 }
 
 impl VideoFacade {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         temp_file_facade: Arc<TempFileFacade>,
         video_repo: Arc<dyn VideoRepo + Sync + Send>,
         artist_facade: Arc<dyn ArtistFacadeTrait + Sync + Send>,
         user_facade: Arc<dyn UserFacadeTrait + Sync + Send>,
+        video_category_facade: Arc<dyn VideoCategoryFacadeTrait + Sync + Send>,
         unit_of_work: Arc<dyn UnitOfWork + Sync + Send>,
         video_dir: String,
         thumbnail_dir: String,
@@ -75,6 +79,7 @@ impl VideoFacade {
             video_repo,
             artist_facade,
             user_facade,
+            video_category_facade,
             unit_of_work,
             video_dir,
             thumbnail_dir,
@@ -148,7 +153,13 @@ impl VideoFacadeTrait for VideoFacade {
         };
 
         let video_entity = self.video_repo.save_video(entity, &mut tx).await?;
-
+        self.video_category_facade
+            .assign_categories(
+                video_entity.id,
+                video_model.category_ids.unwrap_or_default(),
+                Some(&mut tx),
+            )
+            .await?;
         tx.commit().await.app_error("Failed save the video")?;
 
         Ok(models::video::Video::from(&video_entity))
@@ -202,6 +213,13 @@ impl VideoFacadeTrait for VideoFacade {
         };
 
         let video = self.video_repo.patch_video(db_entity, &mut tx).await?;
+        self.video_category_facade
+            .assign_categories(
+                video.id,
+                edited_video.category_ids.unwrap_or_default(),
+                Some(&mut tx),
+            )
+            .await?;
 
         tx.commit().await.app_error("Failed to patch the video")?;
 
@@ -309,7 +327,11 @@ impl VideoFacadeTrait for VideoFacade {
 
         if permissions.contains(&UserRole::Artist) {
             // if permissions hashset contains any UserRole, user_id is always Some
-            if self.is_video_owner(video, user_id.unwrap()).await.is_ok() {
+            if self
+                .is_video_owner(video.artist_id, user_id.unwrap())
+                .await
+                .is_ok()
+            {
                 return Ok(());
             }
         }
@@ -360,14 +382,18 @@ impl VideoFacadeTrait for VideoFacade {
         Ok(videos)
     }
 
-    async fn is_video_owner(&self, video: &Video, user_id: i32) -> Result<()> {
+    async fn is_video_owner(&self, video_artist_id: i32, user_id: i32) -> Result<()> {
+        if user_id < 0 {
+            return Err(AppError::new("Video doesn't exist", AppErrorKind::NotFound));
+        }
+
         let artist = self
             .artist_facade
             .get_artist_internal(user_id, None)
             .await?; // if permissions hashset contains any UserRole, user_id is always Some
 
         // Artist has always access to his video
-        if artist.id != video.artist_id {
+        if artist.id != video_artist_id {
             return Err(AppError::new("Video doesn't exist", AppErrorKind::NotFound));
         }
         Ok(())

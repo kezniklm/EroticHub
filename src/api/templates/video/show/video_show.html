@@ -3,12 +3,14 @@
     <div class="video-name-container mt-2">
         <div class="video-name">{{ video.name }}</div>
         <div>
+            {% if session.is_artist() && is_video_owner %}
             <a class="icon-btn" data-bs-toggle="tooltip" data-bs-title="Edit video" hx-get="/video/{{ video.id }}/edit" hx-target="#content-container" hx-push-url="true">
                 <i class="bi bi-pencil-square"></i>
             </a>
             <a class="icon-btn" data-bs-toggle="tooltip" data-bs-title="Start live stream" hx-post="/stream/start" hx-vals='{"video_id": "{{ video.id }}"}'>
                 <i class="bi bi-cast"></i>
             </a>
+            {% endif %}
         </div>
     </div>
     <hr class="name-divider">

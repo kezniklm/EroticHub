@@ -256,6 +256,7 @@ async fn test11_patch_different_user(ctx: &mut AsyncContext) {
     let mut patch_video_req = VideoEditReq {
         name: Some(String::from("New name")),
         video_visibility: VideoVisibility::All,
+        category_ids: None,
         temp_thumbnail_id: None,
         temp_video_id: None,
         description: None,
@@ -302,6 +303,7 @@ async fn test12_patch_same_user(ctx: &mut AsyncContext) {
     let mut patch_video_req = VideoEditReq {
         name: Some(String::from("New name")),
         video_visibility: VideoVisibility::All,
+        category_ids: None,
         temp_thumbnail_id: None,
         temp_video_id: None,
         description: None,
@@ -414,6 +416,7 @@ pub fn create_upload_req(
     VideoUploadReq {
         name,
         video_visibility,
+        category_ids: None,
         temp_thumbnail_id: -1,
         temp_video_id: -1,
         description,

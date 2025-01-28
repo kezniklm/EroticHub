@@ -57,7 +57,6 @@ pub async fn register_user(
     }
 
     let user = user_facade.register(user_register).await?;
-    let user_permissions = user_facade.get_permissions(user.id).await?;
 
     Identity::login(&request.extensions(), user.id.to_string())?;
 
@@ -65,7 +64,8 @@ pub async fn register_user(
         "user_session_data",
         UserSessionData {
             profile_picture_path: user.profile_picture_path.clone(),
-            user_permissions,
+
+            roles: user_facade.get_permissions(user.id).await?,
         },
     )?;
 
@@ -102,7 +102,6 @@ pub async fn login(
     }
 
     let user = user_facade.login(user_login.into_inner()).await?;
-    let user_permissions = user_facade.get_permissions(user.id).await?;
 
     Identity::login(&request.extensions(), user.id.to_string())?;
 
@@ -110,7 +109,8 @@ pub async fn login(
         "user_session_data",
         UserSessionData {
             profile_picture_path: user.profile_picture_path.clone(),
-            user_permissions,
+
+            roles: user_facade.get_permissions(user.id).await?,
         },
     )?;
 
@@ -153,14 +153,13 @@ pub async fn user_update(
     let user_detail = user_facade
         .update(identity.id_i32()?, user_detail_update.into_inner())
         .await?;
-    let user_permissions = user_facade.get_permissions(identity.id_i32()?).await?;
 
     let user_session_data = UserSessionData {
         profile_picture_path: match user_detail.clone() {
             Some(user_detail) => user_detail.profile_picture_path,
             None => None,
         },
-        user_permissions,
+        roles: user_facade.get_permissions(identity.id_i32()?).await?,
     };
 
     session.insert("user_session_data", user_session_data.clone())?;
@@ -242,14 +241,13 @@ pub async fn profile_picture_update(
     let user_detail = user_facade
         .update_profile_picture(identity.id_i32()?, profile_picture_update)
         .await?;
-    let user_permissions = user_facade.get_permissions(identity.id_i32()?).await?;
 
     let user_session_data = UserSessionData {
         profile_picture_path: match user_detail.clone() {
             Some(user_detail) => user_detail.profile_picture_path,
             None => None,
         },
-        user_permissions,
+        roles: user_facade.get_permissions(identity.id_i32()?).await?,
     };
 
     session.insert("user_session_data", user_session_data.clone())?;

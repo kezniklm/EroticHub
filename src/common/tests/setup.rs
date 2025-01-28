@@ -9,6 +9,7 @@ use crate::business::facades::stream::StreamFacade;
 use crate::business::facades::temp_file::{TempFileFacade, TempFileFacadeTrait};
 use crate::business::facades::user::UserFacade;
 use crate::business::facades::video::VideoFacade;
+use crate::business::facades::video_category::VideoCategoryFacade;
 use crate::business::models::stream::StreamStorage;
 use crate::common::tests::stream::StreamProxyMock;
 use crate::persistence::repositories::artist::ArtistRepository;
@@ -18,6 +19,7 @@ use crate::persistence::repositories::temp_file::PgTempFileRepo;
 use crate::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use crate::persistence::repositories::user::UserRepository;
 use crate::persistence::repositories::video::PgVideoRepo;
+use crate::persistence::repositories::video_category::VideoCategoryRepository;
 use crate::streamer::gstreamer_controller::init_gstreamer;
 use crate::{init_configuration, setup_auth, setup_redis_pool, CONFIG_FILE_KEY};
 use actix_http::body::{BoxBody, EitherBody};
@@ -99,6 +101,9 @@ impl AsyncContext {
         let comment_repo = Arc::new(CommentRepository::new(self.pg_pool.clone()));
         let comment_facade = Arc::new(CommentFacade::new(comment_repo));
 
+        let video_category_repo = Arc::new(VideoCategoryRepository::new(self.pg_pool.clone()));
+        let video_category_facade = Arc::new(VideoCategoryFacade::new(video_category_repo));
+
         let temp_file_repo = Arc::new(PgTempFileRepo::new(self.pg_pool.clone()));
         let temp_file_facade = Arc::new(TempFileFacade::new(temp_file_repo, temp_file_dir));
 
@@ -108,6 +113,7 @@ impl AsyncContext {
             video_repo,
             artist_facade.clone(),
             user_facade.clone(),
+            video_category_facade.clone(),
             unit_of_work,
             video_dir,
             thumbnail_dir,

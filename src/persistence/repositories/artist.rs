@@ -87,7 +87,6 @@ impl ArtistRepoTrait for ArtistRepository {
             Some(tx) => query.fetch_one(tx.as_mut()).await,
         }
         .db_error("Failed to fetch the artist")?;
-
         Ok(artist)
     }
 }

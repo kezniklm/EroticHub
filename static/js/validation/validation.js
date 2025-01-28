@@ -68,14 +68,30 @@ function validateForm(form, event) {
         event.stopPropagation();
         event.stopImmediatePropagation();
     }
+    let scrolled = false;
     for (let index = 0; index < form.elements.length; index++) {
         const input = form.elements.item(index);
         if (input.validity.valid) {
             continue;
         }
         validateInput(input);
+        if (!scrolled) {
+            scrollToInput(input);
+            scrolled = true;
+        }
     }
     markAsValidated(form);
+}
+
+function scrollToInput(input) {
+    const headerHeight = document.getElementsByTagName("nav")[0]?.clientHeight;
+    if (!headerHeight) return;
+    
+    const elementPosition = input.getBoundingClientRect().top;
+    const offset = elementPosition + window.scrollY.valueOf() - headerHeight;
+    scrollTo({
+        top: offset
+    });
 }
 
 function getErrorLabel(input) {
