@@ -4,6 +4,7 @@ use actix_web::{web, App, HttpServer};
 use actix_web_grants::GrantsMiddleware;
 use env_logger::Env;
 use erotic_hub::api::extractors::permissions_extractor::extract;
+use erotic_hub::api::routes::admin::admin_routes;
 use erotic_hub::api::routes::membership::membership_routes;
 use erotic_hub::api::routes::stream::stream_routes;
 use erotic_hub::api::routes::temp_file::temp_file_routes;
@@ -179,6 +180,7 @@ async fn main() -> anyhow::Result<()> {
             .configure(temp_file_routes)
             .configure(stream_routes)
             .configure(membership_routes)
+            .configure(admin_routes)
     })
     .bind((host, port))?
     .run()

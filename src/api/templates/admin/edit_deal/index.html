@@ -1,0 +1,86 @@
+<h2>Membership Deals</h2>
+
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg"></div>
+    <div class="col-lg">
+      <div class="card">
+        <div class="card-body">
+          <form
+            hx-put="/admin/deals/{{ deal.id }}"
+            class="needs-validation"
+            novalidate
+          >
+            <div class="mb-3">
+              <label for="label" class="form-label">Label</label>
+              <input
+                type="text"
+                class="form-control"
+                id="label"
+                name="label"
+                value="{{ deal.label }}"
+                required
+                minlength="3"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="price_per_month" class="form-label"
+                >Price per month</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                id="price_per_month"
+                name="price_per_month"
+                value="{{ deal.price_per_month }}"
+                required
+                min="0.01"
+                step="0.01"
+                oninput="calculateTotalPrice()"
+              />
+            </div>
+            <div class="mb-3">
+              <label for="number_of_months" class="form-label"
+                >Number of months</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                id="number_of_months"
+                name="number_of_months"
+                value="{{ deal.number_of_months }}"
+                required
+                min="1"
+                oninput="calculateTotalPrice()"
+              />
+            </div>
+            <p class="card-text">
+              Total price:
+              <span id="totalPrice" />
+            </p>
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg"></div>
+  </div>
+</div>
+
+<script>
+  function calculateTotalPrice() {
+    const pricePerMonth =
+      parseFloat(document.getElementById("price_per_month").value) || 0;
+    const numberOfMonths =
+      parseInt(document.getElementById("number_of_months").value) || 0;
+    const totalPrice = pricePerMonth * numberOfMonths;
+    document.getElementById("totalPrice").innerText = `$${totalPrice.toFixed(
+      2
+    )}`;
+  }
+
+  // Initial calculation
+  calculateTotalPrice();
+</script>
