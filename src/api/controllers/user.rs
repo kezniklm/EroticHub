@@ -23,6 +23,13 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::protect;
 use askama_actix::TemplateToResponse;
 
+// TODO: after logging in or registering, a page reload is required to update the profile in navbar
+// TODO: liked videos
+// TODO: terms and conditions
+// TODO: banners
+// TODO: Create your own playlists., Engage with the community., and Tailored video suggestions. don't make sense
+// TODO: become an artist
+
 pub async fn register_form(
     htmx_request: HtmxRequest,
     session: Session,
@@ -50,6 +57,7 @@ pub async fn register_user(
     }
 
     let user = user_facade.register(user_register).await?;
+    let user_permissions = user_facade.get_permissions(user.id).await?;
 
     Identity::login(&request.extensions(), user.id.to_string())?;
 
@@ -57,6 +65,7 @@ pub async fn register_user(
         "user_session_data",
         UserSessionData {
             profile_picture_path: user.profile_picture_path.clone(),
+            user_permissions,
         },
     )?;
 
@@ -93,6 +102,7 @@ pub async fn login(
     }
 
     let user = user_facade.login(user_login.into_inner()).await?;
+    let user_permissions = user_facade.get_permissions(user.id).await?;
 
     Identity::login(&request.extensions(), user.id.to_string())?;
 
@@ -100,6 +110,7 @@ pub async fn login(
         "user_session_data",
         UserSessionData {
             profile_picture_path: user.profile_picture_path.clone(),
+            user_permissions,
         },
     )?;
 
@@ -142,12 +153,14 @@ pub async fn user_update(
     let user_detail = user_facade
         .update(identity.id_i32()?, user_detail_update.into_inner())
         .await?;
+    let user_permissions = user_facade.get_permissions(identity.id_i32()?).await?;
 
     let user_session_data = UserSessionData {
         profile_picture_path: match user_detail.clone() {
             Some(user_detail) => user_detail.profile_picture_path,
             None => None,
         },
+        user_permissions,
     };
 
     session.insert("user_session_data", user_session_data.clone())?;
@@ -229,12 +242,14 @@ pub async fn profile_picture_update(
     let user_detail = user_facade
         .update_profile_picture(identity.id_i32()?, profile_picture_update)
         .await?;
+    let user_permissions = user_facade.get_permissions(identity.id_i32()?).await?;
 
     let user_session_data = UserSessionData {
         profile_picture_path: match user_detail.clone() {
             Some(user_detail) => user_detail.profile_picture_path,
             None => None,
         },
+        user_permissions,
     };
 
     session.insert("user_session_data", user_session_data.clone())?;
