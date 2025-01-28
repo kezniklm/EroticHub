@@ -329,6 +329,10 @@ impl UserFacadeTrait for UserFacade {
             user_permissions.insert(UserRole::Artist);
         }
 
+        if user.is_admin {
+            user_permissions.insert(UserRole::Admin);
+        }
+
         Ok(user_permissions)
     }
 

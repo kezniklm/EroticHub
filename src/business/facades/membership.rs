@@ -1,7 +1,9 @@
 use async_trait::async_trait;
 use chrono::NaiveDate;
 use serde::Deserialize;
+use sqlx::types::BigDecimal;
 use std::fmt::Debug;
+use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::business::mappers::generic::ToMappedList;
@@ -11,7 +13,7 @@ use crate::business::models::membership_details::MembershipDetails;
 use crate::business::models::paying_member::PayingMemberModel;
 use crate::business::models::payment_method::PaymentMethodModel;
 use crate::business::Result;
-use crate::persistence::repositories::deal::DealRepo;
+use crate::persistence::repositories::deal::{DealRepo, UpdateDealInput};
 use crate::persistence::repositories::paying_member::PayingMemberRepo;
 use crate::persistence::repositories::payment_method::{NewPaymentMethod, PaymentMethodRepo};
 use crate::persistence::repositories::unit_of_work::UnitOfWork;
@@ -24,6 +26,13 @@ pub struct PaymentMethodInput {
     pub back_to: String,
 }
 
+#[derive(Deserialize)]
+pub struct DealInput {
+    pub label: String,
+    pub number_of_months: String,
+    pub price_per_month: String,
+}
+
 #[async_trait]
 pub trait MembershipFacadeTrait {
     async fn has_payment_method(&self, user_id: i32) -> Result<bool>;
@@ -33,6 +42,7 @@ pub trait MembershipFacadeTrait {
     async fn get_deals(&self) -> Result<Vec<DealModel>>;
     async fn get_deal(&self, deal_id: i32) -> Result<Option<DealModel>>;
     async fn pay(&self, user_id: i32, deal_id: i32) -> Result<()>;
+    async fn edit_deal(&self, deal_id: i32, input: DealInput) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -183,6 +193,30 @@ impl MembershipFacadeTrait for MembershipFacade {
             .await?;
 
         self.unit_of_work.commit(tx).await?;
+
+        Ok(())
+    }
+
+    async fn edit_deal(&self, deal_id: i32, input: DealInput) -> Result<()> {
+        let label = input.label.clone();
+        let number_of_months = input
+            .number_of_months
+            .parse()
+            .app_error("Invalid number of months")?;
+        let price_per_month =
+            BigDecimal::from_str(&input.price_per_month).app_error("Invalid price per month")?;
+
+        self.deal_repository
+            .update_deal(
+                deal_id,
+                UpdateDealInput {
+                    label,
+                    number_of_months,
+                    price_per_month,
+                },
+                None,
+            )
+            .await?;
 
         Ok(())
     }

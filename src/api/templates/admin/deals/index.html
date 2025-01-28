@@ -1,0 +1,24 @@
+<h2>Membership Deals</h2>
+
+<div class="container mt-4">
+  <div class="row">
+    {% for deal in deals %}
+      <div class="col-lg">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">{{ deal.label }}</h5>
+            <p class="card-text">Price per month: ${{ deal.price_per_month }}</p>
+            <p class="card-text">Number of months: {{ deal.number_of_months }}</p>
+            <p class="card-text">Total price: 
+              {% if deal.total_price_without_discount > deal.total_price %}
+                <del class="text-muted">${{ deal.total_price_without_discount }}</del> 
+              {% endif %}
+              ${{ deal.total_price }}
+            </p>
+            <a href="/admin/deals/{{ deal.id }}" class="btn btn-primary">Edit</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>

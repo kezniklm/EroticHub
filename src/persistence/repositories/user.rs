@@ -34,7 +34,7 @@ impl UserRepositoryTrait for UserRepository {
             r#"
             INSERT INTO user_table (username, password_hash, email, profile_picture_path, artist_id, paying_member_id)
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
+            RETURNING id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin
             "#,
             user.username,
             user.password_hash,
@@ -53,7 +53,7 @@ impl UserRepositoryTrait for UserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
+            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin
             FROM user_table
             WHERE id = $1
             "#,
@@ -69,7 +69,7 @@ impl UserRepositoryTrait for UserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
+            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin
             FROM user_table
             WHERE username = $1
             "#,
@@ -85,7 +85,7 @@ impl UserRepositoryTrait for UserRepository {
         let user = sqlx::query_as!(
             User,
             r#"
-            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
+            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin
             FROM user_table
             WHERE email = $1
             "#,
@@ -124,9 +124,10 @@ impl UserRepositoryTrait for UserRepository {
                 email = $3,
                 profile_picture_path = $4,
                 artist_id = $5,
-                paying_member_id = $6
-            WHERE id = $7
-            RETURNING id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id
+                paying_member_id = $6,
+                is_admin = $7
+            WHERE id = $8
+            RETURNING id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin
             "#,
             user.username,
             user.password_hash,
@@ -134,6 +135,7 @@ impl UserRepositoryTrait for UserRepository {
             user.profile_picture_path,
             user.artist_id,
             user.paying_member_id,
+            user.is_admin,
             user.id
         )
             .fetch_optional(&self.pool)
@@ -179,6 +181,7 @@ mod tests {
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         };
 
         let created_user = user_repo.create_user(new_user.clone()).await?;
@@ -203,6 +206,7 @@ mod tests {
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         };
 
         let created_user = user_repo.create_user(new_user).await?;
@@ -227,6 +231,7 @@ mod tests {
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         };
 
         let created_user = user_repo.create_user(new_user).await?;
@@ -253,6 +258,7 @@ mod tests {
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         };
 
         let created_user = user_repo.create_user(new_user).await?;
@@ -277,6 +283,7 @@ mod tests {
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         };
 
         let created_user = user_repo.create_user(new_user.clone()).await?;
@@ -304,6 +311,7 @@ mod tests {
             profile_picture_path: Some("path/to/pic.jpg".to_string()),
             artist_id: None,
             paying_member_id: None,
+            is_admin: false,
         };
         let created_user = user_repo.create_user(new_user).await?;
 
