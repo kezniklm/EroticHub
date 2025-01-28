@@ -71,7 +71,7 @@ pub fn get_profile_picture_folder_path() -> String {
 pub fn get_secret_key() -> Key {
     let secret_key = match env::var("SESSION_SECRET_KEY") {
         Ok(secret_key) => secret_key,
-        Err(_) => return Key::generate(),
+        Err(_) => panic!("SESSION_SECRET_KEY must be set in the ENV"),
     };
 
     if secret_key.len() < 64 {
