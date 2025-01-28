@@ -18,7 +18,7 @@ use crate::api::templates::video::upload::template::{
 use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::facades::video_category::{VideoCategoryFacade, VideoCategoryFacadeTrait};
-use crate::business::models::error::{AppError, MapToAppError};
+use crate::business::models::error::MapToAppError;
 use crate::business::models::user::UserRole::{self, Artist};
 use crate::business::models::video::{
     FetchVideoByFilters, GetVideoByIdReq, VideoEditReq, VideoList, VideoUploadReq,
