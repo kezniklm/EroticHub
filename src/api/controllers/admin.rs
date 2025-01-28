@@ -13,7 +13,7 @@ use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder, Result};
 use actix_web_grants::protect;
 
-// TODO: changing deals/prices of memberships
+// TODO: adding and removing deals
 // TODO: changing categories
 
 #[protect(any("Admin"), ty = "UserRole")]
