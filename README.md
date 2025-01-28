@@ -18,7 +18,7 @@ into EroticHub folders. This is done only when the container is created for the 
 3. In root directory of the project, run
 
 ```bash
-docker compose --profile release up --build -d
+docker compose --profile release up -d
 ```
 
 4. Wait until the all services are built and start.
@@ -30,7 +30,7 @@ In development mode, the EroticHub container is not built and created.
 1. Start all docker services
 
 ```bash
-docker compose up --profile dev up --build -d
+docker compose --profile dev up -d
 ```
 
 2. Set up environmental variables. You can use the example file:
