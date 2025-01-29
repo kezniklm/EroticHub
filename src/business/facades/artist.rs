@@ -18,6 +18,7 @@ pub trait ArtistFacadeTrait {
         user_id: i32,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<Artist>;
+    async fn make_user_artist(&self, user_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -65,5 +66,17 @@ impl ArtistFacadeTrait for ArtistFacade {
             .await?;
 
         Ok(artist_names)
+    }
+
+    async fn make_user_artist(&self, user_id: i32) -> Result<()> {
+        self.artist_repository
+            .make_user_artist(user_id)
+            .await
+            .app_error_kind(
+                "No permissions for video manipulation",
+                AppErrorKind::AccessDenied,
+            )?;
+
+        Ok(())
     }
 }

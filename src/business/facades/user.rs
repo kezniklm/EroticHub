@@ -71,20 +71,19 @@ pub trait UserFacadeTrait {
         user_id: i32,
         user_detail_update: UserDetailUpdate,
     ) -> Result<Option<UserDetail>>;
-
     async fn update_profile_picture(
         &self,
         user_id: i32,
         profile_picture_update: ProfilePictureUpdate,
     ) -> Result<Option<UserDetail>>;
-
     async fn change_password(
         &self,
         user_id: i32,
         user_password_update: UserPasswordUpdate,
     ) -> Result<()>;
-
     async fn delete_user(&self, user_id: i32) -> Result<()>;
+    async fn get_users(&self) -> Result<Vec<UserDetail>>;
+    async fn change_admin_status(&self, user_id: i32, is_admin: bool) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -521,6 +520,20 @@ impl UserFacadeTrait for UserFacade {
         };
 
         self.user_repository.delete_user(user_id).await?;
+
+        Ok(())
+    }
+
+    async fn get_users(&self) -> Result<Vec<UserDetail>> {
+        let users = self.user_repository.get_users().await?;
+
+        Ok(users.into_iter().map(UserDetail::from).collect())
+    }
+
+    async fn change_admin_status(&self, user_id: i32, is_admin: bool) -> Result<()> {
+        self.user_repository
+            .change_admin_status(user_id, is_admin)
+            .await?;
 
         Ok(())
     }

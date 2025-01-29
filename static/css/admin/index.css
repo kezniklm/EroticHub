@@ -7,5 +7,5 @@
 
 #content-container {
   margin-top: 8rem;
-  min-height: 86vh;
+  min-height: calc(100vh - 8rem);
 }

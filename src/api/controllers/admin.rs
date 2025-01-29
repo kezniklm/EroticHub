@@ -4,8 +4,11 @@ use crate::api::templates::admin::deals::template::AdminDealsTemplate;
 use crate::api::templates::admin::edit_deal::template::AdminEditDealTemplate;
 use crate::api::templates::admin::index::template::AdminIndexTemplate;
 use crate::api::templates::admin::template::AdminSectionTemplate;
+use crate::api::templates::admin::users::template::AdminUsersTemplate;
 use crate::api::templates::template::BaseTemplate;
+use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
 use crate::business::facades::membership::{DealInput, MembershipFacade, MembershipFacadeTrait};
+use crate::business::facades::user::{UserFacade, UserFacadeTrait};
 use crate::business::models::error::AppError;
 use crate::business::models::user::UserRole::{self, Admin};
 
@@ -113,5 +116,56 @@ pub async fn add_deal(
 
     let mut response = HttpResponse::NoContent().finish();
     add_redirect_header("/admin/deals", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn get_users(
+    user_facade: web::Data<UserFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+) -> Result<impl Responder> {
+    let users = user_facade.get_users().await?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        AdminSectionTemplate::wrap(AdminUsersTemplate { users }),
+    ))
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn make_user_artist(
+    artist_facade: web::Data<ArtistFacade>,
+    user_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    artist_facade.make_user_artist(*user_id).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/users", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn make_user_admin(
+    user_facade: web::Data<UserFacade>,
+    user_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    user_facade.change_admin_status(*user_id, true).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/users", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn revoke_user_admin(
+    user_facade: web::Data<UserFacade>,
+    user_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    user_facade.change_admin_status(*user_id, false).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/users", &mut response)?;
     Ok(response)
 }

@@ -16,6 +16,7 @@ pub trait ArtistRepoTrait: Debug {
         user_id: i32,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<Artist>;
+    async fn make_user_artist(&self, user_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -88,5 +89,29 @@ impl ArtistRepoTrait for ArtistRepository {
         }
         .db_error("Failed to fetch the artist")?;
         Ok(artist)
+    }
+
+    async fn make_user_artist(&self, user_id: i32) -> Result<()> {
+        let mut tx = self.pg_pool.begin().await?;
+
+        let artist_id = sqlx::query!(
+            "INSERT INTO artist (user_id) VALUES ($1) RETURNING id",
+            user_id
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        sqlx::query!(
+            "UPDATE user_table SET artist_id = $1 WHERE id = $2",
+            artist_id,
+            user_id
+        )
+        .execute(tx.as_mut())
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(())
     }
 }

@@ -13,6 +13,8 @@ pub trait UserRepositoryTrait: Debug {
     async fn update_user(&self, user: User) -> Result<Option<User>>;
     async fn delete_user(&self, user_id: i32) -> Result<bool>;
     async fn fetch_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<UserName>>;
+    async fn get_users(&self) -> Result<Vec<User>>;
+    async fn change_admin_status(&self, user_id: i32, is_admin: bool) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -157,6 +159,37 @@ impl UserRepositoryTrait for UserRepository {
         .rows_affected();
 
         Ok(rows_affected > 0)
+    }
+
+    async fn get_users(&self) -> Result<Vec<User>> {
+        let users = sqlx::query_as!(
+            User,
+            r#"
+            SELECT id, username, password_hash, email, profile_picture_path, artist_id, paying_member_id, is_admin
+            FROM user_table
+            ORDER BY username ASC
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(users)
+    }
+
+    async fn change_admin_status(&self, user_id: i32, is_admin: bool) -> Result<()> {
+        sqlx::query!(
+            r#"
+            UPDATE user_table
+            SET is_admin = $1
+            WHERE id = $2
+            "#,
+            is_admin,
+            user_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 }
 
