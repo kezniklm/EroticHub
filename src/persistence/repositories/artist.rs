@@ -10,12 +10,13 @@ use std::fmt::Debug;
 pub trait ArtistRepoTrait: Debug {
     async fn list_artists(&self) -> anyhow::Result<Vec<Artist>>;
     async fn fetch_artists_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<Artist>>;
-    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>>;
+    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> Result<Vec<ArtistName>>;
     async fn get_artist(
         &self,
         user_id: i32,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<Artist>;
+    async fn make_user_artist(&self, user_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -55,7 +56,7 @@ impl ArtistRepoTrait for ArtistRepository {
         Ok(artists)
     }
 
-    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>> {
+    async fn fetch_artists_names_by_id(&self, ids: Vec<i32>) -> Result<Vec<ArtistName>> {
         let artists = sqlx::query_as!(
             ArtistName,
             r#"
@@ -88,5 +89,29 @@ impl ArtistRepoTrait for ArtistRepository {
         }
         .db_error("Failed to fetch the artist")?;
         Ok(artist)
+    }
+
+    async fn make_user_artist(&self, user_id: i32) -> Result<()> {
+        let mut tx = self.pg_pool.begin().await?;
+
+        let artist_id = sqlx::query!(
+            "INSERT INTO artist (user_id) VALUES ($1) RETURNING id",
+            user_id
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        sqlx::query!(
+            "UPDATE user_table SET artist_id = $1 WHERE id = $2",
+            artist_id,
+            user_id
+        )
+        .execute(tx.as_mut())
+        .await?;
+
+        tx.commit().await?;
+
+        Ok(())
     }
 }

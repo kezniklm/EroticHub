@@ -63,6 +63,7 @@ pub trait IsRole {
     fn is_artist(&self) -> bool;
     fn is_paying_member(&self) -> bool;
     fn is_registered(&self) -> bool;
+    fn is_admin(&self) -> bool;
 
     fn extract_and_check(
         &self,
@@ -93,5 +94,10 @@ impl IsRole for Session {
     fn is_registered(&self) -> bool {
         let session_data = self.get::<UserSessionData>("user_session_data");
         self.extract_and_check(session_data, UserRole::Registered)
+    }
+
+    fn is_admin(&self) -> bool {
+        let session_data = self.get::<UserSessionData>("user_session_data");
+        self.extract_and_check(session_data, UserRole::Admin)
     }
 }

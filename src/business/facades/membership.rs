@@ -43,6 +43,8 @@ pub trait MembershipFacadeTrait {
     async fn get_deal(&self, deal_id: i32) -> Result<Option<DealModel>>;
     async fn pay(&self, user_id: i32, deal_id: i32) -> Result<()>;
     async fn edit_deal(&self, deal_id: i32, input: DealInput) -> Result<()>;
+    async fn delete_deal(&self, deal_id: i32) -> Result<()>;
+    async fn add_deal(&self, input: DealInput) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -69,7 +71,6 @@ impl MembershipFacade {
     }
 }
 
-// TODO: use payment_method_id (paying_member) and paying_member_id (user) fields accordingly
 #[async_trait]
 impl MembershipFacadeTrait for MembershipFacade {
     async fn has_payment_method(&self, user_id: i32) -> Result<bool> {
@@ -209,6 +210,34 @@ impl MembershipFacadeTrait for MembershipFacade {
         self.deal_repository
             .update_deal(
                 deal_id,
+                UpdateDealInput {
+                    label,
+                    number_of_months,
+                    price_per_month,
+                },
+                None,
+            )
+            .await?;
+
+        Ok(())
+    }
+
+    async fn delete_deal(&self, deal_id: i32) -> Result<()> {
+        self.deal_repository.delete_deal(deal_id, None).await?;
+        Ok(())
+    }
+
+    async fn add_deal(&self, input: DealInput) -> Result<()> {
+        let label = input.label.clone();
+        let number_of_months = input
+            .number_of_months
+            .parse()
+            .app_error("Invalid number of months")?;
+        let price_per_month =
+            BigDecimal::from_str(&input.price_per_month).app_error("Invalid price per month")?;
+
+        self.deal_repository
+            .add_deal(
                 UpdateDealInput {
                     label,
                     number_of_months,

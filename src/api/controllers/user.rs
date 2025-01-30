@@ -23,6 +23,13 @@ use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::protect;
 use askama_actix::TemplateToResponse;
 
+// TODO: after logging in or registering, a page reload is required to update the profile in navbar
+// TODO: liked videos
+// TODO: terms and conditions
+// TODO: banners
+// TODO: Create your own playlists., Engage with the community., and Tailored video suggestions. don't make sense
+// TODO: become an artist
+
 pub async fn register_form(
     htmx_request: HtmxRequest,
     session: Session,

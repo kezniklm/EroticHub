@@ -1,0 +1,53 @@
+<h2>Users</h2>
+
+<table class="table table-striped mt-2">
+  <thead>
+    <tr>
+      <th>Username</th>
+      <th>Email</th>
+      <th>Artist</th>
+      <th>Admin</th>
+      <th class="text-end" style="width: 16rem;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr>
+      <td>{{ user.username }}</td>
+      <td>{{ user.email }}</td>
+      <td>
+        {% if let Some (_) = user.artist_id %}
+        <i class="bi bi-check"></i>
+        {% else %}
+        <i class="bi bi-x"></i>
+        {% endif %}
+      </td>
+      <td>
+        {% if user.is_admin %}
+        <i class="bi bi-check"></i>
+        {% else %}
+        <i class="bi bi-x"></i>
+        {% endif %}
+      </td>
+      <td class="text-end" style="width: 16rem;">
+        <div class="btn-group gap-2" role="group" aria-label="User actions">
+          {% if user.artist_id.is_none() %}
+          <form hx-post="/admin/users/{{ user.id }}/make-artist" class="needs-validation" novalidate>
+            <button type="submit" class="btn btn-primary">Make artist</button>
+          </form>
+          {% endif %}
+          {% if user.is_admin %}
+          <form hx-post="/admin/users/{{ user.id }}/revoke-admin" class="needs-validation" novalidate>
+            <button type="submit" class="btn btn-primary">Revoke admin</button>
+          </form>
+          {% else %}
+          <form hx-post="/admin/users/{{ user.id }}/make-admin" class="needs-validation" novalidate>
+            <button type="submit" class="btn btn-primary">Make admin</button>
+          </form>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>

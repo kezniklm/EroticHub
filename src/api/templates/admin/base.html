@@ -2,10 +2,8 @@
 <link rel="stylesheet" type="text/css" href="/static/css/admin/index.css" />
 {% endblock %}
 
-<!-- TODO: fix toggler (smaller screens) -->
-
 {% block extra_navbar %}
-<nav class="navbar navbar-expand-lg navbar-dark fixed-top admin-navbar">
+<nav class="navbar navbar-expand navbar-dark static-top admin-navbar">
   <div class="container">
     <!-- Logo -->
     <a
@@ -45,7 +43,16 @@
             >Deals</a
           >
         </li>
-        <li class="nav-item"><a class="nav-link" href="#">Users</a></li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            href="#"
+            hx-get="/admin/users"
+            hx-push-url="true"
+            hx-target="#content-container"
+            >Users</a
+            >
+        </li>
       </ul>
     </div>
   </div>

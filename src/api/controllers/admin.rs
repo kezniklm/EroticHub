@@ -4,8 +4,11 @@ use crate::api::templates::admin::deals::template::AdminDealsTemplate;
 use crate::api::templates::admin::edit_deal::template::AdminEditDealTemplate;
 use crate::api::templates::admin::index::template::AdminIndexTemplate;
 use crate::api::templates::admin::template::AdminSectionTemplate;
+use crate::api::templates::admin::users::template::AdminUsersTemplate;
 use crate::api::templates::template::BaseTemplate;
+use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
 use crate::business::facades::membership::{DealInput, MembershipFacade, MembershipFacadeTrait};
+use crate::business::facades::user::{UserFacade, UserFacadeTrait};
 use crate::business::models::error::AppError;
 use crate::business::models::user::UserRole::{self, Admin};
 
@@ -13,7 +16,6 @@ use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder, Result};
 use actix_web_grants::protect;
 
-// TODO: adding and removing deals
 // TODO: changing categories
 
 #[protect(any("Admin"), ty = "UserRole")]
@@ -60,7 +62,7 @@ pub async fn get_admin_edit_deal_form(
     Ok(BaseTemplate::wrap(
         htmx_request,
         session,
-        AdminSectionTemplate::wrap(AdminEditDealTemplate { deal }),
+        AdminSectionTemplate::wrap(AdminEditDealTemplate { deal: Some(deal) }),
     ))
 }
 
@@ -76,5 +78,94 @@ pub async fn edit_deal(
 
     let mut response = HttpResponse::NoContent().finish();
     add_redirect_header("/admin/deals", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn delete_deal(
+    membership_facade: web::Data<MembershipFacade>,
+    deal_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    membership_facade.delete_deal(*deal_id).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/deals", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn get_admin_add_deal_form(
+    htmx_request: HtmxRequest,
+    session: Session,
+) -> Result<impl Responder> {
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        AdminSectionTemplate::wrap(AdminEditDealTemplate { deal: None }),
+    ))
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn add_deal(
+    membership_facade: web::Data<MembershipFacade>,
+    edit_deal_input: web::Form<DealInput>,
+) -> Result<impl Responder> {
+    membership_facade
+        .add_deal(edit_deal_input.into_inner())
+        .await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/deals", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn get_users(
+    user_facade: web::Data<UserFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+) -> Result<impl Responder> {
+    let users = user_facade.get_users().await?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        AdminSectionTemplate::wrap(AdminUsersTemplate { users }),
+    ))
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn make_user_artist(
+    artist_facade: web::Data<ArtistFacade>,
+    user_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    artist_facade.make_user_artist(*user_id).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/users", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn make_user_admin(
+    user_facade: web::Data<UserFacade>,
+    user_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    user_facade.change_admin_status(*user_id, true).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/users", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn revoke_user_admin(
+    user_facade: web::Data<UserFacade>,
+    user_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    user_facade.change_admin_status(*user_id, false).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/users", &mut response)?;
     Ok(response)
 }

@@ -1,189 +1,365 @@
 {% if !htmx_request.hx_request %}
 <!DOCTYPE html>
 <html lang="en">
+  <meta charset="UTF-8" />
 
-<meta charset="UTF-8">
-
-<head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>EroticHub</title>
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
     <!-- Bootstrap -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Base Styles -->
-    <link rel="stylesheet" type="text/css" href="/static/css/base.css" onerror="this.href='../../../static/base.css';">
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/static/css/base.css"
+      onerror="this.href='../../../static/base.css';"
+    />
     <!-- Auth Styles -->
-    <link rel="stylesheet" type="text/css" href="/static/css/user/auth.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/video/show.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/video/forms.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/stream/stream.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/membership/index.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/user/auth.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/video/show.css" />
+    <link rel="stylesheet" type="text/css" href="/static/css/video/forms.css" />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/static/css/stream/stream.css"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="/static/css/membership/index.css"
+    />
     {% block extra_styles %} {% endblock %}
 
     <!-- Favicon -->
-    <link rel="icon" href="/static/favicon.ico">
+    <link rel="icon" href="/static/favicon.ico" />
     <!-- Base javascript -->
     <script src="/static/js/base.js"></script>
     <!-- Validation API -->
     <script src="/static/js/validation/validation.js"></script>
     <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@2.0.4"
-        integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
-        crossorigin="anonymous"></script>
+    <script
+      src="https://unpkg.com/htmx.org@2.0.4"
+      integrity="sha384-HGfztofotfshcF7+8n44JQL2oJmowVChPTg48S+jvZoztPfvwD79OC/LTtG6dMp+"
+      crossorigin="anonymous"
+    ></script>
     <!-- HTMX - Response Targets extension -->
     <script src="https://unpkg.com/htmx-ext-response-targets@2.0.0/response-targets.js"></script>
     <!--    VideoJS player-->
-    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet"/>
+    <link href="https://vjs.zencdn.net/8.16.1/video-js.css" rel="stylesheet" />
     <script src="https://vjs.zencdn.net/8.16.1/video.min.js"></script>
-    <link href="https://unpkg.com/videojs-hls-quality-selector@2.0.0/dist/videojs-hls-quality-selector.css" rel="stylesheet"/>
+    <link
+      href="https://unpkg.com/videojs-hls-quality-selector@2.0.0/dist/videojs-hls-quality-selector.css"
+      rel="stylesheet"
+    />
     <script src="https://unpkg.com/videojs-hls-quality-selector@2.0.0/dist/videojs-hls-quality-selector.js"></script>
 
     <script src="/static/js/video/player.js"></script>
-</head>
+  </head>
 
-<body>
+  <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
-        <div class="container">
-            <!-- Logo -->
-            <a class="navbar-brand" href="#" hx-get="/" hx-push-url="true" hx-target="#content-container">Erotic<span>Hub</span></a>
-            <!-- Toggler -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <!-- Navbar Content -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Left Menu -->
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item"><a class="nav-link" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Porn Videos</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Categories</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Live Cams</a></li>
-                    <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" href="#">Stream</a>
-                    <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" hx-get="/video/new"
-                            hx-push-url="true" hx-target="#content-container" hx-swap="innerHTML">Upload
-                            video</a>
-                    </li>
-                    <li class="nav-item"><a class="nav-link d-flex d-lg-none align-items-center" hx-get="/user"
-                            hx-push-url="true" hx-target="#content-container" hx-swap="innerHTML">Account</a>
-                    </li>
-                </ul>
-                <!-- Centered and Wider Search Bar -->
-                <form class="d-flex mx-auto mb-2 mb-lg-0" style="flex-grow: 1;">
-                    <input class="form-control text-input" type="search" placeholder="Search EroticHub">
-                </form>
-                <!-- Right Icons (on large screens) -->
-                <div class="d-none d-lg-flex align-items-center ms-3">
-                    {% if session.is_artist() %}
-                    <a class="icon-btn me-4" hx-get="/video/new" hx-push-url="true" hx-target="#content-container">
-                        <i class="bi bi-camera-video-fill"></i>
-                    </a>
-                    {% endif %}
-                    <div id="account-container" class="account-container">
-                        <a href="#" id="account-icon" class="account-btn">
-                            {% match user_session_data %}
-                            {% when Some(user_session_data) %}
-                            {% match user_session_data.profile_picture_path %}
-                            {% when Some(profile_picture_path) %}
-                            <img src="/{{ profile_picture_path }}" alt="User Profile Photo" class="user-photo"
-                                onerror="this.src='/static/images/anonymous_profile_picture.jpg';" />
-                            {% when None %}
-                            <i class="bi bi-person-circle"></i>
-                            {% endmatch %}
-                            {% when None %}
-                            <i class="bi bi-person-circle"></i>
-                            {% endmatch %}
-                        </a>
-                        <div id="account-popup" class="popup hidden">
-                            {% match user_session_data %}
-                            {% when Some(user_session_data) %}
-                            <a href="#" class="popup-item" hx-get="/user/liked-videos" hx-target="#content-container"
-                                hx-swap="innerHTML" hx-trigger="click" hx-push-url="true">
-                                <div class="popup-icon">
-                                    <i class="bi bi-hand-thumbs-up-fill"></i>
-                                </div>
-                                <span class="popup-label">Liked Videos</span>
-                            </a>
-                            <a href="#" class="popup-item" hx-get="/user/account" hx-target="#content-container"
-                               hx-trigger="click" hx-push-url="true">
-                                <div class="popup-icon">
-                                    <i class="bi bi-person-circle"></i>
-                                </div>
-                                <span class="popup-label">My Account</span>
-                            </a>
-                            <a href="/user/logout" class="popup-item">
-                                <div class="popup-icon">
-                                    <i class="bi bi-box-arrow-left"></i>
-                                </div>
-                                <span class="popup-label">Logout</span>
-                            </a>
-                            {% when None %}
-                            <a href="#" class="popup-item" hx-get="/user/register" hx-target="#auth-popup"
-                                hx-swap="innerHTML" hx-trigger="click">
-                                <div class="popup-icon">
-                                    <i class="bi bi-person-fill-add"></i>
-                                </div>
-                                <span class="popup-label">Sign Up</span>
-                            </a>
-                            <a href="#" class="popup-item" hx-get="/user/login" hx-target="#auth-popup"
-                                hx-swap="innerHTML" hx-trigger="click">
-                                <div class="popup-icon">
-                                    <i class="bi bi-person-circle"></i>
-                                </div>
-                                <span class="popup-label">Log In</span>
-                            </a>
-                            {% endmatch %}
-                        </div>
-                    </div>
-                </div>
+      <div class="container">
+        <!-- Logo -->
+        <a
+          class="navbar-brand"
+          href="#"
+          hx-get="/"
+          hx-push-url="true"
+          hx-target="#content-container"
+          >Erotic<span>Hub</span></a
+        >
+        <!-- Toggler -->
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <!-- Navbar Content -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <!-- Left Menu -->
+          <ul class="navbar-nav me-auto">
+            {% if session.is_artist() %}
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/video/new"
+                hx-push-url="true"
+                hx-target="#content-container"
+                >Upload video</a
+              >
+            </li>
+            {% endif %} {% match user_session_data %} {% when Some with
+            (user_session_data) %}
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/user/liked-videos"
+                hx-push-url="true"
+                hx-target="#content-container"
+              >
+                Liked Videos
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/user/account"
+                hx-push-url="true"
+                hx-target="#content-container"
+                >My Account
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/membership"
+                hx-push-url="true"
+                hx-target="#content-container"
+                >Membership
+              </a>
+            </li>
+            {% if session.is_admin() %}
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/admin"
+                hx-push-url="true"
+                hx-target="#content-container"
+              >
+                Admin Section
+              </a>
+            </li>
+            {% endif %}
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                href="/user/logout"
+              >
+                Logout
+              </a>
+            </li>
+            {% when None %}
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/user/register"
+                hx-push-url="true"
+                hx-target="#content-container"
+              >
+                Sign Up
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link d-flex d-lg-none align-items-center"
+                hx-get="/user/login"
+                hx-push-url="true"
+                hx-target="#content-container"
+              >
+                Log In
+              </a>
+            </li>
+            {% endmatch %}
+          </ul>
+          <!-- TODO: search -->
+          <!-- Centered and Wider Search Bar -->
+          <form class="d-flex mx-auto mb-2 mb-lg-0" style="flex-grow: 1">
+            <input
+              class="form-control text-input"
+              type="search"
+              placeholder="Search EroticHub"
+            />
+          </form>
+          <!-- Right Icons (on large screens) -->
+          <div class="d-none d-lg-flex align-items-center ms-3">
+            {% if session.is_artist() %}
+            <a
+              class="icon-btn me-4"
+              hx-get="/video/new"
+              hx-push-url="true"
+              hx-target="#content-container"
+            >
+              <i class="bi bi-camera-video-fill"></i>
+            </a>
+            {% endif %}
+            <div id="account-container" class="account-container">
+              <a href="#" id="account-icon" class="account-btn">
+                {% match user_session_data %} {% when Some(user_session_data) %}
+                {% match user_session_data.profile_picture_path %} {% when
+                Some(profile_picture_path) %}
+                <img
+                  src="/{{ profile_picture_path }}"
+                  alt="User Profile Photo"
+                  class="user-photo"
+                  onerror="this.src='/static/images/anonymous_profile_picture.jpg';"
+                />
+                {% when None %}
+                <i class="bi bi-person-circle"></i>
+                {% endmatch %} {% when None %}
+                <i class="bi bi-person-circle"></i>
+                {% endmatch %}
+              </a>
+              <div id="account-popup" class="popup hidden">
+                {% match user_session_data %} {% when Some with
+                (user_session_data) %}
+                <a
+                  href="#"
+                  class="popup-item"
+                  hx-get="/user/liked-videos"
+                  hx-target="#content-container"
+                  hx-swap="innerHTML"
+                  hx-trigger="click"
+                  hx-push-url="true"
+                >
+                  <div class="popup-icon">
+                    <i class="bi bi-hand-thumbs-up-fill"></i>
+                  </div>
+                  <span class="popup-label">Liked Videos</span>
+                </a>
+                <a
+                  href="#"
+                  class="popup-item"
+                  hx-get="/user/account"
+                  hx-target="#content-container"
+                  hx-trigger="click"
+                  hx-push-url="true"
+                >
+                  <div class="popup-icon">
+                    <i class="bi bi-person-circle"></i>
+                  </div>
+                  <span class="popup-label">My Account</span>
+                </a>
+                <a
+                  href="#"
+                  class="popup-item"
+                  hx-get="/membership"
+                  hx-target="#content-container"
+                  hx-trigger="click"
+                  hx-push-url="true"
+                >
+                  <div class="popup-icon">
+                    <i class="bi bi-coin"></i>
+                  </div>
+                  <span class="popup-label">Membership</span>
+                </a>
+                {% if session.is_admin() %}
+                <a
+                  href="#"
+                  class="popup-item"
+                  hx-get="/admin"
+                  hx-target="#content-container"
+                  hx-trigger="click"
+                  hx-push-url="true"
+                >
+                  <div class="popup-icon">
+                    <i class="bi bi-shield-lock"></i>
+                  </div>
+                  <span class="popup-label">Admin Section</span>
+                </a>
+                {% endif %}
+                <a href="/user/logout" class="popup-item">
+                  <div class="popup-icon">
+                    <i class="bi bi-box-arrow-left"></i>
+                  </div>
+                  <span class="popup-label">Logout</span>
+                </a>
+                {% when None %}
+                <a
+                  href="#"
+                  class="popup-item"
+                  hx-get="/user/register"
+                  hx-target="#auth-popup"
+                  hx-swap="innerHTML"
+                  hx-trigger="click"
+                >
+                  <div class="popup-icon">
+                    <i class="bi bi-person-fill-add"></i>
+                  </div>
+                  <span class="popup-label">Sign Up</span>
+                </a>
+                <a
+                  href="#"
+                  class="popup-item"
+                  hx-get="/user/login"
+                  hx-target="#auth-popup"
+                  hx-swap="innerHTML"
+                  hx-trigger="click"
+                >
+                  <div class="popup-icon">
+                    <i class="bi bi-person-circle"></i>
+                  </div>
+                  <span class="popup-label">Log In</span>
+                </a>
+                {% endmatch %}
+              </div>
             </div>
+          </div>
         </div>
+      </div>
     </nav>
 
     {% block extra_navbar %} {% endblock %}
 
     <div id="age-verification-popup">
-        <div class="popup-content">
-            <div class="popup-logo">
-                <a class="navbar-brand popup-brand" href="#"><span>Erotic</span>Hub</a>
-            </div>
-            <h1>This is an adult website</h1>
-            <p>
-                This website contains age-restricted materials including nudity and explicit depictions of sexual
-                activity.
-                By entering, you affirm that you are at least 18 years of age or the age of majority in the jurisdiction
-                you are accessing the website from and you consent to viewing sexually explicit content.
-            </p>
-            <div class="popup-buttons">
-                <button id="yes-button">I am 18 or older - Enter</button>
-                <button id="no-button" class="exit-button">I am under 18 - Exit</button>
-            </div>
-            <div class="popup-footer">
-                <p>
-                    Our <a href="#">parental controls page</a> explains how you can easily block access to this site.
-                </p>
-                <p>© <a class="popup-brand-footer" href="#"><span>Erotic</span>Hub</a>, 2024</p>
-            </div>
+      <div class="popup-content">
+        <div class="popup-logo">
+          <a class="navbar-brand popup-brand" href="#"
+            ><span>Erotic</span>Hub</a
+          >
         </div>
+        <h1>This is an adult website</h1>
+        <p>
+          This website contains age-restricted materials including nudity and
+          explicit depictions of sexual activity. By entering, you affirm that
+          you are at least 18 years of age or the age of majority in the
+          jurisdiction you are accessing the website from and you consent to
+          viewing sexually explicit content.
+        </p>
+        <div class="popup-buttons">
+          <button id="yes-button">I am 18 or older - Enter</button>
+          <button id="no-button" class="exit-button">
+            I am under 18 - Exit
+          </button>
+        </div>
+        <div class="popup-footer">
+          <p>
+            Our <a href="#">parental controls page</a> explains how you can
+            easily block access to this site.
+          </p>
+          <p>
+            © <a class="popup-brand-footer" href="#"><span>Erotic</span>Hub</a>,
+            2024
+          </p>
+        </div>
+      </div>
     </div>
 
     <div id="auth-popup" class="hidden">
-        <!-- Content dynamically loaded via HTMX -->
+      <!-- Content dynamically loaded via HTMX -->
     </div>
 
     <div class="container centered-content" id="content-container">
-    {% endif %}
-        {{ child_template|safe }}
-    {% if !htmx_request.hx_request %}
+      {% endif %} {{ child_template|safe }} {% if !htmx_request.hx_request %}
     </div>
-
-
-</body>
-
+  </body>
 </html>
 
 {% endif %}

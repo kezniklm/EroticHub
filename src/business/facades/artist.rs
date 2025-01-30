@@ -12,12 +12,13 @@ use std::sync::Arc;
 #[async_trait]
 pub trait ArtistFacadeTrait {
     async fn list_artists(&self) -> anyhow::Result<Vec<ArtistDetail>>;
-    async fn get_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>>;
+    async fn get_artists_names_by_id(&self, ids: Vec<i32>) -> Result<Vec<ArtistName>>;
     async fn get_artist_internal(
         &self,
         user_id: i32,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<Artist>;
+    async fn make_user_artist(&self, user_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -58,12 +59,24 @@ impl ArtistFacadeTrait for ArtistFacade {
         Ok(artist)
     }
 
-    async fn get_artists_names_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<ArtistName>> {
+    async fn get_artists_names_by_id(&self, ids: Vec<i32>) -> Result<Vec<ArtistName>> {
         let artist_names = self
             .artist_repository
             .fetch_artists_names_by_id(ids)
             .await?;
 
         Ok(artist_names)
+    }
+
+    async fn make_user_artist(&self, user_id: i32) -> Result<()> {
+        self.artist_repository
+            .make_user_artist(user_id)
+            .await
+            .app_error_kind(
+                "No permissions for video manipulation",
+                AppErrorKind::AccessDenied,
+            )?;
+
+        Ok(())
     }
 }
