@@ -51,7 +51,7 @@ pub struct UserLogin {
     pub password: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Validate)]
+#[derive(Clone, Debug, Serialize, Deserialize, Validate)]
 pub struct UserDetailUpdate {
     #[validate(length(min = 3, max = 12))]
     pub username: String,
@@ -59,7 +59,7 @@ pub struct UserDetailUpdate {
     pub email: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Validate)]
+#[derive(Clone, Debug, Serialize, Deserialize, Validate)]
 pub struct UserPasswordUpdate {
     pub old_password: String,
     #[validate(length(min = 8, max = 128))]
