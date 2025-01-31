@@ -113,7 +113,7 @@ impl UserFacadeTrait for UserFacade {
                 user_repository: Arc::clone(&self.user_repository),
             })
             .await
-            .app_error(VALIDATION_ERROR_TEXT)?;
+            .app_error_kind(VALIDATION_ERROR_TEXT, BadRequestError)?;
 
         let password_hash = hash(user_register_model.password.as_str(), DEFAULT_COST)
             .app_error(VALIDATION_ERROR_TEXT)?;
@@ -360,7 +360,7 @@ impl UserFacadeTrait for UserFacade {
 
         user_detail_update
             .validate()
-            .app_error(VALIDATION_ERROR_TEXT)?;
+            .app_error_kind(VALIDATION_ERROR_TEXT, BadRequestError)?;
 
         let mut user = match user_option {
             None => return Err(AppError::from(ValidationError::new("User does not exist"))),
@@ -480,7 +480,7 @@ impl UserFacadeTrait for UserFacade {
     ) -> Result<()> {
         user_password_update
             .validate()
-            .app_error(VALIDATION_ERROR_TEXT)?;
+            .app_error_kind(VALIDATION_ERROR_TEXT, BadRequestError)?;
 
         let user = self.user_repository.get_user_by_id(user_id).await?;
 
