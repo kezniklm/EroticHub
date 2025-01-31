@@ -31,5 +31,11 @@ UPDATE user_table SET artist_id = 1 WHERE id = 1;
 UPDATE user_table SET artist_id = 2 WHERE id = 3;
 
 -- SET PAYING MEMBER REFERENCE FOR USERS
-UPDATE user_table SET paying_member_id = 1 WHERE id = 4; 
+UPDATE user_table SET paying_member_id = 1 WHERE id = 4;
+
+SELECT setval('user_table_id_seq',  (SELECT MAX(id) FROM user_table));
+SELECT setval('artist_id_seq',      (SELECT MAX(id) FROM artist));
+SELECT setval('paying_member_id_seq', (SELECT MAX(id) FROM paying_member));
+SELECT setval('payment_method_id_seq', (SELECT MAX(id) FROM payment_method));
+
 COMMIT;
