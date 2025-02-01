@@ -1,5 +1,6 @@
 use crate::api::controllers::utils::route_util::add_redirect_header;
 use crate::api::extractors::htmx_extractor::HtmxRequest;
+use crate::api::templates::admin::categories::template::AdminCategoriesTemplate;
 use crate::api::templates::admin::deals::template::AdminDealsTemplate;
 use crate::api::templates::admin::edit_deal::template::AdminEditDealTemplate;
 use crate::api::templates::admin::index::template::AdminIndexTemplate;
@@ -9,6 +10,7 @@ use crate::api::templates::template::BaseTemplate;
 use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
 use crate::business::facades::membership::{DealInput, MembershipFacade, MembershipFacadeTrait};
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
+use crate::business::facades::video_category::{VideoCategoryFacade, VideoCategoryFacadeTrait};
 use crate::business::models::error::AppError;
 use crate::business::models::user::UserRole::{self, Admin};
 
@@ -167,5 +169,49 @@ pub async fn revoke_user_admin(
 
     let mut response = HttpResponse::NoContent().finish();
     add_redirect_header("/admin/users", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn get_admin_categories(
+    category_facade: web::Data<VideoCategoryFacade>,
+    htmx_request: HtmxRequest,
+    session: Session,
+) -> Result<impl Responder> {
+    let categories = category_facade.list_categories().await?;
+
+    Ok(BaseTemplate::wrap(
+        htmx_request,
+        session,
+        AdminSectionTemplate::wrap(AdminCategoriesTemplate { categories }),
+    ))
+}
+
+#[derive(serde::Deserialize)]
+pub struct CategoryForm {
+    name: String,
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn add_category(
+    category_facade: web::Data<VideoCategoryFacade>,
+    form: web::Form<CategoryForm>,
+) -> Result<impl Responder> {
+    category_facade.add_category(form.into_inner().name).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/categories", &mut response)?;
+    Ok(response)
+}
+
+#[protect(any("Admin"), ty = "UserRole")]
+pub async fn delete_category(
+    category_facade: web::Data<VideoCategoryFacade>,
+    category_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    category_facade.delete_category(*category_id).await?;
+
+    let mut response = HttpResponse::NoContent().finish();
+    add_redirect_header("/admin/categories", &mut response)?;
     Ok(response)
 }

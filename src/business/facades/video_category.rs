@@ -17,6 +17,8 @@ pub trait VideoCategoryFacadeTrait {
         tx: Option<&mut Transaction<Postgres>>,
     ) -> Result<()>;
     async fn get_selected_categories(&self, video_id: i32) -> Result<Vec<VideoCategorySelected>>;
+    async fn add_category(&self, name: String) -> Result<()>;
+    async fn delete_category(&self, category_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -75,5 +77,17 @@ impl VideoCategoryFacadeTrait for VideoCategoryFacade {
             .collect();
 
         Ok(result)
+    }
+
+    async fn add_category(&self, name: String) -> Result<()> {
+        self.category_repository.add_category(name).await?;
+        Ok(())
+    }
+
+    async fn delete_category(&self, category_id: i32) -> Result<()> {
+        self.category_repository
+            .delete_category(category_id)
+            .await?;
+        Ok(())
     }
 }

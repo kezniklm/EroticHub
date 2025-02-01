@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO video_category(name) VALUES($1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "86eb0915db1775a38c6c862050d655f70a5ac0a3d5f172ec3ee0102736c5ab37"
+}

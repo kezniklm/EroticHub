@@ -1,0 +1,30 @@
+<h2>Categories</h2>
+
+<table class="table table-striped mt-2">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th class="text-end" style="width: 16rem;">Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for category in categories %}
+    <tr>
+      <td>{{ category.name }}</td>
+      <td class="text-end" style="width: 16rem;">
+        <form hx-delete="/admin/categories/{{ category.id }}" class="needs-validation" novalidate>
+          <button type="submit" class="btn btn-primary">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<form hx-post="/admin/categories" class="mt-2 validated" novalidate>
+  <div class="input-group">
+    <input id="name" type="text" name="name" class="form-control" placeholder="Category name" required>
+    <label for="name" class="invalid-feedback"></label>
+    <button type="submit" class="btn btn-primary">Add</button>
+  </div>
+</form>
