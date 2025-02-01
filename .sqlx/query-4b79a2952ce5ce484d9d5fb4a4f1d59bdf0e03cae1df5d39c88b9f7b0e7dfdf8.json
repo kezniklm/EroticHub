@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM deal WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "4b79a2952ce5ce484d9d5fb4a4f1d59bdf0e03cae1df5d39c88b9f7b0e7dfdf8"
+}

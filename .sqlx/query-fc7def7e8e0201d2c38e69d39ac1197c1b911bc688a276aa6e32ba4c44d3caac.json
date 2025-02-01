@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT \n                video.id,\n                artist_id,\n                visibility AS \"visibility: VideoVisibility\",\n                name,\n                file_path,\n                thumbnail_path,\n                description \n            FROM video\n            JOIN live_stream ON live_stream.video_id = video.id\n            WHERE live_stream.id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "artist_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "visibility: VideoVisibility",
+        "type_info": {
+          "Custom": {
+            "name": "visibility_type",
+            "kind": {
+              "Enum": [
+                "ALL",
+                "REGISTERED",
+                "PAYING"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "file_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "thumbnail_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "description",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "fc7def7e8e0201d2c38e69d39ac1197c1b911bc688a276aa6e32ba4c44d3caac"
+}

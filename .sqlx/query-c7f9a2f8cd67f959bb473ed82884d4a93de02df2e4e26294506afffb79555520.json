@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM temp_file",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "c7f9a2f8cd67f959bb473ed82884d4a93de02df2e4e26294506afffb79555520"
+}
