@@ -31,6 +31,7 @@ use erotic_hub::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use erotic_hub::persistence::repositories::user::UserRepository;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use erotic_hub::persistence::repositories::video_category::VideoCategoryRepository;
+use erotic_hub::seed::{create_admin, seed_database};
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
 use erotic_hub::{
     get_profile_picture_folder_path, get_temp_directory_path, get_video_thumbnail_dirs,
@@ -138,6 +139,23 @@ async fn main() -> anyhow::Result<()> {
         payment_method_repo,
         deal_repo,
     ));
+
+    let seed_data = dotenvy::var("SEED_DATA")
+        .ok()
+        .map(|v| v == "true")
+        .unwrap_or(false);
+    if seed_data {
+        seed_database(&pool).await?;
+    }
+
+    let admin_username = dotenvy::var("ADMIN_USERNAME").ok();
+    let admin_password = dotenvy::var("ADMIN_PASSWORD").ok();
+    let admin_email = dotenvy::var("ADMIN_EMAIL").ok();
+    if let (Some(username), Some(password), Some(email)) =
+        (admin_username, admin_password, admin_email)
+    {
+        create_admin(&pool, &username, &password, &email).await?
+    }
 
     let host = dotenvy::var(EH_HOST_KEY).expect("The host is not specified!");
     let port: u16 = dotenvy::var(EH_PORT_KEY)

@@ -19,6 +19,7 @@ pub mod business;
 pub mod common;
 pub mod configuration;
 pub mod persistence;
+pub mod seed;
 pub mod streamer;
 
 pub const CONFIG_FILE_KEY: &str = "CONFIG_FILE_PATH";

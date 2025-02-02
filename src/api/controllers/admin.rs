@@ -18,8 +18,6 @@ use actix_session::Session;
 use actix_web::{web, HttpResponse, Responder, Result};
 use actix_web_grants::protect;
 
-// TODO: changing categories
-
 #[protect(any("Admin"), ty = "UserRole")]
 pub async fn get_admin_section(
     htmx_request: HtmxRequest,

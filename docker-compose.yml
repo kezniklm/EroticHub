@@ -8,15 +8,19 @@ services:
         context: .
         dockerfile: docker/erotic-hub/Dockerfile
       environment:
-        - DATABASE_URL=postgres://postgres:example@db:5432/erotic-hub
-        - REDIS_DATABASE_URL=redis://redis:6379
-        - RTMP_SERVER=rtmp://nginx/hls/
-        - NGINX_HLS_URL=http://localhost:8081/hls/ # Public IP (host) of Nginx server
-        - STREAM_PATH_PREFIX=stream
-        - SESSION_SECRET_KEY=V9k5_UoB6vvk3h4yCxZLkfyohjP3Xymhg5OqNFhNUC43Xymhg5OqNFhNUC4asasrts
-        - EH_HOST=0.0.0.0
-        - EH_PORT=8000
-        - RUST_LOG=debug
+        - DATABASE_URL=${DATABASE_URL}
+        - REDIS_DATABASE_URL=${REDIS_DATABASE_URL}
+        - RTMP_SERVER=${RTMP_SERVER}
+        - NGINX_HLS_URL=${NGINX_HLS_URL}
+        - STREAM_PATH_PREFIX=${STREAM_PATH_PREFIX}
+        - SESSION_SECRET_KEY=${SESSION_SECRET_KEY}
+        - EH_HOST=${EH_HOST}
+        - EH_PORT=${EH_PORT}
+        - RUST_LOG=${RUST_LOG}
+        - SEED_DATA=${SEED_DATA}
+        - ADMIN_USERNAME=${ADMIN_USERNAME}
+        - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+        - ADMIN_EMAIL=${ADMIN_EMAIL}
       ports:
         - "8000:8000"
       depends_on:
@@ -73,7 +77,7 @@ services:
       restart: always
       tty: true
       environment:
-        - NGINX_HLS_PUBLIC_URL=http://localhost:8081/hls/ # Public URL to NGINX HLS folder, must correspond WITH Erotic-Hub NGINX_HLS_URL
+        - NGINX_HLS_PUBLIC_URL=${NGINX_HLS_URL}
         - EH_AUTH_ENDPOINT=http://host.docker.internal:8000/stream/auth # URL for authentication Sub-request
       ports:
         - "1935:1935"

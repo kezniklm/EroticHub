@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+rand = "0.8"
 gstreamer = "0.23.3"
 gstreamer-video = "0.23.3"
 tokio = { version = "1.41.1", features = ["full"] }
@@ -53,7 +54,7 @@ image = "0.24"
 lazy_static = "1.5.0"
 actix-http = "3.9.0"
 infer = "0.16.0"
-serde_qs = {version = "0.13.0", features = ["actix4"]}
+serde_qs = { version = "0.13.0", features = ["actix4"] }
 
 [dev-dependencies]
 actix-multipart-test = "0.0.3"
