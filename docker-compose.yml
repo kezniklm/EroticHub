@@ -73,7 +73,9 @@ services:
           - dev
     nginx:
       container_name: nginx-rtmp
-      build: docker/nginx-rtmp/.
+      build:
+        context: .
+        dockerfile: ./docker/nginx-rtmp/Dockerfile
       restart: always
       tty: true
       environment:

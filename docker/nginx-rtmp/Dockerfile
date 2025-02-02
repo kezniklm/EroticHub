@@ -60,9 +60,10 @@ RUN touch /etc/nginx/logs/error.log
 RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
     ln -sf /dev/stderr /var/log/nginx/error.log
 
-COPY nginx.conf /etc/nginx/nginx.conf.template
+COPY docker/nginx-rtmp/nginx.conf /etc/nginx/nginx.conf.template
 
-COPY run-nginx.sh /usr/bin/run-nginx.sh
+COPY docker/nginx-rtmp/run-nginx.sh /usr/bin/run-nginx.sh
+
 RUN chmod +x /usr/bin/run-nginx.sh
 
 EXPOSE 1935

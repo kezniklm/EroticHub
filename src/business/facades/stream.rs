@@ -37,8 +37,6 @@ lazy_static! {
 
 #[async_trait]
 pub trait StreamFacadeTrait {
-    #[allow(dead_code)]
-    async fn schedule_stream(&self, video_id: i32, user_id: i32) -> anyhow::Result<()>;
     /// Starts the stream of the given video
     ///
     /// # Returns
@@ -169,10 +167,6 @@ impl StreamFacade {
 
 #[async_trait]
 impl StreamFacadeTrait for StreamFacade {
-    async fn schedule_stream(&self, _video_id: i32, _user_id: i32) -> anyhow::Result<()> {
-        todo!()
-    }
-
     async fn start_stream(&self, live_stream: LiveStreamStart, user_id: i32) -> Result<i32> {
         let video = self
             .video_facade
