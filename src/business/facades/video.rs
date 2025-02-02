@@ -39,13 +39,13 @@ pub trait VideoFacadeTrait {
     async fn get_playable_video(&self, video_id: i32, user_id: Option<i32>) -> Result<NamedFile>;
     async fn get_thumbnail_file(&self, video_id: i32, user_id: Option<i32>) -> Result<NamedFile>;
     async fn check_permissions(&self, video: &Video, user_id: Option<i32>) -> Result<()>;
-    async fn get_video_list(&self) -> Result<Vec<Video>>;
     async fn fetch_videos(
         &self,
         ord: Option<&str>,
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
     ) -> Result<Vec<Video>>;
+    async fn fetch_liked_videos(&self, ids: Vec<i32>) -> Result<Vec<Video>>;
     async fn is_video_owner(&self, video_artist_id: i32, user_id: i32) -> Result<()>;
     fn get_video_thumbnail_dirs(&self) -> (String, String);
 }
@@ -349,20 +349,6 @@ impl VideoFacadeTrait for VideoFacade {
         }
     }
 
-    async fn get_video_list(&self) -> Result<Vec<Video>> {
-        let videos = self.video_repo.list_videos().await;
-        let videos = match videos {
-            Ok(videos) => videos,
-            Err(_e) => {
-                return Err(AppError::new(
-                    "Error fetching videos",
-                    AppErrorKind::InternalServerError,
-                ))
-            }
-        };
-        Ok(videos)
-    }
-
     async fn fetch_videos(
         &self,
         ord: Option<&str>,
@@ -375,6 +361,20 @@ impl VideoFacadeTrait for VideoFacade {
             Err(_e) => {
                 return Err(AppError::new(
                     "Error fetching videos",
+                    AppErrorKind::InternalServerError,
+                ))
+            }
+        };
+        Ok(videos)
+    }
+
+    async fn fetch_liked_videos(&self, ids: Vec<i32>) -> Result<Vec<Video>> {
+        let videos = self.video_repo.fetch_liked_videos(ids).await;
+        let videos = match videos {
+            Ok(videos) => videos,
+            Err(_e) => {
+                return Err(AppError::new(
+                    "Error fetching liked videos",
                     AppErrorKind::InternalServerError,
                 ))
             }

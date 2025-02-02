@@ -1,7 +1,5 @@
-use crate::api::controllers::utils::route_util::{
-    add_redirect_header, build_get_video_path, build_watch_path,
-};
-use crate::api::controllers::utils::video_utils::parse_option_string;
+use crate::api::controllers::utils::route_util::{add_redirect_header, build_watch_path};
+use crate::api::controllers::utils::video_utils::{from_video_to_video_list, parse_option_string};
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::extractors::permissions_extractor::{AsInteger, AsIntegerOptional};
 use crate::api::extractors::template_extractor::TemplateReq;
@@ -15,7 +13,8 @@ use crate::api::templates::video::upload::template::{
     ThumbnailPreviewTemplate, ThumbnailUploadInputTemplate, VideoPreviewTemplate,
     VideoUploadInputTemplate, VideoUploadTemplate,
 };
-use crate::business::facades::artist::{ArtistFacade, ArtistFacadeTrait};
+use crate::business::facades::artist::ArtistFacade;
+use crate::business::facades::user::{UserFacade, UserFacadeTrait};
 use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::facades::video_category::{VideoCategoryFacade, VideoCategoryFacadeTrait};
 use crate::business::models::error::MapToAppError;
@@ -79,9 +78,11 @@ pub async fn patch_video(
     path: Path<GetVideoByIdReq>,
     form: QsForm<VideoEditReq>,
     video_facade: Data<VideoFacade>,
+    user_facade: Data<UserFacade>,
     identity: Identity,
     session: Session,
 ) -> Result<impl Responder> {
+    let user_id = identity.id_i32()?;
     let video = video_facade
         .patch_video(identity.id_i32()?, path.id, form.into_inner())
         .await?;
@@ -91,8 +92,10 @@ pub async fn patch_video(
         video,
         player_template: PlayerTemplate::from_saved(path.id),
         session,
+        user_id,
+        is_liked: user_facade.is_liked_already(user_id, path.id).await?,
         is_video_owner: video_facade
-            .is_video_owner(video_artist_id, identity.id_i32()?)
+            .is_video_owner(video_artist_id, user_id)
             .await
             .map_or(false, |_| true),
     };
@@ -169,6 +172,7 @@ pub async fn get_thumbnail(
 pub async fn watch_video(
     req: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
+    user_facade: Data<UserFacade>,
     htmx_request: HtmxRequest,
     session: Session,
     identity: Option<Identity>,
@@ -182,7 +186,10 @@ pub async fn watch_video(
         video,
         player_template: PlayerTemplate::from_saved(video_id),
         session: session.clone(),
-
+        user_id: user_id.unwrap_or(-1),
+        is_liked: user_facade
+            .is_liked_already(user_id.unwrap_or(-1), video_id)
+            .await?,
         is_video_owner: video_facade
             .is_video_owner(video_artist_id, user_id.unwrap_or(-1))
             .await
@@ -193,20 +200,10 @@ pub async fn watch_video(
 }
 
 pub async fn main_page(
-    video_facade: Data<VideoFacade>,
-    artist_facade: Data<ArtistFacade>,
     category_facade: Data<VideoCategoryFacade>,
-    req: Query<FetchVideoByFilters>,
     session: Session,
     htmx_request: HtmxRequest,
 ) -> impl Responder {
-    let serialized_videos = get_videos(video_facade, artist_facade, req.clone()).await;
-
-    let serialized_videos = match serialized_videos {
-        Ok(videos) => videos,
-        Err(e) => return HttpResponse::InternalServerError().json(e.to_string()),
-    };
-
     let categories = category_facade.list_categories().await;
 
     let categories = match categories {
@@ -215,9 +212,7 @@ pub async fn main_page(
     };
 
     let template = IndexTemplate {
-        videos_template: VideoGridTemplate {
-            videos: serialized_videos,
-        },
+        videos_template: VideoGridTemplate {},
         categories,
     };
 
@@ -249,28 +244,7 @@ pub async fn get_videos(
 
     let videos = video_facade.fetch_videos(ord, filter, offset).await?;
 
-    let mut artists_ids = Vec::new();
-    videos.iter().for_each(|v| {
-        artists_ids.push(v.artist_id);
-    });
-
-    let artists = artist_facade.get_artists_names_by_id(artists_ids).await?;
-
-    let mut serialized_videos = Vec::new();
-    for video in &videos {
-        for artist in &artists {
-            if video.artist_id == artist.id {
-                let (_video_path, thumbnail_path) = build_get_video_path(video.id);
-                serialized_videos.push(VideoList {
-                    id: video.id,
-                    artist_id: video.artist_id,
-                    artist_name: artist.name.clone(),
-                    thumbnail_path,
-                    name: video.name.clone(),
-                })
-            }
-        }
-    }
+    let serialized_videos = from_video_to_video_list(videos, artist_facade).await?;
 
     Ok(serialized_videos)
 }

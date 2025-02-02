@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM favorite\n            WHERE user_id = $1 and video_id = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "900e981b155b838d69daabd600b6efff972ad1f9b97cf377a1e48dd7d6193af7"
+}

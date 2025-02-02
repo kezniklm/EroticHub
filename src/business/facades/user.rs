@@ -8,7 +8,7 @@ use crate::business::util::file::{create_dir_if_not_exist, get_file_extension};
 use crate::business::validation::contexts::user::UserValidationContext;
 use crate::business::validation::validatable::Validatable;
 use crate::business::Result;
-use crate::persistence::entities::user::User;
+use crate::persistence::entities::user::{LikedVideo, User};
 use crate::persistence::repositories::user::UserRepositoryTrait;
 use async_trait::async_trait;
 use bcrypt::{hash, verify, DEFAULT_COST};
@@ -84,6 +84,10 @@ pub trait UserFacadeTrait {
     async fn delete_user(&self, user_id: i32) -> Result<()>;
     async fn get_users(&self) -> Result<Vec<UserDetail>>;
     async fn change_admin_status(&self, user_id: i32, is_admin: bool) -> Result<()>;
+    async fn is_liked_already(&self, user_id: i32, video_id: i32) -> Result<bool>;
+    async fn liked_videos_by_user(&self, user_id: i32) -> Result<Vec<LikedVideo>>;
+    async fn like_video(&self, user_id: i32, video_id: i32) -> Result<()>;
+    async fn unlike_video(&self, user_id: i32, video_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -534,6 +538,32 @@ impl UserFacadeTrait for UserFacade {
         self.user_repository
             .change_admin_status(user_id, is_admin)
             .await?;
+
+        Ok(())
+    }
+
+    async fn is_liked_already(&self, user_id: i32, video_id: i32) -> Result<bool> {
+        let like = self
+            .user_repository
+            .is_liked_already(user_id, video_id)
+            .await?;
+        Ok(like)
+    }
+
+    async fn liked_videos_by_user(&self, user_id: i32) -> Result<Vec<LikedVideo>> {
+        let likes = self.user_repository.liked_videos_by_user(user_id).await?;
+
+        Ok(likes)
+    }
+
+    async fn like_video(&self, user_id: i32, video_id: i32) -> Result<()> {
+        self.user_repository.like_video(user_id, video_id).await?;
+
+        Ok(())
+    }
+
+    async fn unlike_video(&self, user_id: i32, video_id: i32) -> Result<()> {
+        self.user_repository.unlike_video(user_id, video_id).await?;
 
         Ok(())
     }

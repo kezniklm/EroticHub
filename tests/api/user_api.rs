@@ -671,7 +671,7 @@ async fn test33_liked_videos(ctx: &mut AsyncContext) {
     let cookie = login_as(JOHN_NOT_ARTIST, &app).await;
 
     let request = test::TestRequest::default()
-        .uri("/user/liked-videos")
+        .uri("/user/likes")
         .method(Method::GET)
         .cookie(cookie)
         .to_request();

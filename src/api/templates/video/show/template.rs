@@ -1,5 +1,6 @@
 use crate::api::controllers::utils::route_util::{build_get_temp_path, build_get_video_path};
 use crate::api::extractors::permissions_extractor::IsRole;
+use crate::business::models::comment::CommentUserModel;
 use crate::business::models::video::Video;
 use actix_session::Session;
 use askama_actix::Template;
@@ -10,6 +11,8 @@ pub struct ShowVideoTemplate<T: Template> {
     pub video: Video,
     pub player_template: T,
     pub session: Session,
+    pub user_id: i32,
+    pub is_liked: bool,
     pub is_video_owner: bool,
 }
 
@@ -36,4 +39,10 @@ impl PlayerTemplate {
             thumbnail_path: None,
         }
     }
+}
+
+#[derive(Template)]
+#[template(path = "video/show/comments.html")]
+pub struct CommentsTemplate {
+    pub comments: Vec<CommentUserModel>,
 }

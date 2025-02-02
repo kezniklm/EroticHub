@@ -1,4 +1,4 @@
-use crate::persistence::entities::user::{User, UserName};
+use crate::persistence::entities::user::{LikedVideo, User, UserName};
 use crate::persistence::Result;
 use async_trait::async_trait;
 use sqlx::PgPool;
@@ -15,6 +15,10 @@ pub trait UserRepositoryTrait: Debug {
     async fn fetch_usernames_by_id(&self, ids: Vec<i32>) -> anyhow::Result<Vec<UserName>>;
     async fn get_users(&self) -> Result<Vec<User>>;
     async fn change_admin_status(&self, user_id: i32, is_admin: bool) -> Result<()>;
+    async fn is_liked_already(&self, user_id: i32, video_id: i32) -> Result<bool>;
+    async fn liked_videos_by_user(&self, user_id: i32) -> Result<Vec<LikedVideo>>;
+    async fn like_video(&self, user_id: i32, video_id: i32) -> Result<()>;
+    async fn unlike_video(&self, user_id: i32, video_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -185,6 +189,67 @@ impl UserRepositoryTrait for UserRepository {
             "#,
             is_admin,
             user_id
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn is_liked_already(&self, user_id: i32, video_id: i32) -> Result<bool> {
+        let like = sqlx::query!(
+            r#"
+            SELECT user_id, video_id
+            FROM favorite
+            WHERE user_id = $1 and video_id = $2
+            "#,
+            user_id,
+            video_id
+        )
+        .fetch_optional(&self.pool) // Use fetch_optional to avoid an error if no row is found
+        .await?;
+        Ok(like.is_some())
+    }
+
+    async fn liked_videos_by_user(&self, user_id: i32) -> Result<Vec<LikedVideo>> {
+        let likes = sqlx::query_as!(
+            LikedVideo,
+            r#"
+            SELECT user_id, video_id
+            FROM favorite
+            WHERE user_id = $1
+            "#,
+            user_id,
+        )
+        .fetch_all(&self.pool) // Use fetch_optional to avoid an error if no row is found
+        .await?;
+        Ok(likes)
+    }
+
+    async fn like_video(&self, user_id: i32, video_id: i32) -> Result<()> {
+        sqlx::query!(
+            r#"
+            INSERT INTO favorite (user_id, video_id)
+            VALUES ($1, $2)
+            RETURNING user_id, video_id
+            "#,
+            user_id,
+            video_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(())
+    }
+
+    async fn unlike_video(&self, user_id: i32, video_id: i32) -> Result<()> {
+        sqlx::query!(
+            r#"
+            DELETE FROM favorite
+            WHERE user_id = $1 and video_id = $2
+            "#,
+            user_id,
+            video_id
         )
         .execute(&self.pool)
         .await?;

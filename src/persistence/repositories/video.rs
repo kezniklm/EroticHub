@@ -32,7 +32,8 @@ pub trait VideoRepo {
         ord: Option<&str>,
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
-    ) -> anyhow::Result<Vec<Video>>;
+    ) -> Result<Vec<Video>>;
+    async fn fetch_liked_videos(&self, ids: Vec<i32>) -> Result<Vec<Video>>;
 }
 
 #[derive(Debug, Clone)]
@@ -272,7 +273,7 @@ impl VideoRepo for PgVideoRepo {
         ord: Option<&str>,
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
-    ) -> anyhow::Result<Vec<Video>> {
+    ) -> Result<Vec<Video>> {
         let mut query = QueryBuilder::new(
             r#"SELECT
             id,
@@ -320,11 +321,36 @@ impl VideoRepo for PgVideoRepo {
             query.push(" ");
         }
 
-        query.push(" LIMIT 20");
+        query.push(" LIMIT 8");
         if let Some(offset) = offset {
             query.push(" OFFSET ");
             query.push_bind(offset);
         }
+
+        let result = query.build_query_as().fetch_all(&self.pg_pool).await;
+
+        Ok(result?)
+    }
+
+    async fn fetch_liked_videos(&self, ids: Vec<i32>) -> Result<Vec<Video>> {
+        let mut query = QueryBuilder::new(
+            r#"SELECT
+            id,
+            artist_id,
+            name,
+            visibility,
+            file_path,
+            thumbnail_path,
+            description FROM video"#,
+        );
+        query.push(format!(
+            r#"
+            WHERE id IN ({})"#,
+            &ids.iter()
+                .map(|&x| x.to_string())
+                .collect::<Vec<String>>()
+                .join(",")
+        ));
 
         let result = query.build_query_as().fetch_all(&self.pg_pool).await;
 

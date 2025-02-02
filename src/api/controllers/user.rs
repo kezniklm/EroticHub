@@ -1,3 +1,4 @@
+use crate::api::controllers::utils::video_utils::from_video_to_video_list;
 use crate::api::extractors::htmx_extractor::HtmxRequest;
 use crate::api::extractors::permissions_extractor::AsInteger;
 use crate::api::templates::template::BaseTemplate;
@@ -9,7 +10,10 @@ use crate::api::templates::user::login::template::UserLoginTemplate;
 use crate::api::templates::user::password_change::template::PasswordChangeTemplate;
 use crate::api::templates::user::register::template::UserRegisterTemplate;
 use crate::api::templates::user::validation::template::ValidationTemplate;
+use crate::api::templates::video::list::template::VideosTemplate;
+use crate::business::facades::artist::ArtistFacade;
 use crate::business::facades::user::{UserFacade, UserFacadeTrait};
+use crate::business::facades::video::{VideoFacade, VideoFacadeTrait};
 use crate::business::models::user::UserRole::{self, Registered};
 use crate::business::models::user::{
     EmailQuery, ProfilePictureUpdate, UserDetailUpdate, UserLogin, UserPasswordUpdate,
@@ -22,7 +26,6 @@ use actix_session::Session;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use actix_web_grants::protect;
 use askama_actix::TemplateToResponse;
-
 // TODO: after logging in or registering, a page reload is required to update the profile in navbar
 // TODO: liked videos
 // TODO: terms and conditions
@@ -259,18 +262,60 @@ pub async fn profile_picture_update(
 
 #[protect(any("Registered"), ty = "UserRole")]
 pub async fn liked_videos(
+    identity: Identity,
+    user_facade: web::Data<UserFacade>,
+    video_facade: web::Data<VideoFacade>,
+    artist_facade: web::Data<ArtistFacade>,
+) -> Result<impl Responder> {
+    let user_id = identity.id_i32()?;
+    let likes = user_facade.liked_videos_by_user(user_id).await?;
+
+    let mut ids = vec![];
+    for like in likes {
+        ids.push(like.video_id);
+    }
+
+    let videos = video_facade.fetch_liked_videos(ids).await?;
+    let serialized_videos = from_video_to_video_list(videos, artist_facade).await?;
+    let template = VideosTemplate {
+        videos: serialized_videos,
+    };
+
+    Ok(template.to_response())
+}
+
+#[protect(any("Registered"), ty = "UserRole")]
+pub async fn likes_page(
     htmx_request: HtmxRequest,
     session: Session,
-    identity: Identity,
+    _identity: Identity,
 ) -> Result<impl Responder> {
-    Ok(BaseTemplate::wrap(
-        htmx_request,
-        session,
-        LikedVideosTemplate {
-            user_id: identity.id()?,
-        },
-    )
-    .to_response())
+    Ok(BaseTemplate::wrap(htmx_request, session, LikedVideosTemplate {}).to_response())
+}
+
+#[protect(any("Registered"), ty = "UserRole")]
+pub async fn like_video(
+    user_facade: web::Data<UserFacade>,
+    identity: Identity,
+    video_id: web::Path<i32>,
+) -> Result<impl Responder> {
+    let user_id = identity.id_i32()?;
+    match user_facade.is_liked_already(user_id, *video_id).await? {
+        true => {
+            user_facade
+                .unlike_video(user_id, video_id.into_inner())
+                .await?;
+        }
+        false => {
+            user_facade
+                .like_video(user_id, video_id.into_inner())
+                .await?;
+        }
+    }
+
+    Ok(HttpResponse::Ok()
+        .append_header(("HX-Refresh", "true"))
+        .finish())
 }
 
 pub async fn validate_username(

@@ -5,6 +5,7 @@ use actix_web_grants::GrantsMiddleware;
 use env_logger::Env;
 use erotic_hub::api::extractors::permissions_extractor::extract;
 use erotic_hub::api::routes::admin::admin_routes;
+use erotic_hub::api::routes::comment::comment_routes;
 use erotic_hub::api::routes::membership::membership_routes;
 use erotic_hub::api::routes::stream::stream_routes;
 use erotic_hub::api::routes::temp_file::temp_file_routes;
@@ -59,7 +60,6 @@ async fn main() -> anyhow::Result<()> {
     if let Err(e) = dotenvy::dotenv() {
         warn!("failed loading .env file: {e}")
     };
-    // std::env::set_var("RUST_LOG", "debug");
     env_logger::init_from_env(Env::default().default_filter_or("info"));
     init_gstreamer()
         .expect("Failed to initialize GStreamer. Check if you have it installed on your system");
@@ -176,6 +176,7 @@ async fn main() -> anyhow::Result<()> {
             .app_data(setup_multipart_config(config.clone()))
             .app_data(setup_qs_config())
             .configure(video_routes)
+            .configure(comment_routes)
             .configure(user_routes)
             .configure(temp_file_routes)
             .configure(stream_routes)

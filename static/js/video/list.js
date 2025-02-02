@@ -8,9 +8,9 @@ function scrollTags(direction) {
     const scrollAmount = 200;
     const tagsContainer = document.querySelector(".tags-container");
     if (direction === "left") {
-        tagsContainer.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+        tagsContainer.scrollBy({left: -scrollAmount, behavior: "smooth"});
     } else if (direction === "right") {
-        tagsContainer.scrollBy({ left: scrollAmount, behavior: "smooth" });
+        tagsContainer.scrollBy({left: scrollAmount, behavior: "smooth"});
     }
 }
 
@@ -70,7 +70,7 @@ async function fetchUserCountry() {
 
         const cachedCountryData = localStorage.getItem("userCountryData");
         if (cachedCountryData) {
-            const { country, countryCode } = JSON.parse(cachedCountryData);
+            const {country, countryCode} = JSON.parse(cachedCountryData);
 
             countryNameElement.textContent = country;
 
@@ -102,7 +102,7 @@ async function fetchUserCountry() {
 
         localStorage.setItem(
             "userCountryData",
-            JSON.stringify({ country, countryCode })
+            JSON.stringify({country, countryCode})
         );
     } catch (error) {
         console.error("Error fetching country:", error);
@@ -111,22 +111,6 @@ async function fetchUserCountry() {
         ).textContent = `Hot Videos in your location`;
     }
 }
-
-/*
-document.addEventListener("htmx:afterRequest", (event) => {
-    const trigger = document.querySelector("#scroll-trigger");
-        // If the server responds with 204 (No Content), remove the trigger
-        if (event.detail.xhr.status === 204) {
-        trigger.remove();
-    } else {
-        // Update offset as before
-        let offset = parseInt(trigger.getAttribute("hx-vals").match(/"offset":\s*(\d+)/)[1], 10);
-        offset += 20;
-        trigger.setAttribute("hx-vals", `{"offset": ${offset}}`);
-    }
-});
-*/
-
 
 function updateFilters(checkbox) {
     if (!checkbox) {
@@ -148,6 +132,8 @@ function updateFilters(checkbox) {
     }
 
     const tagsContainer = document.querySelector('.tags-container');
+    const offset = document.getElementById('offset_liked');
+    const more_videos = document.getElementById('more-videos');
 
     if (selectedTags.length === 0) {
         if (tagsContainer) {
@@ -155,16 +141,19 @@ function updateFilters(checkbox) {
                 input.removeAttribute('hx-vals');
             });
         }
+        more_videos.setAttribute('hx-vals', JSON.stringify({offset: 8, filter: ""}))
         htmx.ajax('GET', '/video', {
             target: '#video-grid',
             swap: 'innerHTML'
         });
     } else {
         const filterString = selectedTags.join(',');
+        more_videos.setAttribute('hx-vals', JSON.stringify({offset: 8, filter: filterString}))
         if (tagsContainer) {
             tagsContainer.querySelectorAll('input[data-value]').forEach(input => {
-                input.setAttribute('hx-vals', JSON.stringify({ filter: filterString }));
+                input.setAttribute('hx-vals', JSON.stringify({filter: filterString}));
             });
         }
     }
+    offset.value = 8;
 }
