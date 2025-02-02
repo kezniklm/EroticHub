@@ -334,6 +334,29 @@ async fn seed_videos(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
         .fetch_one(tx.as_mut())
         .await?
         .id;
+
+        let category_id = sqlx::query!(
+            r#"
+            SELECT id
+            FROM video_category
+            ORDER BY random()
+            LIMIT 1
+            "#,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        sqlx::query!(
+            r#"
+            INSERT INTO video_category_video (video_id, category_id)
+            VALUES ($1, $2)
+            "#,
+            video_id,
+            category_id,
+        )
+        .execute(tx.as_mut())
+        .await?;
     }
 
     Ok(())
