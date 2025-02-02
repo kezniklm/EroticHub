@@ -228,11 +228,10 @@ async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> 
 async fn seed_categories(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
     // name
     let categories = [
-        "Photography",
+        "BBC",
         "Modeling",
         "Dance",
         "Writing",
-        "Digital Art",
         "Painting",
         "Music",
         "Fashion",
@@ -242,12 +241,11 @@ async fn seed_categories(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<(
         "Cosplay",
         "Film",
         "Makeup",
-        "Companionship",
         "Jewelry",
-        "Performance Art",
-        "Photography",
         "ASMR",
         "Tattoo",
+        "MILF",
+        "Asian",
     ];
 
     for category in categories.iter() {
@@ -291,12 +289,74 @@ async fn seed_deals(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
 
 async fn seed_videos(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
     // name, file_path, thumbnail_path, description
-    let templates = [(
+    let templates = [
+        (
         "Pussy licking itself vigorously",
         "./seed_resources/videos/pussy_1.mp4",
         "./seed_resources/thumbnails/pussy_1.png",
         "I made this video with my boyfriend watching! What do you think?",
-    )];
+    ),
+    (
+        "Touching my pussy at the family house",
+        "./seed_resources/videos/pussy_2.mp4",
+        "./seed_resources/thumbnails/pussy_2.png",
+        "I was alone at home and I decided to record myself touching my pussy. I hope you like it!",
+    ),
+    (
+        "Big black pussy alone",
+        "./seed_resources/videos/pussy_3.mp4",
+        "./seed_resources/thumbnails/pussy_3.png",
+        "I recorded this video with my new camera. I hope you like it!",
+    ),
+    (
+        "New toy for my pussy!",
+        "./seed_resources/videos/pussy_4.mp4",
+        "./seed_resources/thumbnails/pussy_4.png",
+        "This is my new toy! I enjoyed it so much!",
+    ),
+    (
+        "Pussy licking in public",
+        "./seed_resources/videos/pussy_5.mp4",
+        "./seed_resources/thumbnails/pussy_5.png",
+        "I recorded this video in a public place. I am so bad!",
+    ),
+    (
+        "Nasty white bitch",
+        "./seed_resources/videos/bitch_1.mp4",
+        "./seed_resources/thumbnails/bitch_1.png",
+        "I found this and couldn't keep it out of my mouth",
+    ),
+    (
+        "Young bitch gets rough rubbing",
+        "./seed_resources/videos/bitch_2.mp4",
+        "./seed_resources/thumbnails/bitch_2.png",
+        "She likes it rough! Look at her face"
+    ),
+    (
+        "Praise this big alpha cock!",
+        "./seed_resources/videos/cock_1.mp4",
+        "./seed_resources/thumbnails/cock_1.png",
+        "How do you like my cock? Leave a comment!",
+    ),
+    (
+        "Don't know what to do with my cock",
+        "./seed_resources/videos/cock_2.mp4",
+        "./seed_resources/thumbnails/cock_2.png",
+        "Check my bio for details"
+    ),
+    (
+        "This cock is trapped in a cage! Hardcore",
+        "./seed_resources/videos/cock_3.mp4",
+        "./seed_resources/thumbnails/cock_3.png",
+        "I almost couldn't do it...",
+    ),
+    (
+        "Two cocks moaning",
+        "./seed_resources/videos/cock_4.mp4",
+        "./seed_resources/thumbnails/cock_4.png",
+        "I love when these two get together to film with me!",
+    )
+    ];
 
     for (name, file_path, thumbnail_path, description) in templates.iter() {
         let artist_id = sqlx::query!(
@@ -362,16 +422,148 @@ async fn seed_videos(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
     Ok(())
 }
 
+async fn seed_comments(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
+    // content
+    let contents = [
+        "This is amazing!",
+        "I love this video!",
+        "Great work!",
+        "I can't stop watching this!",
+        "Wow!",
+        "This is so hot!",
+        "I need more of this!",
+        "Incredible!",
+        "I'm speechless!",
+        "This is perfect!",
+        "Booooring!",
+        "I don't like this!",
+        "This is not what I expected!",
+        "I'm disappointed!",
+        "I want my money back!",
+        "This is trash!",
+        "I would like to have you for myself!",
+        "I'm in love!",
+        "Send nudes!",
+        "I want to see more!",
+        "Please, be my girlfriend!",
+        "I'm your biggest fan!",
+    ];
+
+    for content in contents.iter() {
+        let video_id = sqlx::query!(
+            r#"
+            SELECT id
+            FROM video
+            ORDER BY random()
+            LIMIT 1
+            "#,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        let user_id = sqlx::query!(
+            r#"
+            SELECT id
+            FROM user_table
+            ORDER BY random()
+            LIMIT 1
+            "#,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        sqlx::query!(
+            r#"
+            INSERT INTO comment (video_id, user_id, content)
+            VALUES ($1, $2, $3)
+            "#,
+            video_id,
+            user_id,
+            content,
+        )
+        .execute(tx.as_mut())
+        .await?;
+    }
+
+    Ok(())
+}
+
+async fn seed_favorites(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
+    let video_id = sqlx::query!(
+        r#"
+        SELECT id
+        FROM video
+        ORDER BY random()
+        LIMIT 1
+        "#,
+    )
+    .fetch_one(tx.as_mut())
+    .await?
+    .id;
+
+    let user_id = sqlx::query!(
+        r#"
+        SELECT id
+        FROM user_table
+        ORDER BY random()
+        LIMIT 1
+        "#,
+    )
+    .fetch_one(tx.as_mut())
+    .await?
+    .id;
+
+    let already_exists = sqlx::query!(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM favorite
+            WHERE video_id = $1 AND user_id = $2
+        ) AS "exists!"
+        "#,
+        video_id,
+        user_id,
+    )
+    .fetch_one(tx.as_mut())
+    .await?
+    .exists;
+
+    if already_exists {
+        return Ok(());
+    }
+
+    sqlx::query!(
+        r#"
+        INSERT INTO favorite (video_id, user_id)
+        VALUES ($1, $2)
+        "#,
+        video_id,
+        user_id,
+    )
+    .execute(tx.as_mut())
+    .await?;
+
+    Ok(())
+}
+
 pub async fn seed_database(pool: &PgPool) -> anyhow::Result<()> {
     let mut tx = pool.begin().await?;
 
     seed_users(&mut tx).await?;
     seed_deals(&mut tx).await?;
-
-    // videos depend on artists and categories: mind the order
     seed_artists(&mut tx).await?;
     seed_categories(&mut tx).await?;
-    seed_videos(&mut tx).await?;
+    for _ in 0..10 {
+        seed_videos(&mut tx).await?;
+    }
+    for _ in 0..20 {
+        seed_comments(&mut tx).await?;
+    }
+    for _ in 0..50 {
+        seed_favorites(&mut tx).await?;
+    }
 
     tx.commit().await?;
 
