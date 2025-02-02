@@ -163,7 +163,7 @@ pub async fn get_thumbnail(
 }
 
 /// Returns template which displays the video
-/// TODO: Display some placeholder when user doesn't have permissions to see the video!
+///
 ///
 /// `GET /{id}/watch`
 ///

@@ -149,7 +149,6 @@ async fn main() -> anyhow::Result<()> {
         let (identity_middleware, session_middleware) = setup_auth(&redis_store);
 
         App::new()
-            // TODO: include staticf iles into the binary using include_dir crate
             .service(actix_files::Files::new("/static", "./static"))
             .service(actix_files::Files::new(
                 "/user-images",

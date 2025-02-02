@@ -207,7 +207,7 @@ mod test {
             .expect("Failed to create dummy user");
         tokio::fs::create_dir_all("./test_resources")
             .await
-            .expect("Failed to create test directory"); // TODO: temporary
+            .expect("Failed to create test directory");
 
         let repo = create_repo(ctx.pg_pool.clone());
         let (temp_file, entity) = create_entity(Some(1), &get_temp_file_path(ctx));
