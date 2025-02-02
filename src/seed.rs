@@ -1,3 +1,4 @@
+use crate::persistence::entities::video::VideoVisibility;
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Datelike;
 use sqlx::{types::BigDecimal, PgPool, Postgres, Transaction};
@@ -155,7 +156,8 @@ async fn seed_users(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<i32>> {
+async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
+    // (name, description)
     let templates = [
         ("Seraphina Noir", "A photographer specializing in dark, sensual imagery with a gothic flair."),
         ("Jax Wilder", "A male model and erotic performer known for his athletic physique and captivating presence."),
@@ -179,7 +181,6 @@ async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<
         ("Indigo Bloom", "A tattoo artist specializing in erotic and symbolic designs using fine lines and delicate shading.")
     ];
 
-    let mut ids = vec![];
     for (name, description) in templates.iter() {
         let artist_user_id = sqlx::query!(
             r#"
@@ -208,8 +209,6 @@ async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<
         .await?
         .id;
 
-        ids.push(artist_id);
-
         sqlx::query!(
             r#"
             UPDATE user_table
@@ -223,10 +222,11 @@ async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<
         .await?;
     }
 
-    Ok(ids)
+    Ok(())
 }
 
-async fn seed_categories(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<i32>> {
+async fn seed_categories(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
+    // name
     let categories = [
         "Photography",
         "Modeling",
@@ -250,24 +250,19 @@ async fn seed_categories(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<V
         "Tattoo",
     ];
 
-    let mut ids = vec![];
     for category in categories.iter() {
-        let category_id = sqlx::query!(
+        sqlx::query!(
             r#"
             INSERT INTO video_category (name)
             VALUES ($1)
-            RETURNING id
             "#,
             category,
         )
-        .fetch_one(tx.as_mut())
-        .await?
-        .id;
-
-        ids.push(category_id);
+        .execute(tx.as_mut())
+        .await?;
     }
 
-    Ok(ids)
+    Ok(())
 }
 
 async fn seed_deals(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
@@ -294,14 +289,66 @@ async fn seed_deals(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
     Ok(())
 }
 
+async fn seed_videos(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
+    // name, file_path, thumbnail_path, description
+    let templates = [(
+        "Pussy licking itself vigorously",
+        "./seed_resources/videos/pussy_1.mp4",
+        "./seed_resources/thumbnails/pussy_1.png",
+        "I made this video with my boyfriend watching! What do you think?",
+    )];
+
+    for (name, file_path, thumbnail_path, description) in templates.iter() {
+        let artist_id = sqlx::query!(
+            r#"
+            SELECT id
+            FROM artist
+            ORDER BY random()
+            LIMIT 1
+            "#,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        let random_number = rand::random::<u8>() % 3;
+        let visibility = match random_number {
+            0 => VideoVisibility::All,
+            1 => VideoVisibility::Registered,
+            _ => VideoVisibility::Paying,
+        };
+
+        let video_id = sqlx::query!(
+            r#"
+            INSERT INTO video (artist_id, name, file_path, thumbnail_path, description, visibility)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id
+            "#,
+            artist_id,
+            name,
+            file_path,
+            thumbnail_path,
+            description,
+            visibility as VideoVisibility,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+    }
+
+    Ok(())
+}
+
 pub async fn seed_database(pool: &PgPool) -> anyhow::Result<()> {
     let mut tx = pool.begin().await?;
 
     seed_users(&mut tx).await?;
     seed_deals(&mut tx).await?;
 
-    let artist_ids = seed_artists(&mut tx).await?;
-    let category_ids = seed_categories(&mut tx).await?;
+    // videos depend on artists and categories: mind the order
+    seed_artists(&mut tx).await?;
+    seed_categories(&mut tx).await?;
+    seed_videos(&mut tx).await?;
 
     tx.commit().await?;
 

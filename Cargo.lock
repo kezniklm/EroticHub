@@ -1285,6 +1285,7 @@ dependencies = [
  "lazy_static",
  "log",
  "once_cell",
+ "rand",
  "redis",
  "regex",
  "serde",
