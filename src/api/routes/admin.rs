@@ -1,9 +1,9 @@
 use actix_web::web;
 
 use crate::api::controllers::admin::{
-    add_deal, delete_deal, edit_deal, get_admin_add_deal_form, get_admin_deals,
-    get_admin_edit_deal_form, get_admin_section, get_users, make_user_admin, make_user_artist,
-    revoke_user_admin,
+    add_category, add_deal, delete_category, delete_deal, edit_deal, get_admin_add_deal_form,
+    get_admin_categories, get_admin_deals, get_admin_edit_deal_form, get_admin_section, get_users,
+    make_user_admin, make_user_artist, revoke_user_admin,
 };
 
 pub fn admin_routes(cfg: &mut web::ServiceConfig) {
@@ -28,6 +28,12 @@ pub fn admin_routes(cfg: &mut web::ServiceConfig) {
             .route(
                 "/users/{user_id}/revoke-admin",
                 web::post().to(revoke_user_admin),
+            )
+            .route("/categories", web::get().to(get_admin_categories))
+            .route("/categories", web::post().to(add_category))
+            .route(
+                "/categories/{category_id}",
+                web::delete().to(delete_category),
             ),
     );
 }

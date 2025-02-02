@@ -21,6 +21,9 @@ pub trait VideoCategoryRepoTrait: Debug {
 
     /// Returns assigned categories to specified video
     async fn get_assigned_categories(&self, video_id: i32) -> Result<Vec<VideoCategory>>;
+
+    async fn add_category(&self, name: String) -> Result<()>;
+    async fn delete_category(&self, category_id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -111,5 +114,21 @@ impl VideoCategoryRepoTrait for VideoCategoryRepository {
         .await?;
 
         Ok(result)
+    }
+
+    async fn add_category(&self, name: String) -> Result<()> {
+        sqlx::query!("INSERT INTO video_category(name) VALUES($1)", name)
+            .execute(&self.pg_pool)
+            .await?;
+
+        Ok(())
+    }
+
+    async fn delete_category(&self, category_id: i32) -> Result<()> {
+        sqlx::query!("DELETE FROM video_category WHERE id = $1", category_id)
+            .execute(&self.pg_pool)
+            .await?;
+
+        Ok(())
     }
 }
