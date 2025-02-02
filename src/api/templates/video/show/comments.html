@@ -1,0 +1,26 @@
+<div class="comments container px-2">
+    {% for comment in comments %}
+        <div class="comment py-1 d-flex">
+            <div class="profile_img max-w-10">
+                {% match comment.profile_picture_path %}
+                    {% when Some(profile_picture) %}
+                    <img height="40px" id="imagePreview" src="/{{profile_picture}}" alt="Preview"
+                     onerror="this.src='/static/images/anonymous_profile_picture.jpg';" />
+                    {% when None %}
+                <img height="40px" id="imagePreview" src="/static/images/anonymous_profile_picture.jpg"
+                     alt="Preview" />
+                {% endmatch %}
+            </div>
+            <div class="w-100 px-2">
+                <div class="d-flex w-100 justify-content-between">
+                    <div class="username">{{ comment.username }}</div>
+                    <div class="date">{{ comment.created_at }}</div>
+                </div>
+                <p class="content overflow-auto">{{ comment.comment_content }}</p>
+            </div>
+        </div>
+    {% if !loop.last %}
+    <hr>
+    {% endif %}
+    {% endfor %}
+</div>

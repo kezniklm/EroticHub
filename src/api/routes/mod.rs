@@ -1,4 +1,5 @@
 pub mod admin;
+pub mod comment;
 pub mod membership;
 pub mod stream;
 pub mod temp_file;

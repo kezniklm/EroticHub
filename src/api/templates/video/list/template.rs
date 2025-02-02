@@ -11,9 +11,7 @@ pub struct IndexTemplate<T: Template> {
 
 #[derive(Template)]
 #[template(path = "video/list/video_grid.html")]
-pub struct VideoGridTemplate {
-    pub videos: Vec<VideoList>,
-}
+pub struct VideoGridTemplate {}
 
 #[derive(Template)]
 #[template(path = "video/list/videos.html")]

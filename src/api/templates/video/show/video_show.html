@@ -3,6 +3,9 @@
     <div class="video-name-container mt-2">
         <div class="video-name">{{ video.name }}</div>
         <div>
+            <a class="like-btn" data-bs-title="Like video" data-liked="{{ is_liked }}" hx-post="/user/like/{{ video.id }}" hx-push-url="false">
+                <i class="bi bi-heart-fill"></i>
+            </a>
             {% if session.is_artist() && is_video_owner %}
             <a class="icon-btn" data-bs-toggle="tooltip" data-bs-title="Edit video" hx-get="/video/{{ video.id }}/edit" hx-target="#content-container" hx-push-url="true">
                 <i class="bi bi-pencil-square"></i>
@@ -18,4 +21,43 @@
         {{ description }}
         {% endif %}
     </div>
+    <div class="py-3">
+        <h2>Leave a comment</h2>
+        <form hx-post="/comments" hx-target="#comments" hx-swap="beforeend" method="post">
+            <textarea class="form-control text-input" name="content" maxlength="150" rows="2" cols="50" placeholder="Write your comment here..." required></textarea><br>
+            <input type="hidden" name="video_id" value="{{ video.id }}">
+            <input type="hidden" name="user_id" value="{{ user_id }}">
+            <button class="btn btn-outline-primary" type="submit">Submit</button>
+        </form>
+    </div>
+    <div class="py-3" id="comments" hx-get="/comments/{{ video.id }}" hx-target="#comments" hx-swap="innerHTML" hx-trigger="revealed" hx-vals='{"offset": 0}' hx-push-url="false" hx-swap="innerHTML" hx-params="offset">
+    </div>
+    <button class="btn btn-outline-primary mb-5"
+            id="load-more"
+            hx-get="/comments/{{ video.id }}"
+            hx-target="#comments"
+            hx-swap="beforeend"
+            hx-include="#offset-input"
+            hx-trigger="click">
+        Load More
+    </button>
+
+    <input type="hidden" id="offset-input" name="offset" value="10">
 </div>
+
+<script>
+    const loadMore = document.getElementById('load-more');
+    loadMore.addEventListener('click', () => {
+        let offsetInput = document.getElementById('offset-input');
+        offsetInput.value = parseInt(offsetInput.value) + 10;
+    });
+</script>
+
+<style>
+    .like-btn[data-liked="true"] i {
+        color: orange;
+    }
+    .like-btn[data-liked="false"] i {
+        color: white;
+    }
+</style>

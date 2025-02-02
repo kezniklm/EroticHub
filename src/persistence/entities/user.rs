@@ -17,3 +17,9 @@ pub struct UserName {
     pub id: i32,
     pub username: String,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct LikedVideo {
+    pub user_id: i32,
+    pub video_id: i32,
+}

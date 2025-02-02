@@ -1,10 +1,35 @@
 <!-- Video Grid -->
-<div class="container"  id="scroll-trigger"
-      hx-get="/video"
-      hx-trigger="revealed"
-      hx-vals='{"offset": 20}'
-      hx-swap="beforeend">
-    <div class="row" id="video-grid">
-        {% include "videos.html" %}
+<div class="container">
+    <div class="row"
+         hx-get="/video"
+         hx-trigger="revealed"
+         hx-vals='{"offset": 0}'
+         hx-swap="beforeend"
+         id="video-grid">
     </div>
 </div>
+<button class="btn btn-outline-primary mt-4 mb-4"
+        id="more-videos"
+        hx-get="/video"
+        hx-target="#video-grid"
+        hx-swap="beforeend"
+        hx-vals='{"offset": 8, "filters": ""}'
+        hx-trigger="click">
+    Load More
+</button>
+<input type="hidden" id="offset_videos" name="offset" value="8">
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const moreVideos = document.getElementById('more-videos');
+        const offset_videos = document.getElementById('offset_videos');
+
+        moreVideos.addEventListener('click', () => {
+            const selectedTags = Array.from(document.querySelectorAll('input[data-value]:checked'))
+                .map(checkbox => checkbox.getAttribute('data-value'));
+            const filterString = selectedTags.join(',');
+            offset_videos.value = parseInt(offset_videos.value) + 8;
+            moreVideos.setAttribute('hx-vals', JSON.stringify({offset: offset_videos.value, filter: filterString}));
+        });
+    });
+</script>

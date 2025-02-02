@@ -1,1 +1,11 @@
-{{ user_id }}
+<!-- Video Grid -->
+<div class="container">
+    <div class="row"
+         hx-get="/user/liked-videos"
+         hx-trigger="revealed"
+         hx-vals='{"offset": 0}'
+         hx-swap="beforeend"
+         hx-push-url="false"
+         id="video-liked">
+    </div>
+</div>
