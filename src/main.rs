@@ -31,6 +31,7 @@ use erotic_hub::persistence::repositories::unit_of_work::PostgresUnitOfWork;
 use erotic_hub::persistence::repositories::user::UserRepository;
 use erotic_hub::persistence::repositories::video::PgVideoRepo;
 use erotic_hub::persistence::repositories::video_category::VideoCategoryRepository;
+use erotic_hub::seed::{create_admin, seed_database};
 use erotic_hub::streamer::gstreamer_controller::init_gstreamer;
 use erotic_hub::{
     get_profile_picture_folder_path, get_temp_directory_path, get_video_thumbnail_dirs,
@@ -67,6 +68,14 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = setup_db_pool().await?;
 
+    let seed_data = dotenvy::var("SEED_DATA")
+        .ok()
+        .map(|v| v == "true")
+        .unwrap_or(false);
+    if seed_data {
+        seed_database(&pool).await?;
+    }
+
     let redis_pool = setup_redis_pool().await?;
 
     let redis_store = RedisSessionStore::new_pooled(redis_pool).await?;
@@ -75,6 +84,15 @@ async fn main() -> anyhow::Result<()> {
     let stream_storage = Arc::new(StreamStorage::default());
     let user_repo = Arc::new(UserRepository::new(pool.clone()));
     let user_facade = Arc::new(UserFacade::new(user_repo));
+
+    let admin_username = dotenvy::var("ADMIN_USERNAME").ok();
+    let admin_password = dotenvy::var("ADMIN_PASSWORD").ok();
+    let admin_email = dotenvy::var("ADMIN_EMAIL").ok();
+    if let (Some(username), Some(password), Some(email)) =
+        (admin_username, admin_password, admin_email)
+    {
+        create_admin(&pool, &username, &password, &email).await?
+    }
 
     let profile_picture_folders_path = get_profile_picture_folder_path();
     UserFacade::create_profile_picture_folders(profile_picture_folders_path)
