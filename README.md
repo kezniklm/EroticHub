@@ -6,6 +6,8 @@
 
 Ensure you have `docker` and `docker-compose` installed.
 
+For local development and successful build, you must have [GStreamer](https://gstreamer.freedesktop.org/) installed.
+
 ### How to run in release mode
 
 Release mode automatically prepares build of EroticHub in the Docker container. Then inserts database dump into

@@ -3,7 +3,7 @@
     <div class="video-name-container mt-2">
         <div class="video-name">{{ video.name }}</div>
         <div>
-            <a class="like-btn" data-bs-title="Like video" data-liked="{{ is_liked }}" hx-post="/user/like/{{ video.id }}" hx-push-url="false">
+            <a class="icon-btn like-btn" data-bs-toggle="tooltip" data-bs-title="Like video" data-liked="{{ is_liked }}" hx-post="/user/like/{{ video.id }}" hx-push-url="false">
                 <i class="bi bi-heart-fill"></i>
             </a>
             {% if session.is_artist() && is_video_owner %}

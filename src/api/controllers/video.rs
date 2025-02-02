@@ -223,8 +223,9 @@ pub async fn list_videos(
     video_facade: Data<VideoFacade>,
     artist_facade: Data<ArtistFacade>,
     req: Query<FetchVideoByFilters>,
+    identity: Option<Identity>,
 ) -> Result<impl Responder> {
-    let serialized_videos = get_videos(video_facade, artist_facade, req.clone()).await?;
+    let serialized_videos = get_videos(video_facade, artist_facade, req.clone(), identity).await?;
 
     let template = VideosTemplate {
         videos: serialized_videos,
@@ -237,12 +238,15 @@ pub async fn get_videos(
     video_facade: Data<VideoFacade>,
     artist_facade: Data<ArtistFacade>,
     req: Query<FetchVideoByFilters>,
+    identity: Option<Identity>,
 ) -> Result<Vec<VideoList>> {
     let offset = req.offset;
     let filter: Option<Vec<i32>> = parse_option_string(req.filter.clone()).app_error("filter")?;
     let ord = req.ord.as_deref();
 
-    let videos = video_facade.fetch_videos(ord, filter, offset).await?;
+    let videos = video_facade
+        .fetch_videos(ord, filter, offset, identity.id_i32())
+        .await?;
 
     let serialized_videos = from_video_to_video_list(videos, artist_facade).await?;
 

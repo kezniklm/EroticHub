@@ -44,6 +44,7 @@ pub trait VideoFacadeTrait {
         ord: Option<&str>,
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
+        user_id: Option<i32>,
     ) -> Result<Vec<Video>>;
     async fn fetch_liked_videos(&self, ids: Vec<i32>) -> Result<Vec<Video>>;
     async fn is_video_owner(&self, video_artist_id: i32, user_id: i32) -> Result<()>;
@@ -354,6 +355,7 @@ impl VideoFacadeTrait for VideoFacade {
         ord: Option<&str>,
         filter: Option<Vec<i32>>,
         offset: Option<i32>,
+        user_id: Option<i32>,
     ) -> Result<Vec<Video>> {
         let videos = self.video_repo.fetch_videos(ord, filter, offset).await;
         let videos = match videos {
@@ -365,7 +367,14 @@ impl VideoFacadeTrait for VideoFacade {
                 ))
             }
         };
-        Ok(videos)
+
+        let mut filtered = Vec::new();
+        for video in videos {
+            if self.check_permissions(&video, user_id).await.is_ok() {
+                filtered.push(video);
+            }
+        }
+        Ok(filtered)
     }
 
     async fn fetch_liked_videos(&self, ids: Vec<i32>) -> Result<Vec<Video>> {
