@@ -1,6 +1,7 @@
 use bcrypt::{hash, DEFAULT_COST};
 use chrono::Datelike;
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::{types::BigDecimal, PgPool, Postgres, Transaction};
+use std::str::FromStr;
 
 pub async fn create_admin(
     pool: &PgPool,
@@ -154,10 +155,153 @@ async fn seed_users(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
     Ok(())
 }
 
+async fn seed_artists(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<i32>> {
+    let templates = [
+        ("Seraphina Noir", "A photographer specializing in dark, sensual imagery with a gothic flair."),
+        ("Jax Wilder", "A male model and erotic performer known for his athletic physique and captivating presence."),
+        ("Lila Rouge", "A burlesque dancer and performance artist who blends classic glamour with modern sensuality."),
+        ("Damon Steele", "A writer and illustrator creating erotic comics and graphic novels with intricate storylines."),
+        ("Raven Ash", "A digital artist crafting fantasy-themed erotica with strong female characters."),
+        ("Isabelle Bloom", "A painter using vibrant colors and expressive strokes to capture the beauty of the human form."),
+        ("Kai Storm", "A musician and composer creating ambient soundscapes for sensual experiences."),
+        ("Victoria Velvet", "A lingerie designer specializing in luxurious and seductive pieces."),
+        ("Ethan Blaze", "A fitness model and personal trainer who shares workout routines and motivational content."),
+        ("Luna Moon", "A poet and spoken word artist exploring themes of love, desire, and intimacy."),
+        ("Caleb Stone", "A sculptor working with clay and stone to create erotic figures and abstract forms."),
+        ("Aria Night", "A cosplayer and model known for her detailed costumes and captivating portrayals."),
+        ("Julian Frost", "A filmmaker and director creating erotic short films and music videos."),
+        ("Aurora Rose", "A makeup artist and body painter specializing in sensual and artistic designs."),
+        ("Sebastian Grey", "A male escort and cam model offering personalized experiences and companionship."),
+        ("Skye Diamond", "A jewelry designer creating custom pieces with erotic and symbolic meanings."),
+        ("Phoenix Fire", "A fire performer and dancer who incorporates elements of sensuality and danger."),
+        ("River Wilde", "A nature photographer capturing the raw beauty and eroticism of the natural world."),
+        ("Zephyr Breeze", "An ASMR artist creating audio experiences designed to evoke relaxation and arousal."),
+        ("Indigo Bloom", "A tattoo artist specializing in erotic and symbolic designs using fine lines and delicate shading.")
+    ];
+
+    let mut ids = vec![];
+    for (name, description) in templates.iter() {
+        let artist_user_id = sqlx::query!(
+            r#"
+            INSERT INTO user_table (username, password_hash, email)
+            VALUES ($1, $2, $3)
+            RETURNING id
+            "#,
+            name.to_lowercase().replace(" ", "_"),
+            hash("password123", DEFAULT_COST)?,
+            format!("{}@seed.com", name.to_lowercase().replace(" ", "_")),
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        let artist_id = sqlx::query!(
+            r#"
+            INSERT INTO artist (user_id, description)
+            VALUES ($1, $2)
+            RETURNING id
+            "#,
+            artist_user_id,
+            description,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        ids.push(artist_id);
+
+        sqlx::query!(
+            r#"
+            UPDATE user_table
+            SET artist_id = $1
+            WHERE id = $2
+            "#,
+            artist_id,
+            artist_user_id,
+        )
+        .execute(tx.as_mut())
+        .await?;
+    }
+
+    Ok(ids)
+}
+
+async fn seed_categories(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<Vec<i32>> {
+    let categories = [
+        "Photography",
+        "Modeling",
+        "Dance",
+        "Writing",
+        "Digital Art",
+        "Painting",
+        "Music",
+        "Fashion",
+        "Fitness",
+        "Poetry",
+        "Sculpture",
+        "Cosplay",
+        "Film",
+        "Makeup",
+        "Companionship",
+        "Jewelry",
+        "Performance Art",
+        "Photography",
+        "ASMR",
+        "Tattoo",
+    ];
+
+    let mut ids = vec![];
+    for category in categories.iter() {
+        let category_id = sqlx::query!(
+            r#"
+            INSERT INTO video_category (name)
+            VALUES ($1)
+            RETURNING id
+            "#,
+            category,
+        )
+        .fetch_one(tx.as_mut())
+        .await?
+        .id;
+
+        ids.push(category_id);
+    }
+
+    Ok(ids)
+}
+
+async fn seed_deals(tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<()> {
+    let templates: Vec<(&str, BigDecimal, i32)> = vec![
+        ("Basic", BigDecimal::from_str("9.90")?, 1),
+        ("Extended", BigDecimal::from_str("8.90")?, 3),
+        ("Best value", BigDecimal::from_str("7.90")?, 12),
+    ];
+
+    for (name, price, duration) in templates.iter() {
+        sqlx::query!(
+            r#"
+            INSERT INTO deal (label, price_per_month, number_of_months)
+            VALUES ($1, $2, $3)
+            "#,
+            name,
+            price,
+            duration,
+        )
+        .execute(tx.as_mut())
+        .await?;
+    }
+
+    Ok(())
+}
+
 pub async fn seed_database(pool: &PgPool) -> anyhow::Result<()> {
     let mut tx = pool.begin().await?;
 
     seed_users(&mut tx).await?;
+    seed_deals(&mut tx).await?;
+
+    let artist_ids = seed_artists(&mut tx).await?;
+    let category_ids = seed_categories(&mut tx).await?;
 
     tx.commit().await?;
 
