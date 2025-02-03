@@ -1,4 +1,4 @@
 pub mod controllers;
 pub mod extractors;
 pub mod routes;
-mod templates;
+pub mod templates;

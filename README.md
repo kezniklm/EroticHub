@@ -4,6 +4,8 @@
 
 Ensure you have `docker` and `docker-compose` installed.
 
+For local development and successful build, you must have [GStreamer](https://gstreamer.freedesktop.org/) installed.
+
 ## Run in release mode
 
 If you want to add data from an existing database into the released application, add the resources by copying them into the [docker/erotic-hub/data/](docker/erotic-hub/data/) folder. Add the database dump into the [docker/postgres/db-data](docker/postgres/db-data) folder. Use this command to create such a dump:

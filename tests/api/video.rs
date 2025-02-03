@@ -9,6 +9,8 @@ use actix_service::Service;
 use actix_web::cookie::Cookie;
 use actix_web::dev::ServiceResponse;
 use actix_web::{test, Error};
+use askama::Template;
+use erotic_hub::api::templates::video::show::template::VideoNotAllowed;
 use erotic_hub::business::models::video::{VideoEditReq, VideoUploadReq, VideoVisibility};
 use erotic_hub::common::tests::setup::AsyncContext;
 use http::{Method, StatusCode};
@@ -397,7 +399,14 @@ async fn assert_get_requests(
 ) {
     let watch_video_resp = watch_video(video_id, cookie.clone(), &app).await;
 
-    assert_eq!(watch_video_resp.status(), expected_status);
+    if expected_status == StatusCode::OK {
+        assert_eq!(watch_video_resp.status(), expected_status)
+    } else {
+        let body = test::read_body(watch_video_resp).await;
+        let response_template = String::from_utf8(body.to_vec()).unwrap();
+        let template = VideoNotAllowed {};
+        assert_eq!(response_template, template.render().unwrap());
+    }
 
     let video_file_resp = get_video_file(video_id, cookie.clone(), &app).await;
 
@@ -405,7 +414,8 @@ async fn assert_get_requests(
 
     let thumbnail_file_resp = get_thumbnail_file(video_id, cookie, &app).await;
 
-    assert_eq!(thumbnail_file_resp.status(), expected_status);
+    // Thumbnail should be always available
+    assert_eq!(thumbnail_file_resp.status(), StatusCode::OK);
 }
 
 pub fn create_upload_req(

@@ -37,7 +37,7 @@ pub trait VideoFacadeTrait {
         user_id: Option<i32>,
     ) -> Result<models::video::Video>;
     async fn get_playable_video(&self, video_id: i32, user_id: Option<i32>) -> Result<NamedFile>;
-    async fn get_thumbnail_file(&self, video_id: i32, user_id: Option<i32>) -> Result<NamedFile>;
+    async fn get_thumbnail_file(&self, video_id: i32) -> Result<NamedFile>;
     async fn check_permissions(&self, video: &Video, user_id: Option<i32>) -> Result<()>;
     async fn fetch_videos(
         &self,
@@ -302,15 +302,14 @@ impl VideoFacadeTrait for VideoFacade {
     ///
     ///
     /// * `video_id` - ID of the video you want to get
-    /// * `user_id` - ID of an user that requested the video
-    async fn get_thumbnail_file(&self, video_id: i32, user_id: Option<i32>) -> Result<NamedFile> {
+    async fn get_thumbnail_file(&self, video_id: i32) -> Result<NamedFile> {
         let video_entity = self
             .video_repo
             .get_video_by_id(video_id, None)
             .await?
             .ok_or(AppError::new("Video doesn't exist", AppErrorKind::NotFound))?;
 
-        self.check_permissions(&video_entity, user_id).await?;
+        // self.check_permissions(&video_entity, user_id).await?;
         let path = Path::new(video_entity.thumbnail_path.as_str());
         let file = NamedFile::open_async(path)
             .await

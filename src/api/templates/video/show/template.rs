@@ -46,3 +46,7 @@ impl PlayerTemplate {
 pub struct CommentsTemplate {
     pub comments: Vec<CommentUserModel>,
 }
+
+#[derive(Template)]
+#[template(path = "video/show/video_not_allowed.html")]
+pub struct VideoNotAllowed {}

@@ -8,7 +8,9 @@ use crate::api::templates::video::edit::template::EditVideoTemplate;
 use crate::api::templates::video::list::template::{
     IndexTemplate, VideoGridTemplate, VideosTemplate,
 };
-use crate::api::templates::video::show::template::{PlayerTemplate, ShowVideoTemplate};
+use crate::api::templates::video::show::template::{
+    PlayerTemplate, ShowVideoTemplate, VideoNotAllowed,
+};
 use crate::api::templates::video::upload::template::{
     ThumbnailPreviewTemplate, ThumbnailUploadInputTemplate, VideoPreviewTemplate,
     VideoUploadInputTemplate, VideoUploadTemplate,
@@ -154,11 +156,8 @@ pub async fn get_video(
 pub async fn get_thumbnail(
     request: Path<GetVideoByIdReq>,
     video_facade: Data<VideoFacade>,
-    identity: Option<Identity>,
 ) -> Result<NamedFile> {
-    let file = video_facade
-        .get_thumbnail_file(request.id, identity.id_i32())
-        .await?;
+    let file = video_facade.get_thumbnail_file(request.id).await?;
     Ok(file)
 }
 
@@ -178,7 +177,10 @@ pub async fn watch_video(
     identity: Option<Identity>,
 ) -> Result<impl Responder> {
     let user_id = identity.id_i32();
-    let video = video_facade.get_video_model(req.id, user_id).await?;
+    let Ok(video) = video_facade.get_video_model(req.id, user_id).await else {
+        let template = VideoNotAllowed {};
+        return Ok(template.to_response());
+    };
     let video_id = video.id;
     let video_artist_id = video.artist_id;
 
@@ -196,7 +198,7 @@ pub async fn watch_video(
             .map_or(false, |_| true),
     };
 
-    Ok(BaseTemplate::wrap(htmx_request, session, template))
+    Ok(BaseTemplate::wrap(htmx_request, session, template).to_response())
 }
 
 pub async fn main_page(
